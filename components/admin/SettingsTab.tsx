@@ -300,6 +300,46 @@ const SettingsTab = ({ currentUser, onDataChange, configs }: { currentUser: User
                 </div>
             </div>
 
+            {/* Database Setup Section */}
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
+                    <Database size={18} className="text-indigo-600" />
+                    <h3 className="font-bold text-slate-700">Setup Database</h3>
+                </div>
+                <div className="p-6">
+                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200">
+                        <div className="mb-4 md:mb-0">
+                            <h4 className="font-bold text-slate-700 text-sm">Generate Soal Survey Default</h4>
+                            <p className="text-xs text-slate-500 mt-1">Buat soal default untuk Survey Karakter dan Survey Lingkungan Belajar jika belum ada di database.</p>
+                        </div>
+                        <button 
+                            onClick={async () => {
+                                if (window.confirm('Apakah Anda yakin ingin men-generate soal survey default? Ini akan menambahkan soal ke database.')) {
+                                    setIsSaving(true);
+                                    try {
+                                        const res = await api.seedSurveys();
+                                        if (res.success) {
+                                            await showAlert(res.message, { type: 'success' });
+                                        } else {
+                                            await showAlert("Gagal: " + res.message, { type: 'error' });
+                                        }
+                                    } catch (e: any) {
+                                        await showAlert("Terjadi kesalahan sistem.", { type: 'error' });
+                                    } finally {
+                                        setIsSaving(false);
+                                    }
+                                }
+                            }}
+                            disabled={isSaving}
+                            className="px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-sm disabled:opacity-50 flex items-center gap-2 text-sm whitespace-nowrap"
+                        >
+                            {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Database size={16} />}
+                            Generate Soal Survey
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             {/* Admin Management Section */}
             <AdminManagement currentUser={currentUser} onDataChange={onDataChange} />
         </div>

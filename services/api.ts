@@ -312,6 +312,36 @@ export const api = {
       if (data.status === 'RESET') return { success: false, message: 'Sesi telah direset' };
       return { success: true, message: 'Sesi aktif' };
   },
+
+  initSystem: async (): Promise<{success: boolean, message: string}> => {
+      return { success: true, message: 'Sistem siap' };
+  },
+
+  seedSurveys: async (): Promise<{success: boolean, message: string}> => {
+      const surveyKarakterQuestions = [
+          { id: 'SK-01', exam_id: 'Survey_Karakter', text_soal: 'Saya selalu mengerjakan tugas sekolah tepat waktu.', tipe_soal: 'LIKERT', bobot_nilai: 1, opsi_a: 'Sangat Kurang Sesuai', opsi_b: 'Kurang Sesuai', opsi_c: 'Sesuai', opsi_d: 'Sangat Sesuai', kunci_jawaban: '4' },
+          { id: 'SK-02', exam_id: 'Survey_Karakter', text_soal: 'Saya menghormati perbedaan pendapat dengan teman.', tipe_soal: 'LIKERT', bobot_nilai: 1, opsi_a: 'Sangat Kurang Sesuai', opsi_b: 'Kurang Sesuai', opsi_c: 'Sesuai', opsi_d: 'Sangat Sesuai', kunci_jawaban: '4' },
+          { id: 'SK-03', exam_id: 'Survey_Karakter', text_soal: 'Saya berani mengakui kesalahan jika berbuat salah.', tipe_soal: 'LIKERT', bobot_nilai: 1, opsi_a: 'Sangat Kurang Sesuai', opsi_b: 'Kurang Sesuai', opsi_c: 'Sesuai', opsi_d: 'Sangat Sesuai', kunci_jawaban: '4' },
+          { id: 'SK-04', exam_id: 'Survey_Karakter', text_soal: 'Saya peduli terhadap kebersihan lingkungan sekolah.', tipe_soal: 'LIKERT', bobot_nilai: 1, opsi_a: 'Sangat Kurang Sesuai', opsi_b: 'Kurang Sesuai', opsi_c: 'Sesuai', opsi_d: 'Sangat Sesuai', kunci_jawaban: '4' },
+          { id: 'SK-05', exam_id: 'Survey_Karakter', text_soal: 'Saya tidak mudah menyerah saat menghadapi soal yang sulit.', tipe_soal: 'LIKERT', bobot_nilai: 1, opsi_a: 'Sangat Kurang Sesuai', opsi_b: 'Kurang Sesuai', opsi_c: 'Sesuai', opsi_d: 'Sangat Sesuai', kunci_jawaban: '4' }
+      ];
+
+      const surveyLingkunganQuestions = [
+          { id: 'SL-01', exam_id: 'Survey_Lingkungan', text_soal: 'Fasilitas di sekolah saya sangat mendukung kegiatan belajar.', tipe_soal: 'LIKERT', bobot_nilai: 1, opsi_a: 'Sangat Kurang Sesuai', opsi_b: 'Kurang Sesuai', opsi_c: 'Sesuai', opsi_d: 'Sangat Sesuai', kunci_jawaban: '4' },
+          { id: 'SL-02', exam_id: 'Survey_Lingkungan', text_soal: 'Guru-guru di sekolah saya mengajar dengan cara yang mudah dipahami.', tipe_soal: 'LIKERT', bobot_nilai: 1, opsi_a: 'Sangat Kurang Sesuai', opsi_b: 'Kurang Sesuai', opsi_c: 'Sesuai', opsi_d: 'Sangat Sesuai', kunci_jawaban: '4' },
+          { id: 'SL-03', exam_id: 'Survey_Lingkungan', text_soal: 'Saya merasa aman dari perundungan (bullying) di sekolah.', tipe_soal: 'LIKERT', bobot_nilai: 1, opsi_a: 'Sangat Kurang Sesuai', opsi_b: 'Kurang Sesuai', opsi_c: 'Sesuai', opsi_d: 'Sangat Sesuai', kunci_jawaban: '4' },
+          { id: 'SL-04', exam_id: 'Survey_Lingkungan', text_soal: 'Sekolah menyediakan ruang perpustakaan yang nyaman.', tipe_soal: 'LIKERT', bobot_nilai: 1, opsi_a: 'Sangat Kurang Sesuai', opsi_b: 'Kurang Sesuai', opsi_c: 'Sesuai', opsi_d: 'Sangat Sesuai', kunci_jawaban: '4' },
+          { id: 'SL-05', exam_id: 'Survey_Lingkungan', text_soal: 'Teman-teman di kelas saling mendukung dalam belajar.', tipe_soal: 'LIKERT', bobot_nilai: 1, opsi_a: 'Sangat Kurang Sesuai', opsi_b: 'Kurang Sesuai', opsi_c: 'Sesuai', opsi_d: 'Sangat Sesuai', kunci_jawaban: '4' }
+      ];
+
+      const { error: err1 } = await supabase.from('questions').upsert(surveyKarakterQuestions);
+      const { error: err2 } = await supabase.from('questions').upsert(surveyLingkunganQuestions);
+
+      if (err1 || err2) {
+          return { success: false, message: (err1?.message || '') + ' ' + (err2?.message || '') };
+      }
+      return { success: true, message: 'Soal survey berhasil di-generate' };
+  },
   
   getSchoolSchedules: async (): Promise<SchoolSchedule[]> => {
       const { data, error } = await supabase.from('school_schedules').select('*');
