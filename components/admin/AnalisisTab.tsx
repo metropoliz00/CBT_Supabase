@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { BarChart3, FileText, Loader2 } from 'lucide-react';
+import { BarChart3, FileText, Loader2, Search } from 'lucide-react';
 import { api } from '../../services/api';
 import { exportToExcel } from '../../utils/adminHelpers';
 import { Exam } from '../../types';
@@ -16,6 +16,7 @@ const AnalisisTab = ({ students }: { students: any[] }) => {
     const [loadingPakets, setLoadingPakets] = useState(false);
     const [filterSchool, setFilterSchool] = useState('all');
     const [filterKecamatan, setFilterKecamatan] = useState('all');
+    const [searchTerm, setSearchTerm] = useState('');
     
     const userMap = useMemo(() => {
         const map: Record<string, any> = {};
@@ -127,9 +128,19 @@ const AnalisisTab = ({ students }: { students: any[] }) => {
             const schoolName = d.school || d.sekolah;
             const schoolMatch = filterSchool === 'all' || schoolName === filterSchool;
             const kecMatch = filterKecamatan === 'all' || (userKecamatan && userKecamatan.toLowerCase() === filterKecamatan.toLowerCase());
-            return schoolMatch && kecMatch;
+            
+            let searchMatch = true;
+            if (searchTerm) {
+                const lowerSearch = searchTerm.toLowerCase();
+                searchMatch = 
+                    (d.username || '').toLowerCase().includes(lowerSearch) ||
+                    (d.fullname || d.nama || '').toLowerCase().includes(lowerSearch) ||
+                    (d.school || d.sekolah || '').toLowerCase().includes(lowerSearch);
+            }
+
+            return schoolMatch && kecMatch && searchMatch;
         });
-    }, [parsedData, filterSchool, filterKecamatan, userMap]);
+    }, [parsedData, filterSchool, filterKecamatan, userMap, searchTerm]);
 
     // Calculate Statistics per Question
     const questionStats = useMemo(() => {
@@ -172,7 +183,17 @@ const AnalisisTab = ({ students }: { students: any[] }) => {
                         )}
                     </div>
                 </div>
-                <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+                <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto items-center">
+                    <div className="relative w-full md:w-auto">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={16} />
+                        <input 
+                            type="text" 
+                            placeholder="Cari Peserta..." 
+                            className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-100 w-full md:w-48"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
                     <select className="p-2 border border-slate-200 rounded-lg text-sm font-bold bg-slate-50 outline-none focus:ring-2 focus:ring-indigo-100" value={filterKecamatan} onChange={e => setFilterKecamatan(e.target.value)}><option value="all">Semua Kecamatan</option>{uniqueKecamatans.map((s:any) => <option key={s} value={s}>{s}</option>)}</select>
                     <select 
                         className="p-2 border border-slate-200 rounded-lg text-sm font-bold bg-slate-50 outline-none focus:ring-2 focus:ring-indigo-100" 

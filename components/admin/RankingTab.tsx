@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Award, FileText, Loader2, Printer } from 'lucide-react';
+import { Award, FileText, Loader2, Printer, Search } from 'lucide-react';
 import { api } from '../../services/api';
 import { exportToExcel, getPredicateBadge } from '../../utils/adminHelpers';
 import { User } from '../../types';
@@ -13,6 +13,7 @@ const RankingTab = ({ students, currentUser }: { students: any[], currentUser: U
     const [filterKecamatan, setFilterKecamatan] = useState('all');
     const [filterSchool, setFilterSchool] = useState('all');
     const [filterPaket, setFilterPaket] = useState('all');
+    const [searchTerm, setSearchTerm] = useState('');
     
     const userMap = useMemo(() => {
         const map: Record<string, any> = {};
@@ -119,8 +120,17 @@ const RankingTab = ({ students, currentUser }: { students: any[], currentUser: U
             });
         }
 
+        if (searchTerm) {
+            const lowerSearch = searchTerm.toLowerCase();
+            filtered = filtered.filter(d => 
+                (d.username || '').toLowerCase().includes(lowerSearch) ||
+                (d.nama || '').toLowerCase().includes(lowerSearch) ||
+                (d.sekolah || '').toLowerCase().includes(lowerSearch)
+            );
+        }
+
         return filtered;
-    }, [pivotedData, filterKecamatan, filterSchool, currentUser]);
+    }, [pivotedData, filterKecamatan, filterSchool, currentUser, searchTerm]);
 
     const getPredicateText = (score: number) => {
         if (score >= 86) return "Istimewa";
@@ -244,7 +254,17 @@ const RankingTab = ({ students, currentUser }: { students: any[], currentUser: U
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 fade-in p-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                 <h3 className="font-bold text-lg flex items-center gap-2"><Award size={20}/> Peringkat Peserta</h3>
-                <div className="flex flex-wrap gap-2 w-full md:w-auto">
+                <div className="flex flex-wrap gap-2 w-full md:w-auto items-center">
+                    <div className="relative w-full md:w-auto">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={16} />
+                        <input 
+                            type="text" 
+                            placeholder="Cari Peserta..." 
+                            className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-100 w-full md:w-48"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
                     <select className="p-2 border border-slate-200 rounded-lg text-sm font-bold bg-slate-50 outline-none focus:ring-2 focus:ring-indigo-100" value={filterPaket} onChange={e => setFilterPaket(e.target.value)}>
                         <option value="all">Semua Paket</option>
                         {uniquePakets.map(p => <option key={p} value={p}>{p}</option>)}

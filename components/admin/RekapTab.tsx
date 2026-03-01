@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { LayoutDashboard, FileText, Loader2, Printer } from 'lucide-react';
+import { LayoutDashboard, FileText, Loader2, Printer, Search, Edit, Trash2, X, Save } from 'lucide-react';
 import { api } from '../../services/api';
 import { exportToExcel, formatDurationToText } from '../../utils/adminHelpers';
 import { User } from '../../types';
@@ -13,6 +13,15 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
     const [filterSchool, setFilterSchool] = useState('all');
     const [filterKecamatan, setFilterKecamatan] = useState('all');
     const [filterPaket, setFilterPaket] = useState('all');
+    const [searchTerm, setSearchTerm] = useState('');
+
+    // Edit State
+    const [editingStudent, setEditingStudent] = useState<any | null>(null);
+    const [editForm, setEditForm] = useState<{
+        id_bi: string, nilai_bi: string, 
+        id_mtk: string, nilai_mtk: string
+    }>({ id_bi: '', nilai_bi: '', id_mtk: '', nilai_mtk: '' });
+    const [saving, setSaving] = useState(false);
 
     const userMap = useMemo(() => {
         const map: Record<string, any> = {};
@@ -20,9 +29,13 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
         return map;
     }, [students]);
 
-    useEffect(() => {
+    const loadData = () => {
         setLoading(true);
         api.getRecap().then(setData).catch(console.error).finally(() => setLoading(false));
+    };
+
+    useEffect(() => {
+        loadData();
     }, []);
 
     const pivotedData = useMemo(() => {
@@ -43,7 +56,9 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
                     nilai_bi: '-',
                     nilai_mtk: '-',
                     durasi_bi: '-',
-                    durasi_mtk: '-'
+                    durasi_mtk: '-',
+                    id_bi: '',
+                    id_mtk: ''
                 });
             }
             const entry = map.get(key);
@@ -51,13 +66,16 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
             const val = d.score ?? d.nilai;
             const displayVal = (val !== undefined && val !== null && val !== '') ? val : '-';
             const durationVal = d.duration || d.durasi || '-';
+            const idVal = d.id;
 
             if (subject.includes('bahasa') || subject.includes('indo') || subject.includes('literasi')) {
                 entry.nilai_bi = displayVal;
                 entry.durasi_bi = durationVal;
+                entry.id_bi = idVal;
             } else if (subject.includes('matematika') || subject.includes('mtk') || subject.includes('numerasi')) {
                 entry.nilai_mtk = displayVal;
                 entry.durasi_mtk = durationVal;
+                entry.id_mtk = idVal;
             }
         });
         return Array.from(map.values());
@@ -88,8 +106,18 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
             });
         }
 
+        // Apply Search
+        if (searchTerm) {
+            const lowerSearch = searchTerm.toLowerCase();
+            filtered = filtered.filter(d => 
+                d.username.toLowerCase().includes(lowerSearch) ||
+                d.nama.toLowerCase().includes(lowerSearch) ||
+                d.sekolah.toLowerCase().includes(lowerSearch)
+            );
+        }
+
         return filtered;
-    }, [pivotedData, filterSchool, filterKecamatan, currentUser]);
+    }, [pivotedData, filterSchool, filterKecamatan, currentUser, searchTerm]);
 
     const uniqueSchools = useMemo(() => {
         let relevantPivotedData = pivotedData;
@@ -122,6 +150,60 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
         const pakets = new Set(data.map(d => d.id_paket).filter(Boolean));
         return Array.from(pakets).sort();
     }, [data]);
+
+    // CRUD Handlers
+    const handleEdit = (student: any) => {
+        setEditingStudent(student);
+        setEditForm({
+            id_bi: student.id_bi,
+            nilai_bi: student.nilai_bi === '-' ? '' : student.nilai_bi,
+            id_mtk: student.id_mtk,
+            nilai_mtk: student.nilai_mtk === '-' ? '' : student.nilai_mtk
+        });
+    };
+
+    const handleSaveEdit = async () => {
+        setSaving(true);
+        try {
+            const promises = [];
+            if (editForm.id_bi) {
+                promises.push(api.updateExamResult(editForm.id_bi, { score: Number(editForm.nilai_bi) }));
+            }
+            if (editForm.id_mtk) {
+                promises.push(api.updateExamResult(editForm.id_mtk, { score: Number(editForm.nilai_mtk) }));
+            }
+            await Promise.all(promises);
+            await showAlert("Nilai berhasil diperbarui", { type: 'success' });
+            setEditingStudent(null);
+            loadData();
+        } catch (e) {
+            console.error(e);
+            await showAlert("Gagal memperbarui nilai", { type: 'error' });
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleDeleteResult = async (id: string, type: 'BI' | 'MTK') => {
+        if (!confirm(`Yakin ingin menghapus nilai ${type === 'BI' ? 'Bahasa Indonesia' : 'Matematika'} ini?`)) return;
+        
+        setSaving(true);
+        try {
+            await api.deleteExamResult(id);
+            await showAlert("Nilai berhasil dihapus", { type: 'success' });
+            
+            // Update local state immediately for better UX
+            if (type === 'BI') setEditForm(prev => ({ ...prev, id_bi: '', nilai_bi: '' }));
+            else setEditForm(prev => ({ ...prev, id_mtk: '', nilai_mtk: '' }));
+            
+            loadData();
+        } catch (e) {
+            console.error(e);
+            await showAlert("Gagal menghapus nilai", { type: 'error' });
+        } finally {
+            setSaving(false);
+        }
+    };
 
     const handlePrint = async () => {
         if (filteredData.length === 0) return showAlert("Tidak ada data untuk dicetak.", { type: 'warning' });
@@ -237,7 +319,17 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
                     <h3 className="font-bold text-lg flex items-center gap-2"><LayoutDashboard size={20}/> Rekapitulasi Nilai</h3>
                     <p className="text-xs text-slate-400">Hasil ujian.</p>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto flex-wrap">
+                <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto flex-wrap items-center">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={16} />
+                        <input 
+                            type="text" 
+                            placeholder="Cari Peserta..." 
+                            className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-100 w-full md:w-64"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
                     <select className="p-2 border border-slate-200 rounded-lg text-sm font-bold bg-slate-50 outline-none focus:ring-2 focus:ring-indigo-100" value={filterPaket} onChange={e => setFilterPaket(e.target.value)}>
                         <option value="all">Semua Paket</option>
                         {uniquePakets.map(p => <option key={p} value={p}>{p}</option>)}
@@ -288,13 +380,14 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
                             <th className="p-4 text-center">ID Paket</th>
                             <th className="p-4 text-center border-l border-slate-200 bg-blue-50/50">B. Indo</th>
                             <th className="p-4 text-center border-l border-slate-200 bg-orange-50/50">Matematika</th>
+                            {currentUser.role === 'admin_pusat' && <th className="p-4 text-center">Aksi</th>}
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                         {loading ? (
-                            <tr><td colSpan={7} className="p-8 text-center text-slate-400"><Loader2 className="animate-spin inline mr-2"/> Memuat data nilai...</td></tr>
+                            <tr><td colSpan={currentUser.role === 'admin_pusat' ? 8 : 7} className="p-8 text-center text-slate-400"><Loader2 className="animate-spin inline mr-2"/> Memuat data nilai...</td></tr>
                         ) : filteredData.length === 0 ? (
-                            <tr><td colSpan={7} className="p-8 text-center text-slate-400 italic">Data tidak ditemukan untuk filter ini.</td></tr>
+                            <tr><td colSpan={currentUser.role === 'admin_pusat' ? 8 : 7} className="p-8 text-center text-slate-400 italic">Data tidak ditemukan untuk filter ini.</td></tr>
                         ) : (
                             filteredData.map((d, i) => (
                                 <tr key={i} className="hover:bg-slate-50 transition">
@@ -312,6 +405,13 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
                                     <td className="p-4 text-center border-l border-slate-100 bg-orange-50/10">
                                         {d.nilai_mtk !== '-' ? (<div className="flex flex-col items-center"><span className="text-lg font-bold text-orange-600">{d.nilai_mtk}</span><span className="text-[10px] text-slate-400 font-mono">{formatDurationToText(d.durasi_mtk)}</span></div>) : <span className="text-slate-300">-</span>}
                                     </td>
+                                    {currentUser.role === 'admin_pusat' && (
+                                        <td className="p-4 text-center">
+                                            <button onClick={() => handleEdit(d)} className="p-2 bg-slate-100 hover:bg-indigo-100 text-slate-500 hover:text-indigo-600 rounded-lg transition">
+                                                <Edit size={16}/>
+                                            </button>
+                                        </td>
+                                    )}
                                 </tr>
                             ))
                         )}
@@ -322,6 +422,77 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
             <div className="mt-4 flex justify-between items-center text-xs text-slate-400">
                 <span>Total Data: {filteredData.length}</span>
             </div>
+
+            {/* EDIT MODAL */}
+            {editingStudent && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 fade-in">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden">
+                        <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                            <h3 className="font-bold text-slate-800">Edit Nilai Peserta</h3>
+                            <button onClick={() => setEditingStudent(null)} className="text-slate-400 hover:text-slate-600"><X size={20}/></button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                <p className="text-xs text-slate-400 uppercase font-bold">Peserta</p>
+                                <p className="font-bold text-slate-700">{editingStudent.nama}</p>
+                                <p className="text-xs text-slate-500 font-mono">{editingStudent.username}</p>
+                            </div>
+
+                            {/* Bahasa Indonesia */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-slate-600 flex justify-between">
+                                    <span>Bahasa Indonesia</span>
+                                    {editForm.id_bi && (
+                                        <button onClick={() => handleDeleteResult(editForm.id_bi, 'BI')} className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1">
+                                            <Trash2 size={12}/> Hapus Nilai
+                                        </button>
+                                    )}
+                                </label>
+                                <div className="flex gap-2">
+                                    <input 
+                                        type="number" 
+                                        className="w-full p-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-indigo-500"
+                                        placeholder="Nilai (0-100)"
+                                        value={editForm.nilai_bi}
+                                        onChange={e => setEditForm({...editForm, nilai_bi: e.target.value})}
+                                        disabled={!editForm.id_bi}
+                                    />
+                                </div>
+                                {!editForm.id_bi && <p className="text-xs text-slate-400 italic">Belum ada nilai.</p>}
+                            </div>
+
+                            {/* Matematika */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-slate-600 flex justify-between">
+                                    <span>Matematika</span>
+                                    {editForm.id_mtk && (
+                                        <button onClick={() => handleDeleteResult(editForm.id_mtk, 'MTK')} className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1">
+                                            <Trash2 size={12}/> Hapus Nilai
+                                        </button>
+                                    )}
+                                </label>
+                                <div className="flex gap-2">
+                                    <input 
+                                        type="number" 
+                                        className="w-full p-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-indigo-500"
+                                        placeholder="Nilai (0-100)"
+                                        value={editForm.nilai_mtk}
+                                        onChange={e => setEditForm({...editForm, nilai_mtk: e.target.value})}
+                                        disabled={!editForm.id_mtk}
+                                    />
+                                </div>
+                                {!editForm.id_mtk && <p className="text-xs text-slate-400 italic">Belum ada nilai.</p>}
+                            </div>
+                        </div>
+                        <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-2">
+                            <button onClick={() => setEditingStudent(null)} className="px-4 py-2 text-slate-500 hover:bg-slate-200 rounded-lg text-sm font-bold transition">Batal</button>
+                            <button onClick={handleSaveEdit} disabled={saving} className="px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg text-sm font-bold transition flex items-center gap-2 shadow-lg shadow-indigo-200">
+                                {saving ? <Loader2 size={16} className="animate-spin"/> : <Save size={16}/>} Simpan Perubahan
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

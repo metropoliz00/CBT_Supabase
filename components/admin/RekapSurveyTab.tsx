@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { ClipboardList, FileText, Loader2, RefreshCw } from 'lucide-react';
+import { ClipboardList, FileText, Loader2, RefreshCw, Search } from 'lucide-react';
 import { api } from '../../services/api';
 import { exportToExcel } from '../../utils/adminHelpers';
 import { User } from '../../types';
@@ -13,6 +13,7 @@ const RekapSurveyTab = ({ students, currentUser }: { students: any[], currentUse
     // Filters
     const [filterSchool, setFilterSchool] = useState('all');
     const [filterKecamatan, setFilterKecamatan] = useState('all');
+    const [searchTerm, setSearchTerm] = useState('');
 
     const [surveyOptions, setSurveyOptions] = useState<{id: string, name: string}[]>([]);
     
@@ -101,8 +102,18 @@ const RekapSurveyTab = ({ students, currentUser }: { students: any[], currentUse
             });
         }
 
+        // Apply Search
+        if (searchTerm) {
+            const lowerSearch = searchTerm.toLowerCase();
+            filtered = filtered.filter((d: any) => 
+                (d.username || '').toLowerCase().includes(lowerSearch) ||
+                (d.nama || '').toLowerCase().includes(lowerSearch) ||
+                (d.sekolah || '').toLowerCase().includes(lowerSearch)
+            );
+        }
+
         return filtered;
-    }, [data, filterSchool, filterKecamatan, currentUser]);
+    }, [data, filterSchool, filterKecamatan, currentUser, searchTerm]);
 
     const getSurveyPredicate = (avgVal: any) => {
         const val = parseFloat(avgVal);
@@ -173,7 +184,17 @@ const RekapSurveyTab = ({ students, currentUser }: { students: any[], currentUse
                             <span className="flex items-center gap-1 text-red-600"><span className="w-2 h-2 rounded-full bg-red-500"></span> 1: Sangat Kurang</span>
                         </div>
                     </div>
-                    <div className="flex gap-2 w-full lg:w-auto">
+                    <div className="flex gap-2 w-full lg:w-auto items-center">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={16} />
+                            <input 
+                                type="text" 
+                                placeholder="Cari Peserta..." 
+                                className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-100 w-full md:w-48"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
                         <button onClick={loadData} disabled={loading} className="bg-slate-100 text-slate-600 px-3 py-2 rounded-lg font-bold hover:bg-slate-200 transition">
                             <RefreshCw size={16} className={loading ? "animate-spin" : ""}/>
                         </button>

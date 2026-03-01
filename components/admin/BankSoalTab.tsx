@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { FileQuestion, Download, Upload, Loader2, Plus, Edit, Trash2, X, Save, Image as ImageIcon } from 'lucide-react';
+import { FileQuestion, Download, Upload, Loader2, Plus, Edit, Trash2, X, Save, Image as ImageIcon, Search } from 'lucide-react';
 import { api } from '../../services/api';
 import { QuestionRow } from '../../types';
 import { useAlert } from '../../context/AlertContext';
@@ -19,6 +19,7 @@ const BankSoalTab = () => {
     const [addSubjectModalOpen, setAddSubjectModalOpen] = useState(false);
     const [newSubjectId, setNewSubjectId] = useState('');
     const [newSubjectName, setNewSubjectName] = useState('');
+    const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
         const loadSubjects = async () => {
@@ -214,6 +215,12 @@ const BankSoalTab = () => {
 
     const isSurveyMode = selectedSubject.startsWith('Survey_');
 
+    const filteredQuestions = questions.filter(q => 
+        searchTerm === '' || 
+        q.text_soal.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        q.id.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
     const formatImgUrl = (url: string) => {
         if (!url) return '';
         if (url.startsWith('data:image')) return url;
@@ -235,6 +242,16 @@ const BankSoalTab = () => {
                     </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={16} />
+                        <input 
+                            type="text" 
+                            placeholder="Cari Soal..." 
+                            className="pl-9 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-100 w-full md:w-48"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
                     <select 
                         className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 outline-none font-bold min-w-[200px]"
                         value={selectedSubject}
@@ -295,9 +312,9 @@ const BankSoalTab = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-50">
-                                {questions.length === 0 ? (
+                                {filteredQuestions.length === 0 ? (
                                     <tr><td colSpan={10} className="p-8 text-center text-slate-400 italic">Belum ada data di sheet ini.</td></tr>
-                                ) : questions.map((q, i) => (
+                                ) : filteredQuestions.map((q, i) => (
                                     <tr key={i} className="hover:bg-slate-50 transition">
                                         <td className="p-4 font-mono font-bold text-slate-600">{q.id}</td>
                                         <td className="p-4">
