@@ -212,13 +212,30 @@ export const api = {
   },
 
   submitSurvey: async (payload: { user: User, surveyType: string, answers: any, startTime: number }) => {
-      const { error } = await supabase.from('survey_results').insert({
+      const { data: existing } = await supabase
+        .from('survey_results')
+        .select('id')
+        .eq('username', payload.user.username)
+        .eq('survey_type', payload.surveyType)
+        .single();
+
+      const resultPayload = {
           username: payload.user.username,
           survey_type: payload.surveyType,
           answers: payload.answers,
           start_time: payload.startTime,
           end_time: new Date().getTime()
-      });
+      };
+
+      let error;
+      if (existing) {
+          const res = await supabase.from('survey_results').update(resultPayload).eq('id', existing.id);
+          error = res.error;
+      } else {
+          const res = await supabase.from('survey_results').insert(resultPayload);
+          error = res.error;
+      }
+
       return { success: !error };
   },
 
@@ -245,16 +262,25 @@ export const api = {
   getRawQuestions: async (subject: string): Promise<QuestionRow[]> => {
       const { data, error } = await supabase.from('questions').select('*').eq('exam_id', subject);
       if (error || !data) return [];
-      return data as QuestionRow[];
+      return data.map((q: any) => ({
+          ...q,
+          bobot: q.bobot_nilai
+      })) as QuestionRow[];
   },
   
   saveQuestion: async (subject: string, data: QuestionRow): Promise<{success: boolean, message: string}> => {
-      const { error } = await supabase.from('questions').upsert({ ...data, exam_id: subject });
+      const payload = { ...data, exam_id: subject, bobot_nilai: data.bobot };
+      delete (payload as any).bobot;
+      const { error } = await supabase.from('questions').upsert(payload);
       return { success: !error, message: error ? error.message : 'Berhasil disimpan' };
   },
 
   importQuestions: async (subject: string, data: QuestionRow[]): Promise<{success: boolean, message: string}> => {
-      const questions = data.map(q => ({ ...q, exam_id: subject }));
+      const questions = data.map(q => {
+          const payload = { ...q, exam_id: subject, bobot_nilai: q.bobot };
+          delete (payload as any).bobot;
+          return payload;
+      });
       const { error } = await supabase.from('questions').upsert(questions);
       return { success: !error, message: error ? error.message : 'Berhasil diimport' };
   },
@@ -279,8 +305,12 @@ export const api = {
       if (!payload.id) {
           delete payload.id;
       }
+      delete payload.fullname;
+      delete payload.school;
+      delete payload.gender;
+      delete payload.photo; // photo is base64, we shouldn't save it directly to table if there's no column, or we should handle it. The table only has photo_url.
       
-      const { error } = await supabase.from('users').upsert(payload);
+      const { error } = await supabase.from('users').upsert(payload, { onConflict: 'username' });
       return { success: !error, message: error ? error.message : 'Berhasil disimpan' };
   },
 
@@ -290,7 +320,11 @@ export const api = {
   },
 
   importUsers: async (users: any[]): Promise<{success: boolean, message: string}> => {
-      const { error } = await supabase.from('users').upsert(users);
+      const cleanUsers = users.map(u => {
+          const { fullname, school, gender, photo, ...rest } = u;
+          return rest;
+      });
+      const { error } = await supabase.from('users').upsert(cleanUsers, { onConflict: 'username' });
       return { success: !error, message: error ? error.message : 'Berhasil diimport' };
   },
 
@@ -404,17 +438,33 @@ export const api = {
 
   submitExam: async (payload: { user: User, subject: string, answers: any, startTime: number, displayedQuestionCount?: number, questionIds?: string[] }) => {
       let score = 0;
-      // Calculate score if possible, or do it on backend.
-      // For now, we just save the answers.
-      const { error } = await supabase.from('exam_results').upsert({
+      
+      // Check if exists
+      const { data: existing } = await supabase
+        .from('exam_results')
+        .select('id')
+        .eq('username', payload.user.username)
+        .eq('exam_id', payload.subject)
+        .single();
+
+      const resultPayload = {
           username: payload.user.username,
           exam_id: payload.subject,
           answers: payload.answers,
-          score: score, // Need a way to calculate score properly based on questions
+          score: score,
           start_time: payload.startTime,
           end_time: new Date().getTime(),
           status: 'completed'
-      });
+      };
+
+      let error;
+      if (existing) {
+          const res = await supabase.from('exam_results').update(resultPayload).eq('id', existing.id);
+          error = res.error;
+      } else {
+          const res = await supabase.from('exam_results').insert(resultPayload);
+          error = res.error;
+      }
       
       await supabase.from('users').update({ status: 'FINISHED' }).eq('username', payload.user.username);
       
@@ -455,13 +505,31 @@ export const api = {
   },
 
   saveExamProgress: async (userId: string, examId: string, progress: { answers: Record<string, any>, currentQuestionIndex: number }): Promise<{success: boolean}> => {
-      const { error } = await supabase.from('exam_results').upsert({
+      // Check if exists
+      const { data: existing } = await supabase
+        .from('exam_results')
+        .select('id')
+        .eq('username', userId)
+        .eq('exam_id', examId)
+        .single();
+
+      const payload = {
           username: userId,
           exam_id: examId,
           answers: progress.answers,
           current_question_index: progress.currentQuestionIndex,
           status: 'ongoing'
-      });
+      };
+
+      let error;
+      if (existing) {
+          const res = await supabase.from('exam_results').update(payload).eq('id', existing.id);
+          error = res.error;
+      } else {
+          const res = await supabase.from('exam_results').insert(payload);
+          error = res.error;
+      }
+
       return { success: !error };
   },
 

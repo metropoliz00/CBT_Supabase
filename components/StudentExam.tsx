@@ -11,6 +11,7 @@ interface StudentExamProps {
   userFullName: string;
   username: string; // Needed for unique local storage key
   userPhoto?: string;
+  idPaket?: string;
   startTime: number; // Absolute start time from server
   onFinish: (answers: Record<string, UserAnswerValue>, questionCount: number, questionIds: string[], isTimeout?: boolean) => Promise<void> | void;
   onExit: () => void;
@@ -140,7 +141,7 @@ const ImageViewer = ({ src, onClose }: { src: string; onClose: () => void }) => 
     );
 };
 
-const StudentExam: React.FC<StudentExamProps> = ({ exam, questions, userFullName, username, userPhoto, startTime, onFinish, onExit }) => {
+const StudentExam: React.FC<StudentExamProps> = ({ exam, questions, userFullName, username, userPhoto, idPaket, startTime, onFinish, onExit }) => {
   const { showAlert } = useAlert();
 
   const [examQuestions, setExamQuestions] = useState<QuestionWithOptions[]>([]);
@@ -394,6 +395,7 @@ const StudentExam: React.FC<StudentExamProps> = ({ exam, questions, userFullName
               <div>
                   <div className="text-sm font-bold text-slate-800">{userFullName}</div>
                   <div className="text-xs text-slate-500">{exam.nama_ujian}</div>
+                  {idPaket && idPaket !== '-' && <div className="text-[10px] text-indigo-500 font-bold uppercase">Paket: {idPaket}</div>}
               </div>
               {userPhoto ? (
                   <img src={userPhoto} className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm bg-white" alt="Profile" />
