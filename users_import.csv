@@ -1,0 +1,20 @@
+username,password,role,nama_lengkap,jenis_kelamin,kelas_id,kecamatan,active_exam,session,photo_url,status,id_sekolah,id_gugus,id_kecamatan
+J0138468928,12345,siswa,Silfi Qurrotul Ainy,P,UPT SD Negeri Jenggolo,Jenu,Bahasa_Indonesia,Sesi 1,https://drive.google.com/thumbnail?id=1tG6KRPx-bhWBZu1pMChmwhlvq5n5oT9v&sz=w1000,FINISHED,S01,G01,KEC01
+J0144755450,12345,siswa,Hanin Shafa Rezky,P,UPT SD Negeri Jenggolo,Jenu,Bahasa_Indonesia,Sesi 1,https://drive.google.com/thumbnail?id=1e2Jxao-tS5CQaFSHrn6OM1qw5FNEzMam&sz=w1000,FINISHED,S01,G01,KEC01
+J0131410620,12345,siswa,Farel Putra Rohangkat,L,UPT SD Negeri Jenggolo,Jenu,Bahasa_Indonesia,Sesi 1,https://drive.google.com/thumbnail?id=1C9EP63dD3AVwuaMKoOOYNHeIXY5H1Ql6&sz=w1000,FINISHED,S01,G01,KEC01
+J0143868261,12345,siswa,Kanzah Robi'ul Badi'ah,P,UPT SD Negeri Jenggolo,Jenu,Bahasa_Indonesia,Sesi 1,https://drive.google.com/thumbnail?id=1K44qEqkrI-Tjk8zksyDj5o2sEO-LsLt1&sz=w1000,LOGGED_IN,S01,G01,KEC01
+J0145030303,12345,siswa,Ronnin Enner,L,UPT SD Negeri Jenggolo,Jenu,Bahasa_Indonesia,Sesi 1,https://drive.google.com/thumbnail?id=1ePSWKq7ZhqNEuBX-6BkKHM4NB9HsVEf1&sz=w1000,FINISHED,S01,G01,KEC01
+J0126837770,12345,siswa,M. Ragam Dunyagati,L,UPT SD Negeri Jenggolo,Jenu,Bahasa_Indonesia,Sesi 1,https://drive.google.com/thumbnail?id=1C_gdKbBgxTBTB-fDGEZzL3rMM-UALFnD&sz=w1000,FINISHED,S01,G01,KEC01
+J0132181088,12345,siswa,Muhammad Bazil Azizi,L,UPT SD Negeri Jenggolo,Jenu,Bahasa_Indonesia,Sesi 1,https://drive.google.com/thumbnail?id=1lZtY0gfX1HrWy0lVu6TzSdfiG-JTCq_Z&sz=w1000,FINISHED,S01,G01,KEC01
+J3137623823,12345,siswa,Adinda Alifiatul Khusnah,P,UPT SD Negeri Jenggolo,Jenu,Bahasa_Indonesia,Sesi 1,https://drive.google.com/thumbnail?id=1ji3LYhMZZkzqzQzXjR2ZQc8uW3gMYdz2&sz=w1000,FINISHED,S01,G01,KEC01
+J0145292317,12345,siswa,Salsabila,P,UPT SD Negeri Jenggolo,Jenu,Bahasa_Indonesia,Sesi 2,https://drive.google.com/thumbnail?id=108jlElmmKg3_7btqJ10xTu7fFe8UHCnt&sz=w1000,FINISHED,S01,G01,KEC01
+J0139704762,12345,siswa,Achmad Ihya'uddin,L,UPT SD Negeri Jenggolo,Jenu,Bahasa_Indonesia,Sesi 2,https://drive.google.com/thumbnail?id=1gWbSCkTvj2J8BH0GKe2002esYwcJW8cn&sz=w1000,LOGGED_IN,S01,G01,KEC01
+J0133261175,12345,siswa,Ahsaniatul Farahiyah,P,UPT SD Negeri Jenggolo,Jenu,Bahasa_Indonesia,Sesi 2,https://drive.google.com/thumbnail?id=1V0hCaA8O9mzWNkYvk7d_alS19eGh7Az_&sz=w1000,FINISHED,S01,G01,KEC01
+J3139018757,12345,siswa,Laila Ismatul Nasya,P,UPT SD Negeri Jenggolo,Jenu,Bahasa_Indonesia,Sesi 2,https://drive.google.com/thumbnail?id=1b_4cyzzRPJtkmBO1NgJzZ18xl4YMmqH2&sz=w1000,FINISHED,S01,G01,KEC01
+J3138387275,12345,siswa,Fatqur Rochman,L,UPT SD Negeri Jenggolo,Jenu,Bahasa_Indonesia,Sesi 2,https://drive.google.com/thumbnail?id=1DTmHEXqffR1XU37KDkzZALtt8DxihgNX&sz=w1000,FINISHED,S01,G01,KEC01
+J0136679230,12345,siswa,Puja Prayugi,P,UPT SD Negeri Jenggolo,Jenu,Bahasa_Indonesia,Sesi 2,https://drive.google.com/thumbnail?id=1TjaitXIT5m40s95bLUaix4vZwDJ4nCvU&sz=w1000,FINISHED,S01,G01,KEC01
+J0134368047,12345,siswa,Aqila Dwi Safitri,P,UPT SD Negeri Jenggolo,Jenu,Bahasa_Indonesia,Sesi 2,https://drive.google.com/thumbnail?id=1RqzW1nqryDgyYimtfFng6W7_YQTkjQvX&sz=w1000,LOGGED_IN,S01,G01,KEC01
+J0131076840,12345,siswa,M. KHOLILURROHMAN,L,UPT SD Negeri Jenu,Jenu,Bahasa_Indonesia,Sesi 2,https://drive.google.com/thumbnail?id=1CYOI7c-WBKa2nuPnMudvAvS6AfWLFs81&sz=w1000,FINISHED,S02,G01,KEC01
+J0131094837,12345,siswa,ILHAM YUSUF KURNIAWAN,L,UPT SD Negeri Jenu,Jenu,Bahasa_Indonesia,Sesi 2,https://drive.google.com/thumbnail?id=1R3TaBW30qBNf-vobke89xuhBZw7Y6_db&sz=w1000,LOGGED_IN,S02,G01,KEC01
+J0139448868,12345,siswa,ABID AQILA PRAMADAYA,L,UPT SD Negeri Jenu,Jenu,Bahasa_Indonesia,Sesi 2,https://drive.google.com/thumbnail?id=1mc68rBITAfyI4y3YiGs7PXh2JVuXvJBe&sz=w1000,FINISHED,S02,G01,KEC01
+J0135395638,12345,siswa,MOHAMMAD FARHAN,L,UPT SD Negeri Jenu,Jenu,Bahasa_Indonesia,Sesi 1,https://drive.google.com/thumbnail?id=1hVbEk1RZIuskXnKXLd5YdLL9friNef52&sz=w1000,FINISHED,S02,G01,KEC01

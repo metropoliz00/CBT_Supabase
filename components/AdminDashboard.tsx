@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Home, LogOut, Menu, Monitor, Group, Clock, Printer, List, Calendar, Key, FileQuestion, LayoutDashboard, ClipboardList, BarChart3, Award, RefreshCw, X, CreditCard, ChevronDown, ChevronRight, Settings, AlertCircle } from 'lucide-react';
 import { api } from '../services/api';
+import { supabase } from '../services/supabase';
 import { User } from '../types';
 import { DashboardSkeleton } from '../utils/adminHelpers';
 
@@ -209,6 +210,80 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
         return () => clearInterval(interval);
     }
   }, [activeTab]);
+
+  // Real-time Subscription for Users Table
+  useEffect(() => {
+      const channel = supabase
+        .channel('realtime-users')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'users' },
+          (payload) => {
+            // console.log('Realtime update:', payload);
+            
+            if (payload.eventType === 'UPDATE') {
+               setDashboardData((prev: any) => {
+                   const newUser = payload.new;
+                   // Find old user state from current state, not payload.old (which might be incomplete)
+                   const oldUser = prev.allUsers.find((u: any) => u.username === newUser.username);
+                   
+                   const updatedUsers = prev.allUsers.map((u: any) => 
+                       u.username === newUser.username ? { ...u, ...newUser } : u
+                   );
+                   
+                   // Generate Activity Log
+                   let action = '';
+                   let subject = newUser.active_exam || '-';
+                   
+                   if (oldUser) {
+                       if (newUser.status && newUser.status !== oldUser.status) {
+                           if (newUser.status === 'ONLINE' || newUser.status === 'LOGGED_IN') action = 'LOGIN';
+                           else if (newUser.status === 'WORKING' || newUser.status === 'EXAM') action = 'START';
+                           else if (newUser.status === 'FINISHED') action = 'FINISH';
+                       } else if (newUser.active_exam && newUser.active_exam !== oldUser.active_exam) {
+                           action = 'START';
+                       }
+                   }
+
+                   if (!action) {
+                       return { ...prev, allUsers: updatedUsers };
+                   }
+
+                   const newActivity = {
+                       id: Date.now(),
+                       nama_lengkap: newUser.nama_lengkap,
+                       fullname: newUser.nama_lengkap,
+                       username: newUser.username,
+                       kelas_id: newUser.kelas_id,
+                       school: newUser.kelas_id,
+                       kecamatan: newUser.kecamatan,
+                       id_kecamatan: newUser.id_kecamatan,
+                       id_sekolah: newUser.id_sekolah,
+                       action: action,
+                       subject: subject,
+                       time: new Date().toLocaleTimeString('id-ID')
+                   };
+
+                   return { 
+                       ...prev, 
+                       allUsers: updatedUsers,
+                       activityFeed: [newActivity, ...(prev.activityFeed || [])].slice(0, 20)
+                   };
+               });
+            } else if (payload.eventType === 'INSERT') {
+               setDashboardData((prev: any) => ({
+                   ...prev,
+                   allUsers: [...prev.allUsers, payload.new]
+               }));
+            }
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+  }, []);
 
   const getTabTitle = () => {
     let foundTitle = "Dashboard";

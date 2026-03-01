@@ -1,0 +1,21 @@
+id,exam_id,text_soal,tipe_soal,opsi_a,opsi_b,opsi_c,opsi_d,kunci_jawaban,bobot_nilai
+S1,Bahasa_Indonesia,Saya berdoa sebelum memulai kegiatan belajar.,LIKERT,Sangat Tidak Setuju,Tidak Setuju,Setuju,Sangat Setuju,D,5
+S2,Bahasa_Indonesia,Saya bersyukur atas hasil belajar yang saya peroleh.,LIKERT,Sangat Tidak Setuju,Tidak Setuju,Setuju,Sangat Setuju,D,5
+S3,Bahasa_Indonesia,Saya berkata jujur meskipun itu merugikan diri saya.,LIKERT,Sangat Tidak Setuju,Tidak Setuju,Setuju,Sangat Setuju,D,5
+S4,Bahasa_Indonesia,Saya meminta maaf jika melakukan kesalahan kepada orang lain.,LIKERT,Sangat Tidak Setuju,Tidak Setuju,Setuju,Sangat Setuju,D,5
+S5,Bahasa_Indonesia,Saya mengerjakan tugas sekolah tanpa harus selalu disuruh.,LIKERT,Sangat Tidak Setuju,Tidak Setuju,Setuju,Sangat Setuju,D,5
+S6,Bahasa_Indonesia,Saya berusaha menyelesaikan tugas meskipun terasa sulit.,LIKERT,Sangat Tidak Setuju,Tidak Setuju,Setuju,Sangat Setuju,D,5
+S7,Bahasa_Indonesia,Saya mengatur waktu belajar dengan baik di rumah.,LIKERT,Sangat Tidak Setuju,Tidak Setuju,Setuju,Sangat Setuju,D,5
+S8,Bahasa_Indonesia,Saya percaya pada kemampuan diri sendiri saat mengerjakan soal.,LIKERT,Sangat Tidak Setuju,Tidak Setuju,Setuju,Sangat Setuju,D,5
+S9,Bahasa_Indonesia,Saya senang bekerja sama dengan teman dalam kelompok.,LIKERT,Sangat Tidak Setuju,Tidak Setuju,Setuju,Sangat Setuju,D,5
+S10,Bahasa_Indonesia,Saya membantu teman yang mengalami kesulitan belajar.,LIKERT,Sangat Tidak Setuju,Tidak Setuju,Setuju,Sangat Setuju,D,5
+S11,Bahasa_Indonesia,Saya menghargai pendapat teman meskipun berbeda.,LIKERT,Sangat Tidak Setuju,Tidak Setuju,Setuju,Sangat Setuju,D,5
+S12,Bahasa_Indonesia,Saya mau berbagi tugas secara adil saat kerja kelompok.,LIKERT,Sangat Tidak Setuju,Tidak Setuju,Setuju,Sangat Setuju,D,5
+S13,Bahasa_Indonesia,Saya menghormati teman dengan latar belakang budaya berbeda.,LIKERT,Sangat Tidak Setuju,Tidak Setuju,Setuju,Sangat Setuju,D,5
+S14,Bahasa_Indonesia,Saya tidak mengejek teman karena perbedaan.,LIKERT,Sangat Tidak Setuju,Tidak Setuju,Setuju,Sangat Setuju,D,5
+S15,Bahasa_Indonesia,Saya mau berteman dengan siapa saja tanpa membeda-bedakan.,LIKERT,Sangat Tidak Setuju,Tidak Setuju,Setuju,Sangat Setuju,D,5
+S16,Bahasa_Indonesia,Saya menghargai budaya daerah lain.,LIKERT,Sangat Tidak Setuju,Tidak Setuju,Setuju,Sangat Setuju,D,5
+S17,Bahasa_Indonesia,Saya bertanya jika ada pelajaran yang belum saya pahami.,LIKERT,Sangat Tidak Setuju,Tidak Setuju,Setuju,Sangat Setuju,D,5
+S18,Bahasa_Indonesia,Saya mencoba mencari cara lain untuk menyelesaikan masalah.,LIKERT,Sangat Tidak Setuju,Tidak Setuju,Setuju,Sangat Setuju,D,5
+S19,Bahasa_Indonesia,Saya mempertimbangkan akibat sebelum mengambil keputusan.,LIKERT,Sangat Tidak Setuju,Tidak Setuju,Setuju,Sangat Setuju,D,5
+S20,Bahasa_Indonesia,Saya senang mengemukakan ide atau gagasan baru.,LIKERT,Sangat Tidak Setuju,Tidak Setuju,Setuju,Sangat Setuju,D,5

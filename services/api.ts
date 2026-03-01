@@ -452,6 +452,7 @@ export const api = {
         
       if (error || !data) return [];
       
+      // Ranking is calculated on the frontend based on the score
       return data.map((r: any) => ({
           ...r,
           nama: String(r.users?.nama_lengkap || ''),

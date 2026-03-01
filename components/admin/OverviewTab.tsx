@@ -28,11 +28,17 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ dashboardData, currentUserSta
         // Only count 'siswa' for these stats
         const relevantUsers = filteredUsers.filter((u: any) => u.role === 'siswa');
 
-        const localCounts = { OFFLINE: 0, LOGGED_IN: 0, WORKING: 0, FINISHED: 0 };
+        const localCounts: Record<string, number> = { OFFLINE: 0, LOGGED_IN: 0, WORKING: 0, FINISHED: 0 };
         relevantUsers.forEach((u: any) => {
-            const status = u.status as keyof typeof localCounts;
+            let status = u.status;
+            if (status === 'ONLINE') status = 'LOGGED_IN';
+            if (status === 'EXAM') status = 'WORKING';
+            
             if (localCounts[status] !== undefined) {
                 localCounts[status]++;
+            } else {
+                // Fallback for unknown status, maybe count as OFFLINE or ignore
+                localCounts['OFFLINE']++;
             }
         });
 
