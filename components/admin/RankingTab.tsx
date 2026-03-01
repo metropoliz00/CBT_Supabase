@@ -5,6 +5,7 @@ import { api } from '../../services/api';
 import { exportToExcel, getPredicateBadge } from '../../utils/adminHelpers';
 import { User } from '../../types';
 import { useAlert } from '../../context/AlertContext';
+import Pagination from './Pagination';
 
 const RankingTab = ({ students, currentUser }: { students: any[], currentUser: User }) => {
     const { showAlert } = useAlert();
@@ -14,6 +15,8 @@ const RankingTab = ({ students, currentUser }: { students: any[], currentUser: U
     const [filterSchool, setFilterSchool] = useState('all');
     const [filterPaket, setFilterPaket] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
     
     const userMap = useMemo(() => {
         const map: Record<string, any> = {};
@@ -131,6 +134,11 @@ const RankingTab = ({ students, currentUser }: { students: any[], currentUser: U
 
         return filtered;
     }, [pivotedData, filterKecamatan, filterSchool, currentUser, searchTerm]);
+
+    const paginatedData = useMemo(() => {
+        const startIndex = (currentPage - 1) * rowsPerPage;
+        return filteredData.slice(startIndex, startIndex + rowsPerPage);
+    }, [filteredData, currentPage, rowsPerPage]);
 
     const getPredicateText = (score: number) => {
         if (score >= 86) return "Istimewa";
@@ -315,12 +323,14 @@ const RankingTab = ({ students, currentUser }: { students: any[], currentUser: U
                     <tbody className="divide-y divide-slate-100">
                         {loading ? (
                             <tr><td colSpan={9} className="p-8 text-center text-slate-400"><Loader2 className="animate-spin inline mr-2"/> Memuat data...</td></tr>
-                        ) : filteredData.length === 0 ? (
+                        ) : paginatedData.length === 0 ? (
                             <tr><td colSpan={9} className="p-8 text-center text-slate-400 italic">Data tidak ditemukan.</td></tr>
                         ) : (
-                            filteredData.map((d, i) => (
+                            paginatedData.map((d, i) => {
+                                const globalRank = (currentPage - 1) * rowsPerPage + i + 1;
+                                return (
                                 <tr key={i} className="border-b hover:bg-slate-50 transition">
-                                    <td className="p-4 font-bold text-center text-slate-500"><div className={`w-8 h-8 rounded-full flex items-center justify-center mx-auto ${i < 3 ? 'bg-yellow-100 text-yellow-700 font-black' : 'bg-slate-100'}`}>{i+1}</div></td>
+                                    <td className="p-4 font-bold text-center text-slate-500"><div className={`w-8 h-8 rounded-full flex items-center justify-center mx-auto ${globalRank <= 3 ? 'bg-yellow-100 text-yellow-700 font-black' : 'bg-slate-100'}`}>{globalRank}</div></td>
                                     <td className="p-4 font-mono text-slate-600">{d.username}</td>
                                     <td className="p-4 font-bold text-slate-600">{d.nama}</td>
                                     <td className="p-4 text-slate-600">{d.sekolah}</td>
@@ -333,10 +343,21 @@ const RankingTab = ({ students, currentUser }: { students: any[], currentUser: U
                                     <td className="p-4 text-center font-extrabold text-indigo-600 text-lg border-l border-slate-100">{d.avg.toFixed(2)}</td>
                                     <td className="p-4 text-center border-l border-slate-100">{getPredicateBadge(d.avg)}</td>
                                 </tr>
-                            ))
+                                );
+                            })
                         )}
                     </tbody>
                 </table>
+            </div>
+            
+            <div className="mt-4">
+                <Pagination 
+                    currentPage={currentPage} 
+                    totalRows={filteredData.length} 
+                    rowsPerPage={rowsPerPage} 
+                    onPageChange={setCurrentPage} 
+                    onRowsPerPageChange={setRowsPerPage} 
+                />
             </div>
         </div>
     );

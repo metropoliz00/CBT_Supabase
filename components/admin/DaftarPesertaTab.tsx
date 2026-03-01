@@ -6,6 +6,7 @@ import { User } from '../../types';
 import { useAlert } from '../../context/AlertContext';
 import * as XLSX from 'xlsx';
 import { exportToExcel } from '../../utils/adminHelpers';
+import Pagination from './Pagination';
 
 const DaftarPesertaTab = ({ currentUser, onDataChange }: { currentUser: User, onDataChange: () => void }) => {
     const { showAlert } = useAlert();
@@ -17,6 +18,8 @@ const DaftarPesertaTab = ({ currentUser, onDataChange }: { currentUser: User, on
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
     const [formData, setFormData] = useState<Partial<User>>({
         id: '', username: '', password: '', nama_lengkap: '', role: 'siswa', 
         kelas_id: '', kecamatan: '', jenis_kelamin: 'L', photo: '', photo_url: '',
@@ -155,6 +158,12 @@ const DaftarPesertaTab = ({ currentUser, onDataChange }: { currentUser: User, on
 
         return filtered;
     }, [users, filterKecamatan, filterSchool, searchTerm, currentUser]);
+
+    const paginatedUsers = useMemo(() => {
+        const startIndex = (currentPage - 1) * rowsPerPage;
+        return filteredUsers.slice(startIndex, startIndex + rowsPerPage);
+    }, [filteredUsers, currentPage, rowsPerPage]);
+
     const handleExport = () => { const dataToExport = filteredUsers.map((u, i) => ({ No: i + 1, Username: u.username, Password: u.password, "Nama Lengkap": u.nama_lengkap, Role: u.role, "Jenis Kelamin": u.jenis_kelamin, "Sekolah / Kelas": u.kelas_id, "Kecamatan": u.kecamatan || '-', "ID Sekolah": u.id_sekolah || '', "ID Gugus": u.id_gugus || '', "ID Kecamatan": u.id_kecamatan || '' })); exportToExcel(dataToExport, "Data_Pengguna", "Users"); };
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => { 
     if (!e.target.files || e.target.files.length === 0) return;
@@ -334,10 +343,19 @@ const DaftarPesertaTab = ({ currentUser, onDataChange }: { currentUser: User, on
              <div className="overflow-x-auto rounded-lg border border-slate-200">
                  <table className="w-full text-sm text-left"><thead className="bg-slate-50 text-slate-500 font-bold uppercase text-xs"><tr><th className="p-4">Username</th><th className="p-4">Nama Lengkap</th><th className="p-4">Role</th><th className="p-4">Sekolah</th><th className="p-4">Kecamatan</th><th className="p-4 text-center">Aksi</th></tr></thead>
                      <tbody className="divide-y divide-slate-100">
-                         {loading ? (<tr><td colSpan={6} className="p-8 text-center text-slate-400"><Loader2 className="animate-spin inline mr-2"/> Memuat data...</td></tr>) : filteredUsers.length === 0 ? (<tr><td colSpan={6} className="p-8 text-center text-slate-400 italic">Data tidak ditemukan.</td></tr>) : (filteredUsers.map(u => (<tr key={u.id || u.username} className="hover:bg-slate-50 transition"><td className="p-4 font-mono font-bold text-slate-600">{u.username}</td><td className="p-4 text-slate-700 flex items-center gap-3">{u.photo_url ? <img src={u.photo_url} alt="Profile" className="w-8 h-8 rounded-full object-cover border border-slate-200 bg-white" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} /> : <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 text-xs font-bold border border-slate-300">{(u.nama_lengkap || '?').charAt(0)}</div>}<div className="hidden w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 text-xs font-bold border border-slate-300">{(u.nama_lengkap || '?').charAt(0)}</div><span>{u.nama_lengkap ? u.nama_lengkap : <span className="text-red-500 italic">[Nama Kosong]</span>}</span></td><td className="p-4"><span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${u.role === 'admin_pusat' ? 'bg-purple-100 text-purple-600' : u.role === 'admin_sekolah' ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-600'}`}>{u.role === 'admin_sekolah' ? 'Proktor' : u.role}</span></td><td className="p-4 text-slate-600 text-xs">{u.kelas_id || '-'}</td><td className="p-4 text-slate-600 text-xs">{u.kecamatan || '-'}</td><td className="p-4 flex justify-center gap-2"><button onClick={() => handleEdit(u)} className="p-2 bg-amber-50 text-amber-600 rounded-lg hover:bg-amber-100 transition"><Edit size={16}/></button><button onClick={() => handleDelete(u.username)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"><Trash2 size={16}/></button></td></tr>)))}
+                         {loading ? (<tr><td colSpan={6} className="p-8 text-center text-slate-400"><Loader2 className="animate-spin inline mr-2"/> Memuat data...</td></tr>) : paginatedUsers.length === 0 ? (<tr><td colSpan={6} className="p-8 text-center text-slate-400 italic">Data tidak ditemukan.</td></tr>) : (paginatedUsers.map(u => (<tr key={u.id || u.username} className="hover:bg-slate-50 transition"><td className="p-4 font-mono font-bold text-slate-600">{u.username}</td><td className="p-4 text-slate-700 flex items-center gap-3">{u.photo_url ? <img src={u.photo_url} alt="Profile" className="w-8 h-8 rounded-full object-cover border border-slate-200 bg-white" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} /> : <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 text-xs font-bold border border-slate-300">{(u.nama_lengkap || '?').charAt(0)}</div>}<div className="hidden w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 text-xs font-bold border border-slate-300">{(u.nama_lengkap || '?').charAt(0)}</div><span>{u.nama_lengkap ? u.nama_lengkap : <span className="text-red-500 italic">[Nama Kosong]</span>}</span></td><td className="p-4"><span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${u.role === 'admin_pusat' ? 'bg-purple-100 text-purple-600' : u.role === 'admin_sekolah' ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-600'}`}>{u.role === 'admin_sekolah' ? 'Proktor' : u.role}</span></td><td className="p-4 text-slate-600 text-xs">{u.kelas_id || '-'}</td><td className="p-4 text-slate-600 text-xs">{u.kecamatan || '-'}</td><td className="p-4 flex justify-center gap-2"><button onClick={() => handleEdit(u)} className="p-2 bg-amber-50 text-amber-600 rounded-lg hover:bg-amber-100 transition"><Edit size={16}/></button><button onClick={() => handleDelete(u.username)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"><Trash2 size={16}/></button></td></tr>)))}
                      </tbody>
                  </table>
              </div>
+             
+             <Pagination 
+                currentPage={currentPage} 
+                totalRows={filteredUsers.length} 
+                rowsPerPage={rowsPerPage} 
+                onPageChange={setCurrentPage} 
+                onRowsPerPageChange={setRowsPerPage} 
+             />
+
              {isModalOpen && (
                  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
                      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden max-h-[90vh] flex flex-col">

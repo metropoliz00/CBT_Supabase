@@ -4,6 +4,7 @@ import { ClipboardList, FileText, Loader2, RefreshCw, Search } from 'lucide-reac
 import { api } from '../../services/api';
 import { exportToExcel } from '../../utils/adminHelpers';
 import { User } from '../../types';
+import Pagination from './Pagination';
 
 const RekapSurveyTab = ({ students, currentUser }: { students: any[], currentUser: User }) => {
     const [selectedSurvey, setSelectedSurvey] = useState('Survey_Karakter');
@@ -14,6 +15,8 @@ const RekapSurveyTab = ({ students, currentUser }: { students: any[], currentUse
     const [filterSchool, setFilterSchool] = useState('all');
     const [filterKecamatan, setFilterKecamatan] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
 
     const [surveyOptions, setSurveyOptions] = useState<{id: string, name: string}[]>([]);
     
@@ -114,6 +117,11 @@ const RekapSurveyTab = ({ students, currentUser }: { students: any[], currentUse
 
         return filtered;
     }, [data, filterSchool, filterKecamatan, currentUser, searchTerm]);
+
+    const paginatedData = useMemo(() => {
+        const startIndex = (currentPage - 1) * rowsPerPage;
+        return filteredData.slice(startIndex, startIndex + rowsPerPage);
+    }, [filteredData, currentPage, rowsPerPage]);
 
     const getSurveyPredicate = (avgVal: any) => {
         const val = parseFloat(avgVal);
@@ -257,16 +265,16 @@ const RekapSurveyTab = ({ students, currentUser }: { students: any[], currentUse
                      <tbody className="divide-y divide-slate-50">
                          {loading ? (
                              <tr><td colSpan={8 + questionKeys.length} className="p-8 text-center text-slate-400"><Loader2 className="animate-spin inline mr-2"/> Memuat data survey...</td></tr>
-                         ) : filteredData.length === 0 ? (
+                         ) : paginatedData.length === 0 ? (
                              <tr><td colSpan={8 + questionKeys.length} className="p-8 text-center text-slate-400">
                                  Tidak ada data untuk filter ini.<br/>
                                  <span className="text-xs">Pastikan siswa sudah mengerjakan survey dan filter sekolah sesuai.</span>
                              </td></tr>
-                         ) : filteredData.map((d, i) => {
+                         ) : paginatedData.map((d, i) => {
                              const pred = getSurveyPredicate(d.rata);
                              return (
                              <tr key={i} className="hover:bg-slate-50 transition">
-                                 <td className="p-4 text-center text-slate-500 border-r border-slate-100">{i + 1}</td>
+                                 <td className="p-4 text-center text-slate-500 border-r border-slate-100">{(currentPage - 1) * rowsPerPage + i + 1}</td>
                                  <td className="p-4 font-mono text-slate-600 border-r border-slate-100">{d.username}</td>
                                  <td className="p-4 font-bold text-slate-700 sticky left-0 bg-white border-r border-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">{d.nama}</td>
                                  <td className="p-4 text-slate-600 text-xs">{d.sekolah}</td>
@@ -298,6 +306,16 @@ const RekapSurveyTab = ({ students, currentUser }: { students: any[], currentUse
                          })}
                      </tbody>
                  </table>
+             </div>
+             
+             <div className="p-4 border-t border-slate-100">
+                 <Pagination 
+                    currentPage={currentPage} 
+                    totalRows={filteredData.length} 
+                    rowsPerPage={rowsPerPage} 
+                    onPageChange={setCurrentPage} 
+                    onRowsPerPageChange={setRowsPerPage} 
+                 />
              </div>
         </div>
     );
