@@ -231,7 +231,7 @@ const AdminManagement = ({ currentUser, onDataChange }: { currentUser: User, onD
                 "L/P": "L", 
                 "Sekolah / Kelas": "UPT SD Negeri Glodog", 
                 "Kecamatan": "Palang", 
-                "Link Foto (Opsional)": "", 
+                "Link Foto (photo_url)": "", 
                 "ID Sekolah": "SCH002", 
                 "ID Gugus": "G02", 
                 "ID Kecamatan": "KEC02" 
