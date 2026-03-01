@@ -132,7 +132,7 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ dashboardData, currentUserSta
 
         const schools = new Set(
             filteredUsers
-                .filter((u: any) => u.role === 'admin_sekolah' || u.role === 'siswa')
+                .filter((u: any) => String(u.role || '').toLowerCase() === 'siswa')
                 .map((u: any) => u.kelas_id || u.school)
                 .filter((s: any) => s && s !== '-' && s.trim() !== '')
         );
