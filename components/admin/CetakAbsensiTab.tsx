@@ -20,22 +20,25 @@ const CetakAbsensiTab = ({ currentUser, students }: { currentUser: User, student
     }, []);
 
     const uniqueSchools = useMemo(() => {
-        const schools = new Set(students.map(s => s.school).filter(Boolean));
+        const schools = new Set(students.map(s => s.kelas_id || s.school).filter(Boolean));
         return Array.from(schools).sort() as string[];
     }, [students]);
 
     const uniqueKecamatans = useMemo(() => {
-        const kecs = new Set(students.map(s => s.kecamatan).filter(Boolean).filter(k => k !== '-'));
+        const kecs = new Set(students.map(s => s.kecamatan || s.id_kecamatan).filter(Boolean).filter(k => k !== '-'));
         return Array.from(kecs).sort();
     }, [students]);
 
     const filteredStudents = useMemo(() => {
         return students.filter(s => {
+            const sSchool = (s.kelas_id || s.school || '').toLowerCase();
+            const sKecamatan = (s.kecamatan || s.id_kecamatan || '').toLowerCase();
+
             if (currentUser.role === 'admin_sekolah') {
-                if ((s.school || '').toLowerCase() !== (currentUser.kelas_id || '').toLowerCase()) return false;
+                if (sSchool !== (currentUser.kelas_id || '').toLowerCase()) return false;
             } else {
-                if (filterSchool !== 'all' && s.school !== filterSchool) return false;
-                if (filterKecamatan !== 'all' && (s.kecamatan || '').toLowerCase() !== filterKecamatan.toLowerCase()) return false;
+                if (filterSchool !== 'all' && (s.kelas_id !== filterSchool && s.school !== filterSchool)) return false;
+                if (filterKecamatan !== 'all' && sKecamatan !== filterKecamatan.toLowerCase()) return false;
             }
             if (selectedSession && s.session !== selectedSession) return false;
             if (s.role !== 'siswa' && s.role !== undefined) return false; 
@@ -67,8 +70,8 @@ const CetakAbsensiTab = ({ currentUser, students }: { currentUser: User, student
             <tr>
                 <td style="text-align: center;">${idx + 1}</td>
                 <td>${s.username}</td>
-                <td>${s.fullname}</td>
-                <td>${s.school}</td>
+                <td>${s.nama_lengkap || s.fullname}</td>
+                <td>${s.kelas_id || s.school}</td>
                 <td style="text-align: center;">${s.session || '-'}</td>
                 <td></td>
             </tr>
@@ -235,8 +238,8 @@ const CetakAbsensiTab = ({ currentUser, students }: { currentUser: User, student
                                 <tr key={s.username} className="hover:bg-slate-50">
                                     <td className="p-4 text-center text-slate-500 font-mono">{idx+1}</td>
                                     <td className="p-4 font-mono font-bold text-slate-600">{s.username}</td>
-                                    <td className="p-4 font-bold text-slate-700">{s.fullname}</td>
-                                    <td className="p-4 text-slate-600">{s.school}</td>
+                                    <td className="p-4 font-bold text-slate-700">{s.nama_lengkap || s.fullname}</td>
+                                    <td className="p-4 text-slate-600">{s.kelas_id || s.school}</td>
                                     <td className="p-4"><span className="bg-indigo-50 text-indigo-600 px-2 py-1 rounded text-xs font-bold">{s.session || '-'}</span></td>
                                 </tr>
                             ))

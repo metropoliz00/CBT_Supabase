@@ -33,22 +33,25 @@ const CetakKartuTab = ({ currentUser, students, schedules }: { currentUser: User
     }, []);
 
     const uniqueSchools = useMemo(() => {
-        const schools = new Set(localStudents.map(s => s.school).filter(Boolean));
+        const schools = new Set(localStudents.map(s => s.kelas_id || s.school).filter(Boolean));
         return Array.from(schools).sort() as string[];
     }, [localStudents]);
 
     const uniqueKecamatans = useMemo(() => {
-        const kecs = new Set(localStudents.map(s => s.kecamatan).filter(Boolean).filter(k => k !== '-'));
+        const kecs = new Set(localStudents.map(s => s.kecamatan || s.id_kecamatan).filter(Boolean).filter(k => k !== '-'));
         return Array.from(kecs).sort();
     }, [localStudents]);
 
     const filteredStudents = useMemo(() => {
         return localStudents.filter(s => {
+            const sSchool = (s.kelas_id || s.school || '').toLowerCase();
+            const sKecamatan = (s.kecamatan || s.id_kecamatan || '').toLowerCase();
+
             if (currentUser.role === 'admin_sekolah') {
-                if ((s.school || '').toLowerCase() !== (currentUser.kelas_id || '').toLowerCase()) return false;
+                if (sSchool !== (currentUser.kelas_id || '').toLowerCase()) return false;
             } else {
-                if (filterSchool !== 'all' && s.school !== filterSchool) return false;
-                if (filterKecamatan !== 'all' && (s.kecamatan || '').toLowerCase() !== filterKecamatan.toLowerCase()) return false;
+                if (filterSchool !== 'all' && (s.kelas_id !== filterSchool && s.school !== filterSchool)) return false;
+                if (filterKecamatan !== 'all' && sKecamatan !== filterKecamatan.toLowerCase()) return false;
             }
             if (filterSession !== 'all' && s.session !== filterSession) return false;
             if (s.role !== 'siswa') return false; 
@@ -57,7 +60,7 @@ const CetakKartuTab = ({ currentUser, students, schedules }: { currentUser: User
     }, [localStudents, currentUser, filterSchool, filterKecamatan, filterSession]);
 
     const getGelombang = (schoolName: string) => {
-        const sched = schedules.find((s: any) => s.school === schoolName);
+        const sched = schedules.find((s: any) => (s.school || '').toLowerCase() === schoolName.toLowerCase());
         return sched ? sched.gelombang : '-';
     };
 
@@ -76,16 +79,16 @@ const CetakKartuTab = ({ currentUser, students, schedules }: { currentUser: User
                     <div class="header-text">
                         <h2>KARTU PESERTA</h2>
                         <p class="title-sub">TRY OUT TKA TAHUN 2026</p>
-                        <p class="school-name">${s.school} - Kecamatan ${s.kecamatan || '-'}</p>
+                        <p class="school-name">${s.kelas_id || s.school} - Kecamatan ${s.kecamatan || s.id_kecamatan || '-'}</p>
                     </div>
                     <img src="https://image2url.com/r2/default/images/1769821862384-d6ef24bf-e12c-4616-a255-7366afae4c30.png" class="logo" />
                 </div>
                 <div class="card-body">
                     <div class="info-col">
                         <table class="info-table">
-                            <tr><td width="65">Nama</td><td>: <b>${s.fullname}</b></td></tr>
-                            <tr><td>Sekolah</td><td>: ${s.school}</td></tr>
-                            <tr><td>Gelombang</td><td>: ${getGelombang(s.school)}</td></tr>
+                            <tr><td width="65">Nama</td><td>: <b>${s.nama_lengkap || s.fullname}</b></td></tr>
+                            <tr><td>Sekolah</td><td>: ${s.kelas_id || s.school}</td></tr>
+                            <tr><td>Gelombang</td><td>: ${getGelombang(s.kelas_id || s.school)}</td></tr>
                             <tr><td>Sesi</td><td>: <b>${s.session || '-'}</b></td></tr>
                             <tr><td>Username</td><td>: <b>${s.username}</b></td></tr>
                             <tr><td>Password</td><td>: <b>${s.password || '-'}</b></td></tr>
@@ -292,7 +295,7 @@ const CetakKartuTab = ({ currentUser, students, schedules }: { currentUser: User
                                 <div className="text-center flex-1 leading-tight px-1">
                                     <h4 className="font-bold text-[13px]">KARTU PESERTA</h4>
                                     <p className="font-bold text-[11px]">TRY OUT TKA TAHUN 2026</p>
-                                    <p className="text-[10px] italic mt-0.5 truncate max-w-[400px] mx-auto">{s.school} - Kecamatan {s.kecamatan || '-'}</p>
+                                    <p className="text-[10px] italic mt-0.5 truncate max-w-[400px] mx-auto">{s.kelas_id || s.school} - Kecamatan {s.kecamatan || s.id_kecamatan || '-'}</p>
                                 </div>
                                 <img src="https://image2url.com/r2/default/images/1769821862384-d6ef24bf-e12c-4616-a255-7366afae4c30.png" className="h-[46px] w-auto object-contain pr-1" alt="Logo"/>
                             </div>
@@ -302,9 +305,9 @@ const CetakKartuTab = ({ currentUser, students, schedules }: { currentUser: User
                                 <div className="flex-1">
                                     <table className="w-full text-[11px] leading-loose">
                                         <tbody>
-                                            <tr><td className="w-16">Nama</td><td>: <b>{s.fullname}</b></td></tr>
-                                            <tr><td>Sekolah</td><td>: {s.school}</td></tr>
-                                            <tr><td>Gelombang</td><td>: {getGelombang(s.school)}</td></tr>
+                                            <tr><td className="w-16">Nama</td><td>: <b>{s.nama_lengkap || s.fullname}</b></td></tr>
+                                            <tr><td>Sekolah</td><td>: {s.kelas_id || s.school}</td></tr>
+                                            <tr><td>Gelombang</td><td>: {getGelombang(s.kelas_id || s.school)}</td></tr>
                                             <tr><td>Sesi</td><td>: <b>{s.session || '-'}</b></td></tr>
                                             <tr><td>Username</td><td>: <b>{s.username}</b></td></tr>
                                             <tr><td>Password</td><td>: <b>{s.password || '-'}</b></td></tr>
