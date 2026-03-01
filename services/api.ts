@@ -195,10 +195,11 @@ export const api = {
 
     return questions.map((q: any) => {
         const options = [];
-        if (q.opsi_a !== undefined && q.opsi_a !== null) options.push({ id: 'A', question_id: String(q.id), text_jawaban: String(q.opsi_a), is_correct: String(q.kunci_jawaban) === 'A' });
-        if (q.opsi_b !== undefined && q.opsi_b !== null) options.push({ id: 'B', question_id: String(q.id), text_jawaban: String(q.opsi_b), is_correct: String(q.kunci_jawaban) === 'B' });
-        if (q.opsi_c !== undefined && q.opsi_c !== null) options.push({ id: 'C', question_id: String(q.id), text_jawaban: String(q.opsi_c), is_correct: String(q.kunci_jawaban) === 'C' });
-        if (q.opsi_d !== undefined && q.opsi_d !== null) options.push({ id: 'D', question_id: String(q.id), text_jawaban: String(q.opsi_d), is_correct: String(q.kunci_jawaban) === 'D' });
+        if (q.opsi_a && String(q.opsi_a).trim() !== '') options.push({ id: 'A', question_id: String(q.id), text_jawaban: String(q.opsi_a), is_correct: String(q.kunci_jawaban) === 'A' });
+        if (q.opsi_b && String(q.opsi_b).trim() !== '') options.push({ id: 'B', question_id: String(q.id), text_jawaban: String(q.opsi_b), is_correct: String(q.kunci_jawaban) === 'B' });
+        if (q.opsi_c && String(q.opsi_c).trim() !== '') options.push({ id: 'C', question_id: String(q.id), text_jawaban: String(q.opsi_c), is_correct: String(q.kunci_jawaban) === 'C' });
+        if (q.opsi_d && String(q.opsi_d).trim() !== '') options.push({ id: 'D', question_id: String(q.id), text_jawaban: String(q.opsi_d), is_correct: String(q.kunci_jawaban) === 'D' });
+        if (q.opsi_e && String(q.opsi_e).trim() !== '') options.push({ id: 'E', question_id: String(q.id), text_jawaban: String(q.opsi_e), is_correct: String(q.kunci_jawaban) === 'E' });
 
         return {
             id: String(q.id),
