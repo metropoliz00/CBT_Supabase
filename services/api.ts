@@ -63,11 +63,14 @@ export const api = {
     // EXCEPTION: Admin/Proktor can bypass this check
     const isBypassRole = ['admin_pusat', 'proktor', 'admin_sekolah'].includes(data.role);
     
-    if (!isBypassRole && data.status) {
-        const s = String(data.status).trim().toUpperCase();
-        // Allow OFFLINE and RESET
-        if (s !== 'OFFLINE' && s !== 'RESET') {
-            throw new Error(`Status peserta sedang ${data.status}. Hubungi proktor untuk reset login.`);
+    if (!isBypassRole) {
+        // Normalize status: treat null/undefined as 'OFFLINE'
+        const rawStatus = data.status || 'OFFLINE';
+        const status = String(rawStatus).trim().toUpperCase();
+        
+        // Allow ONLY these statuses
+        if (status !== 'OFFLINE' && status !== 'RESET') {
+             throw new Error(`Status peserta sedang ${data.status}. Hubungi proktor untuk reset login.`);
         }
     }
 
@@ -75,10 +78,8 @@ export const api = {
     const { error: updateError } = await supabase.from('users').update({ status: 'ONLINE', last_active: new Date().toISOString() }).eq('username', username);
     
     if (updateError) {
-        console.error("Login status update failed:", updateError);
-        // If we can't update status, the user will be kicked out by heartbeat immediately.
-        // Better to fail login.
-        throw new Error("Gagal mengupdate status login. Silakan coba lagi.");
+        console.warn("Login status update warning:", updateError);
+        // Don't block login if update fails, just warn
     }
 
     // Log Login Activity
