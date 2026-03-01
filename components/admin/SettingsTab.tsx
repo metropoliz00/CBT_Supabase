@@ -300,45 +300,6 @@ const SettingsTab = ({ currentUser, onDataChange, configs }: { currentUser: User
                 </div>
             </div>
 
-            {/* System Maintenance Section */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
-                    <Layers size={18} className="text-indigo-600" />
-                    <h3 className="font-bold text-slate-700">Perawatan Sistem</h3>
-                </div>
-                <div className="p-6">
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200">
-                        <div>
-                            <h4 className="font-bold text-slate-700 text-sm">Generate Header Sheet</h4>
-                            <p className="text-xs text-slate-500 mt-1">Buat otomatis header kolom pada semua sheet jika belum ada.</p>
-                        </div>
-                        <button 
-                            onClick={async () => {
-                                setIsInitializing(true);
-                                try {
-                                    const res = await api.initSystem();
-                                    if (res.success) {
-                                        await showAlert("Header sheet & Nama Spreadsheet berhasil di-generate!", { type: 'success' });
-                                    } else {
-                                        throw new Error(res.message);
-                                    }
-                                } catch (e: any) {
-                                    console.error(e);
-                                    await showAlert("Gagal generate header: " + e.message, { type: 'error' });
-                                } finally {
-                                    setIsInitializing(false);
-                                }
-                            }}
-                            disabled={isInitializing}
-                            className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 flex items-center gap-2 disabled:opacity-50"
-                        >
-                            {isInitializing ? <Loader2 size={14} className="animate-spin" /> : <Layers size={14} />}
-                            Generate Headers
-                        </button>
-                    </div>
-                </div>
-            </div>
-
             {/* Admin Management Section */}
             <AdminManagement currentUser={currentUser} onDataChange={onDataChange} />
         </div>

@@ -307,10 +307,6 @@ export const api = {
       if (data.status === 'RESET') return { success: false, message: 'Sesi telah direset' };
       return { success: true, message: 'Sesi aktif' };
   },
-
-  initSystem: async (): Promise<{success: boolean, message: string}> => {
-      return { success: true, message: 'Sistem siap' };
-  },
   
   getSchoolSchedules: async (): Promise<SchoolSchedule[]> => {
       const { data, error } = await supabase.from('school_schedules').select('*');
