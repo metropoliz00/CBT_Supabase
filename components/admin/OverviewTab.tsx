@@ -32,14 +32,16 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ dashboardData, currentUserSta
         let offline = 0, loggedIn = 0, working = 0, finished = 0;
 
         students.forEach((u: any) => {
-            const status = String(u.status || 'OFFLINE').toUpperCase().trim();
+            // Normalize status
+            const rawStatus = String(u.status || 'OFFLINE').toUpperCase().trim();
             
-            if (['EXAM', 'WORKING', 'MENGERJAKAN', 'ONGOING'].includes(status)) {
-                working++;
-            } else if (['FINISHED', 'SELESAI', 'COMPLETED'].includes(status)) {
-                finished++;
-            } else if (['ONLINE', 'LOGGED_IN', 'LOGIN'].includes(status)) {
+            // Use includes for broader matching
+            if (rawStatus.includes('ONLINE') || rawStatus.includes('LOGGED') || rawStatus.includes('LOGIN')) {
                 loggedIn++;
+            } else if (rawStatus.includes('EXAM') || rawStatus.includes('WORKING') || rawStatus.includes('MENGERJAKAN') || rawStatus.includes('ONGOING') || rawStatus.includes('START')) {
+                working++;
+            } else if (rawStatus.includes('FINISHED') || rawStatus.includes('SELESAI') || rawStatus.includes('COMPLETED') || rawStatus.includes('DONE')) {
+                finished++;
             } else {
                 // Everything else is OFFLINE (including RESET, null, undefined)
                 offline++;
@@ -81,7 +83,12 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ dashboardData, currentUserSta
             filteredActivity = filteredActivity.filter((log: any) => String(log.id_kecamatan || '').trim() === myKecamatanId);
         } else if (currentUserState.role === 'admin_sekolah') {
             const mySchoolName = (currentUserState.kelas_id || '').trim().toLowerCase();
-            filteredActivity = filteredActivity.filter((log: any) => (log.school || log.kelas_id || '').trim().toLowerCase() === mySchoolName);
+            // Fallback: If school is empty in log, maybe show it anyway? No, safer to filter.
+            // But let's be more lenient with matching.
+            filteredActivity = filteredActivity.filter((log: any) => {
+                const logSchool = (log.school || log.kelas_id || '').trim().toLowerCase();
+                return logSchool === mySchoolName || logSchool.includes(mySchoolName) || mySchoolName.includes(logSchool);
+            });
         }
         return filteredActivity;
     }, [dashboardData.activityFeed, currentUserState]);
