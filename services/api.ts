@@ -134,6 +134,11 @@ export const api = {
     return exams;
   },
 
+  addExam: async (id: string, nama_ujian: string): Promise<{success: boolean, message: string}> => {
+      const { error } = await supabase.from('exams').insert({ id, nama_ujian, is_active: true });
+      return { success: !error, message: error ? error.message : 'Berhasil ditambahkan' };
+  },
+
   // Get Server Token
   getServerToken: async (): Promise<string> => {
       const { data } = await supabase.from('config').select('value').eq('key', 'TOKEN').single();
@@ -387,10 +392,29 @@ export const api = {
   getDashboardData: async () => {
       const { data: users } = await supabase.from('users').select('*');
       const { data: exams } = await supabase.from('exams').select('*');
+      const { data: configData } = await supabase.from('config').select('*');
+      const { data: schedules } = await supabase.from('school_schedules').select('*');
       
+      const configs = configData?.reduce((acc, curr) => ({ ...acc, [curr.key]: curr.value }), {}) || {};
+      
+      const activeSessions = [];
+      for (let i = 1; i <= 4; i++) {
+          const status = configs[`SESSION_${i}_STATUS`] || 'OFF';
+          if (status === 'ON' || status === 'AKTIF' || status === 'ACTIVE' || status === 'TRUE' || status === '1') {
+              activeSessions.push(i.toString());
+          }
+      }
+
       return {
           allUsers: users || [],
-          activeExams: exams || []
+          activeExams: exams || [],
+          token: configs['TOKEN'] || 'TOKEN',
+          duration: parseInt(configs['DURATION'] || '60'),
+          maxQuestions: parseInt(configs['MAX_QUESTIONS'] || '0'),
+          surveyDuration: parseInt(configs['SURVEY_DURATION'] || '30'),
+          configs: configs,
+          activeSessions: activeSessions,
+          schedules: schedules || []
       };
   },
 

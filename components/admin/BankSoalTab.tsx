@@ -238,8 +238,27 @@ const BankSoalTab = () => {
                         value={selectedSubject}
                         onChange={e => setSelectedSubject(e.target.value)}
                     >
-                        {subjects.map(s => <option key={s} value={s}>{s}</option>)}
+                        {subjects.length === 0 ? <option value="">-- Belum ada Mapel --</option> : subjects.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
+
+                    <button onClick={async () => {
+                        const newSubjectId = prompt("Masukkan ID Mata Pelajaran Baru (tanpa spasi, contoh: Matematika, Bahasa_Indonesia):");
+                        if (newSubjectId) {
+                            const nama = prompt("Masukkan Nama Mata Pelajaran (contoh: Matematika, Bahasa Indonesia):");
+                            if (nama) {
+                                const res = await api.addExam(newSubjectId, nama);
+                                if (res.success) {
+                                    setSubjects([...subjects, newSubjectId]);
+                                    setSelectedSubject(newSubjectId);
+                                    await showAlert("Mata pelajaran berhasil ditambahkan", { type: 'success' });
+                                } else {
+                                    await showAlert("Gagal: " + res.message, { type: 'error' });
+                                }
+                            }
+                        }
+                    }} className="bg-indigo-100 text-indigo-600 px-4 py-2.5 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-indigo-200 transition">
+                        <Plus size={16}/> Mapel Baru
+                    </button>
 
                     <button onClick={downloadTemplate} className="bg-slate-100 text-slate-600 px-4 py-2.5 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-slate-200 transition">
                         <Download size={16}/> Template
