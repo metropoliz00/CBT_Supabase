@@ -252,8 +252,9 @@ const CetakKartuTab = ({ currentUser, students, schedules }: { currentUser: User
                                     const val = e.target.value;
                                     setFilterSchool(val);
                                     if (val !== 'all') {
-                                        const found = localStudents.find(s => s.school === val);
-                                        if (found && found.kecamatan) setFilterKecamatan(found.kecamatan);
+                                        const found = localStudents.find(s => (s.kelas_id === val || s.school === val));
+                                        const foundKec = found ? (found.kecamatan || found.id_kecamatan) : null;
+                                        if (foundKec) setFilterKecamatan(foundKec);
                                     } else {
                                         setFilterKecamatan('all');
                                     }

@@ -20,21 +20,28 @@ const AturGelombangTab = ({ students, currentUser, refreshData }: { students: an
     const [bulkShowToken, setBulkShowToken] = useState(false);
     const [selectedSchools, setSelectedSchools] = useState<Set<string>>(new Set());
 
-    const uniqueSchools = useMemo<string[]>(() => {
-        let filteredStudents = students;
+    const uniqueSchoolsData = useMemo(() => {
+        let filteredStudents = students.filter(s => s.role === 'siswa');
 
         if (currentUser.role === 'proktor' && currentUser.id_sekolah) {
-            filteredStudents = students.filter(s => s.id_sekolah === currentUser.id_sekolah);
+            filteredStudents = filteredStudents.filter(s => s.id_sekolah === currentUser.id_sekolah);
         } else if (currentUser.role === 'admin_kecamatan' && currentUser.id_kecamatan) {
-            filteredStudents = students.filter(s => s.id_kecamatan === currentUser.id_kecamatan);
-        } else if (currentUser.role === 'admin_pusat') {
-            // For admin_pusat, filter out schools with a dash '-' as their name
-            filteredStudents = students.filter(s => s.school !== '-');
+            filteredStudents = filteredStudents.filter(s => s.id_kecamatan === currentUser.id_kecamatan);
         }
 
-        const schools = new Set(filteredStudents.map(s => s.school).filter(Boolean));
-        return Array.from(schools).sort() as string[];
+        const schoolMap = new Map<string, string>(); // schoolName -> kecamatan
+        filteredStudents.forEach(s => {
+            const schoolName = s.kelas_id || s.school;
+            const kecamatanName = s.kecamatan || s.id_kecamatan || '-';
+            if (schoolName && schoolName !== '-' && schoolName.trim() !== '') {
+                schoolMap.set(schoolName, kecamatanName);
+            }
+        });
+
+        return Array.from(schoolMap.entries()).map(([school, kecamatan]) => ({ school, kecamatan })).sort((a, b) => a.school.localeCompare(b.school));
     }, [students, currentUser]);
+
+    const uniqueSchools = useMemo(() => uniqueSchoolsData.map(d => d.school), [uniqueSchoolsData]);
 
     useEffect(() => {
         if (uniqueSchools.length > 0) {
@@ -266,6 +273,7 @@ const AturGelombangTab = ({ students, currentUser, refreshData }: { students: an
                         <tr>
                             <th className="p-4 w-10"><input type="checkbox" onChange={e => toggleSelectAll(e.target.checked)} checked={uniqueSchools.length > 0 && selectedSchools.size === uniqueSchools.length} /></th>
                             <th className="p-4">Nama Sekolah</th>
+                            <th className="p-4">Kecamatan</th>
                             <th className="p-4">Gelombang</th>
                             <th className="p-4 text-center">Rentang Tanggal Pelaksanaan</th>
                             <th className="p-4 text-center">Tampilkan Token</th>
@@ -273,10 +281,10 @@ const AturGelombangTab = ({ students, currentUser, refreshData }: { students: an
                     </thead>
                     <tbody className="divide-y divide-slate-50">
                         {loading ? (
-                             <tr><td colSpan={5} className="p-12 text-center text-slate-400"><Loader2 className="animate-spin inline mr-2"/> Sinkronisasi data jadwal...</td></tr>
-                        ) : uniqueSchools.length === 0 ? (
-                            <tr><td colSpan={5} className="p-8 text-center text-slate-400">Belum ada data sekolah (User).</td></tr>
-                        ) : uniqueSchools.map(school => (
+                             <tr><td colSpan={6} className="p-12 text-center text-slate-400"><Loader2 className="animate-spin inline mr-2"/> Sinkronisasi data jadwal...</td></tr>
+                        ) : uniqueSchoolsData.length === 0 ? (
+                            <tr><td colSpan={6} className="p-8 text-center text-slate-400">Belum ada data sekolah (User).</td></tr>
+                        ) : uniqueSchoolsData.map(({ school, kecamatan }) => (
                             <tr key={school} className="hover:bg-slate-50 transition-colors">
                                 <td className="p-4">
                                     <input type="checkbox" checked={selectedSchools.has(school)} onChange={() => {
@@ -287,6 +295,7 @@ const AturGelombangTab = ({ students, currentUser, refreshData }: { students: an
                                     }} />
                                 </td>
                                 <td className="p-4 font-bold text-slate-700">{school}</td>
+                                <td className="p-4 text-slate-500 text-xs">{kecamatan}</td>
                                 <td className="p-4">
                                     <select className="p-2 border border-slate-200 rounded bg-white w-full max-w-[200px] text-sm focus:border-indigo-500 outline-none transition-colors" value={schedules[school]?.gelombang || 'Gelombang 1'} onChange={(e) => handleChange(school, 'gelombang', e.target.value)}>
                                         <option>Gelombang 1</option>

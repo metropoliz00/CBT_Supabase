@@ -72,6 +72,7 @@ const CetakAbsensiTab = ({ currentUser, students }: { currentUser: User, student
                 <td>${s.username}</td>
                 <td>${s.nama_lengkap || s.fullname}</td>
                 <td>${s.kelas_id || s.school}</td>
+                <td>${s.kecamatan || s.id_kecamatan || '-'}</td>
                 <td style="text-align: center;">${s.session || '-'}</td>
                 <td></td>
             </tr>
@@ -128,6 +129,7 @@ const CetakAbsensiTab = ({ currentUser, students }: { currentUser: User, student
                             <th>Username</th>
                             <th>Nama Peserta</th>
                             <th>Sekolah</th>
+                            <th>Kecamatan</th>
                             <th width="80">Sesi</th>
                             <th width="100">Tanda Tangan</th>
                         </tr>
@@ -197,8 +199,9 @@ const CetakAbsensiTab = ({ currentUser, students }: { currentUser: User, student
                                     const val = e.target.value;
                                     setFilterSchool(val);
                                     if (val !== 'all') {
-                                        const found = students.find(s => s.school === val);
-                                        if (found && found.kecamatan) setFilterKecamatan(found.kecamatan);
+                                        const found = students.find(s => (s.kelas_id === val || s.school === val));
+                                        const foundKec = found ? (found.kecamatan || found.id_kecamatan) : null;
+                                        if (foundKec) setFilterKecamatan(foundKec);
                                     } else {
                                         setFilterKecamatan('all');
                                     }
@@ -227,12 +230,13 @@ const CetakAbsensiTab = ({ currentUser, students }: { currentUser: User, student
                             <th className="p-4">Username</th>
                             <th className="p-4">Nama Peserta</th>
                             <th className="p-4">Sekolah</th>
+                            <th className="p-4">Kecamatan</th>
                             <th className="p-4">Sesi</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                          {filteredStudents.length === 0 ? (
-                            <tr><td colSpan={5} className="p-8 text-center text-slate-400 italic">Tidak ada data siswa sesuai filter.</td></tr>
+                            <tr><td colSpan={6} className="p-8 text-center text-slate-400 italic">Tidak ada data siswa sesuai filter.</td></tr>
                         ) : (
                             filteredStudents.map((s, idx) => (
                                 <tr key={s.username} className="hover:bg-slate-50">
@@ -240,6 +244,7 @@ const CetakAbsensiTab = ({ currentUser, students }: { currentUser: User, student
                                     <td className="p-4 font-mono font-bold text-slate-600">{s.username}</td>
                                     <td className="p-4 font-bold text-slate-700">{s.nama_lengkap || s.fullname}</td>
                                     <td className="p-4 text-slate-600">{s.kelas_id || s.school}</td>
+                                    <td className="p-4 text-slate-500 text-xs">{s.kecamatan || s.id_kecamatan || '-'}</td>
                                     <td className="p-4"><span className="bg-indigo-50 text-indigo-600 px-2 py-1 rounded text-xs font-bold">{s.session || '-'}</span></td>
                                 </tr>
                             ))
