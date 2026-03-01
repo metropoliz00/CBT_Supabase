@@ -79,7 +79,8 @@ const RankingTab = ({ students, currentUser }: { students: any[], currentUser: U
             }
             const entry = map.get(key);
             const subject = (d.subject || d.mapel || '').toLowerCase();
-            const val = parseFloat(d.score || d.nilai);
+            const rawVal = d.score ?? d.nilai;
+            const val = parseFloat(rawVal);
             const safeVal = isNaN(val) ? 0 : val;
             if (subject.includes('bahasa') || subject.includes('indo') || subject.includes('literasi')) {
                 entry.score_bi = safeVal;

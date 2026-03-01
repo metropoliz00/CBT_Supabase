@@ -492,6 +492,56 @@ export const api = {
   submitExam: async (payload: { user: User, subject: string, answers: any, startTime: number, displayedQuestionCount?: number, questionIds?: string[] }) => {
       let score = 0;
       
+      // Calculate Score
+      try {
+          const { data: questions } = await supabase.from('questions').select('id, kunci_jawaban, bobot_nilai, tipe_soal').eq('exam_id', payload.subject);
+          
+          if (questions && questions.length > 0) {
+              let totalScore = 0;
+              let maxScore = 0;
+
+              questions.forEach((q: any) => {
+                  const qId = String(q.id);
+                  const userAnswer = payload.answers[qId];
+                  const weight = Number(q.bobot_nilai || 1);
+                  
+                  // Only count if question was displayed (if questionIds provided)
+                  if (payload.questionIds && !payload.questionIds.includes(qId)) return;
+
+                  maxScore += weight;
+
+                  if (userAnswer) {
+                      if (q.tipe_soal === 'PG' || q.tipe_soal === 'BS') {
+                          // PG: Single Answer (A, B, C, D, E)
+                          // BS: Boolean (true/false) mapped to key
+                          if (String(userAnswer) === String(q.kunci_jawaban)) {
+                              totalScore += weight;
+                          }
+                      } else if (q.tipe_soal === 'PGK') {
+                          // PGK: Multiple Answers (Array)
+                          // Simple scoring: All correct must be selected (exact match) or partial?
+                          // Let's assume exact match for now or partial credit logic if needed.
+                          // For simplicity: If array matches exactly (sorted)
+                          const correctKeys = String(q.kunci_jawaban).split(',').map(k => k.trim());
+                          const userKeys = Array.isArray(userAnswer) ? userAnswer : [userAnswer];
+                          
+                          // Check if arrays have same elements
+                          const isCorrect = correctKeys.length === userKeys.length && correctKeys.every(k => userKeys.includes(k));
+                          if (isCorrect) totalScore += weight;
+                      }
+                  }
+              });
+              
+              // Normalize score to 0-100 scale if needed, or keep raw score
+              // Usually exams are 0-100.
+              if (maxScore > 0) {
+                  score = (totalScore / maxScore) * 100;
+              }
+          }
+      } catch (e) {
+          console.error("Error calculating score:", e);
+      }
+      
       // Check if exists
       const { data: existing } = await supabase
         .from('exam_results')

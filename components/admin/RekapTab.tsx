@@ -48,12 +48,16 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
             }
             const entry = map.get(key);
             const subject = (d.subject || d.mapel || '').toLowerCase();
+            const val = d.score ?? d.nilai;
+            const displayVal = (val !== undefined && val !== null && val !== '') ? val : '-';
+            const durationVal = d.duration || d.durasi || '-';
+
             if (subject.includes('bahasa') || subject.includes('indo') || subject.includes('literasi')) {
-                entry.nilai_bi = d.score || d.nilai || '-';
-                entry.durasi_bi = d.duration || d.durasi || '-';
+                entry.nilai_bi = displayVal;
+                entry.durasi_bi = durationVal;
             } else if (subject.includes('matematika') || subject.includes('mtk') || subject.includes('numerasi')) {
-                entry.nilai_mtk = d.score || d.nilai || '-';
-                entry.durasi_mtk = d.duration || d.durasi || '-';
+                entry.nilai_mtk = displayVal;
+                entry.durasi_mtk = durationVal;
             }
         });
         return Array.from(map.values());
