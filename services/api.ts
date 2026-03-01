@@ -274,7 +274,13 @@ export const api = {
   },
 
   saveUser: async (userData: any): Promise<{success: boolean, message: string}> => {
-      const { error } = await supabase.from('users').upsert(userData);
+      const payload = { ...userData };
+      // If id is empty, remove it so Supabase can generate a new UUID
+      if (!payload.id) {
+          delete payload.id;
+      }
+      
+      const { error } = await supabase.from('users').upsert(payload);
       return { success: !error, message: error ? error.message : 'Berhasil disimpan' };
   },
 
