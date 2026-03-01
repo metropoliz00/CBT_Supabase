@@ -1,0 +1,5 @@
+{
+  "name": "CBT TKA System V9_DB Supabase",
+  "description": "High-performance Computer Based Test application with sharding support for 3000+ concurrent users, integrated Survey Karakter \u0026 Lingkungan Belajar, and advanced admin reporting.",
+  "requestFramePermissions": []
+}
