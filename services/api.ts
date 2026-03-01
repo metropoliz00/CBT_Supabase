@@ -79,12 +79,17 @@ export const api = {
         }
     }
 
-    // Update status to ONLINE
-    const { error: updateError } = await supabase.from('users').update({ status: 'ONLINE', last_active: new Date().toISOString() }).eq('username', username);
+    // Update status to LOGGED_IN (more explicit than ONLINE)
+    const { error: updateError } = await supabase
+        .from('users')
+        .update({ 
+            status: 'LOGGED_IN', 
+            last_active: new Date().toISOString() 
+        })
+        .eq('username', username);
     
     if (updateError) {
         console.warn("Login status update warning:", updateError);
-        // Don't block login if update fails, just warn
     }
 
     // Log Login Activity

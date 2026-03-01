@@ -30,10 +30,14 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ dashboardData, currentUserSta
 
         // 4. Count Statuses
         let offline = 0, loggedIn = 0, working = 0, finished = 0;
+        const debugStatuses: Record<string, number> = {};
 
         students.forEach((u: any) => {
             // Normalize status
             const rawStatus = String(u.status || 'OFFLINE').toUpperCase().trim();
+            
+            // Count raw statuses for debug
+            debugStatuses[rawStatus] = (debugStatuses[rawStatus] || 0) + 1;
             
             // Use includes for broader matching
             if (rawStatus.includes('ONLINE') || rawStatus.includes('LOGGED') || rawStatus.includes('LOGIN')) {
@@ -50,7 +54,8 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ dashboardData, currentUserSta
 
         return {
             counts: { OFFLINE: offline, LOGGED_IN: loggedIn, WORKING: working, FINISHED: finished },
-            total: students.length
+            total: students.length,
+            debug: debugStatuses
         };
     }, [dashboardData.allUsers, currentUserState]);
 
@@ -58,6 +63,9 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ dashboardData, currentUserSta
     const BELUM_UJIAN = OFFLINE + LOGGED_IN;
     const displayTotalUsers = stats.total;
     const totalStatus = OFFLINE + LOGGED_IN + WORKING + FINISHED;
+    
+    // Debug output for raw statuses
+    const debugString = Object.entries(stats.debug || {}).map(([k, v]) => `${k}: ${v}`).join(', ');
     
     // Duration Calculation
     const examDuration = Number(dashboardData.duration) || 0;
@@ -297,6 +305,10 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ dashboardData, currentUserSta
                         <span>Selesai ({FINISHED}) - {totalStatus > 0 ? ((FINISHED/totalStatus)*100).toFixed(1) : 0}%</span>
                     </div>
                 </div>
+                {/* Debug Info */}
+                <div className="mt-4 w-full bg-slate-50 p-2 rounded text-[10px] text-slate-400 font-mono break-all border border-slate-100">
+                    Raw Statuses: {debugString || 'None'}
+                </div>
             </div>
 
             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 col-span-2">
@@ -342,7 +354,10 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ dashboardData, currentUserSta
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="flex justify-between items-start mb-0.5">
-                                            <p className="text-sm font-bold text-slate-700 truncate">{log.nama_lengkap || log.fullname}</p>
+                                            <p className="text-sm font-bold text-slate-700 truncate">
+                                                {log.nama_lengkap || log.fullname || log.username} 
+                                                <span className="text-[10px] text-slate-400 font-normal ml-1">({log.username})</span>
+                                            </p>
                                         </div>
                                         
                                         {/* Sekolah & Kecamatan Display */}
