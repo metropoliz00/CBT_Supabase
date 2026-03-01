@@ -358,6 +358,18 @@ export const api = {
   },
 
   seedSurveys: async (): Promise<{success: boolean, message: string}> => {
+      // Pastikan data ujian survey ada di tabel exams untuk menghindari error foreign key
+      const surveyExams = [
+          { id: 'Survey_Karakter', nama_ujian: 'Survey Karakter', durasi: 60, is_active: true },
+          { id: 'Survey_Lingkungan', nama_ujian: 'Survey Lingkungan Belajar', durasi: 60, is_active: true }
+      ];
+
+      const { error: examErr } = await supabase.from('exams').upsert(surveyExams);
+      if (examErr) {
+          console.error("Error seeding survey exams:", examErr);
+          return { success: false, message: 'Gagal membuat data ujian survey: ' + examErr.message };
+      }
+
       const surveyKarakterQuestions = [
           { id: 'SK-01', exam_id: 'Survey_Karakter', text_soal: 'Saya selalu mengerjakan tugas sekolah tepat waktu.', tipe_soal: 'LIKERT', bobot_nilai: 1, opsi_a: 'Sangat Kurang Sesuai', opsi_b: 'Kurang Sesuai', opsi_c: 'Sesuai', opsi_d: 'Sangat Sesuai', kunci_jawaban: '4' },
           { id: 'SK-02', exam_id: 'Survey_Karakter', text_soal: 'Saya menghormati perbedaan pendapat dengan teman.', tipe_soal: 'LIKERT', bobot_nilai: 1, opsi_a: 'Sangat Kurang Sesuai', opsi_b: 'Kurang Sesuai', opsi_c: 'Sesuai', opsi_d: 'Sangat Sesuai', kunci_jawaban: '4' },
