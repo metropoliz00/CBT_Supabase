@@ -545,36 +545,6 @@ function App() {
                                     )}
                                     <div><h2 className="text-xl font-bold text-slate-800">Profil Peserta</h2><p className="text-slate-500 text-sm">Pastikan data user di bawah ini benar.</p></div>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <button 
-                                        onClick={async () => {
-                                            setLoading(true);
-                                            setLoadingMessage('Sinkronisasi Menyeluruh...');
-                                            try {
-                                                const res = await api.clearAllCache();
-                                                if (res.success) {
-                                                    const allConfigs = await api.getAllConfig();
-                                                    setConfigs(allConfigs);
-                                                    localStorage.setItem('cbt_config_data', JSON.stringify(allConfigs));
-                                                    localStorage.setItem('cbt_config_time', new Date().getTime().toString());
-                                                    await showAlert("Sinkronisasi Berhasil! Status sesi telah diperbarui.", { type: 'success' });
-                                                } else {
-                                                    throw new Error(res.message);
-                                                }
-                                            } catch (e: any) {
-                                                console.error(e);
-                                                await showAlert("Gagal sinkronisasi: " + e.message, { type: 'error' });
-                                            } finally {
-                                                setLoading(false);
-                                            }
-                                        }}
-                                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-full text-xs font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-200"
-                                        title="Sinkronkan Semua Data"
-                                    >
-                                        <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-                                        Sinkronkan Sesi
-                                    </button>
-                                </div>
                             </div>
                         <div className="p-8 space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6"><div className="space-y-1"><label className="text-xs font-bold text-slate-400 uppercase">Username</label><div className="font-mono text-lg font-bold text-slate-700 bg-slate-50 p-2 rounded border border-slate-200">{currentUser?.username}</div></div><div className="space-y-1"><label className="text-xs font-bold text-slate-400 uppercase">Mata Ujian</label>{examList.length > 0 ? (<select className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-blue-700 font-bold outline-none focus:ring-2 focus:ring-blue-100 disabled:bg-slate-100 disabled:text-slate-500" value={selectedExamId} onChange={e=>setSelectedExamId(e.target.value)} disabled={examList.length === 1}>{examList.map(s=><option key={s.id} value={s.id}>{s.nama_ujian}</option>)}</select>) : (<div className="p-2.5 bg-red-50 border border-red-200 text-red-500 rounded-lg text-sm font-bold flex items-center gap-2"><AlertCircle size={16}/>{currentUser?.active_exam && currentUser.active_exam !== '-' ? `Ujian "${currentUser.active_exam}" belum aktif/tersedia.` : "Belum ada ujian yang diaktifkan untuk User ini."}</div>)}</div></div>
