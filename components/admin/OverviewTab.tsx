@@ -25,8 +25,8 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ dashboardData, currentUserSta
             allUsers = allUsers.filter((u: any) => (u.kelas_id || u.school || '').trim().toLowerCase() === mySchoolName);
         }
 
-        // 3. Filter only students
-        const students = allUsers.filter((u: any) => u.role === 'siswa');
+        // 3. Filter only students (Case insensitive)
+        const students = allUsers.filter((u: any) => String(u.role || '').trim().toLowerCase() === 'siswa');
 
         // 4. Count Statuses
         let offline = 0, loggedIn = 0, working = 0, finished = 0;
@@ -153,6 +153,16 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ dashboardData, currentUserSta
         return dateStr;
     };
 
+    if (!dashboardData.allUsers || dashboardData.allUsers.length === 0) {
+        return (
+            <div className="p-8 text-center bg-red-50 rounded-2xl border border-red-200">
+                <AlertCircle className="mx-auto text-red-500 mb-2" size={32} />
+                <h3 className="font-bold text-red-800">Data User Kosong</h3>
+                <p className="text-sm text-red-600">Tidak ada data siswa yang dimuat. Kemungkinan masalah koneksi database atau permission (RLS).</p>
+            </div>
+        );
+    }
+
     return (
     <div className="space-y-6 fade-in max-w-7xl mx-auto">
         {/* Welcome Section */}
@@ -253,7 +263,10 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ dashboardData, currentUserSta
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center">
-                <h3 className="text-slate-700 font-bold mb-6 text-sm uppercase tracking-wide w-full border-b pb-2">Status Peserta (%)</h3>
+                <h3 className="text-slate-700 font-bold mb-6 text-sm uppercase tracking-wide w-full border-b pb-2 flex justify-between">
+                    <span>Status Peserta (%)</span>
+                    <span className="text-xs text-slate-400 normal-case">Total: {totalStatus} Siswa</span>
+                </h3>
                 <SimpleDonutChart data={statusData} />
                 <div className="grid grid-cols-2 gap-4 mt-6 w-full text-xs font-bold text-slate-500">
                     <div className="flex items-center gap-2"><div className="w-3 h-3 bg-slate-200 rounded"></div> Belum Login ({totalStatus > 0 ? Math.round((OFFLINE/totalStatus)*100) : 0}%)</div>

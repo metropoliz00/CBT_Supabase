@@ -661,6 +661,8 @@ export const api = {
           ...u,
           username: String(u.username || ''),
           nama_lengkap: String(u.nama_lengkap || ''),
+          role: String(u.role || 'siswa'), // Default to siswa
+          status: String(u.status || 'OFFLINE'), // Default to OFFLINE
           kelas_id: String(u.kelas_id || ''),
           kecamatan: String(u.kecamatan || ''),
           id_sekolah: String(u.id_sekolah || ''),
