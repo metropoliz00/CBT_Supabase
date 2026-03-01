@@ -22,7 +22,7 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ dashboardData, currentUserSta
         } else if (currentUserState.role === 'admin_sekolah') {
             // admin_sekolah uses kelas_id which maps to school name
             const mySchoolName = (currentUserState.kelas_id || '').toLowerCase();
-            filteredUsers = filteredUsers.filter((u: any) => (u.school || '').toLowerCase() === mySchoolName);
+            filteredUsers = filteredUsers.filter((u: any) => (u.kelas_id || u.school || '').toLowerCase() === mySchoolName);
         }
 
         // Only count 'siswa' for these stats
@@ -108,7 +108,7 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ dashboardData, currentUserSta
         const schools = new Set(
             filteredUsers
                 .filter((u: any) => u.role === 'admin_sekolah' || u.role === 'siswa')
-                .map((u: any) => u.school)
+                .map((u: any) => u.kelas_id || u.school)
                 .filter((s: any) => s && s !== '-' && s.trim() !== '')
         );
         return schools.size;
@@ -289,18 +289,18 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ dashboardData, currentUserSta
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="flex justify-between items-start mb-0.5">
-                                            <p className="text-sm font-bold text-slate-700 truncate">{log.fullname}</p>
+                                            <p className="text-sm font-bold text-slate-700 truncate">{log.nama_lengkap || log.fullname}</p>
                                         </div>
                                         
                                         {/* Sekolah & Kecamatan Display */}
                                         <div className="text-xs text-slate-500 mb-2 flex flex-col gap-1 mt-1">
                                             <div className="flex items-center gap-2" title="Sekolah">
                                                 <School size={13} className="text-indigo-400 shrink-0"/>
-                                                <span className="truncate font-semibold text-slate-600">{log.school || '-'}</span>
+                                                <span className="truncate font-semibold text-slate-600">{log.kelas_id || log.school || '-'}</span>
                                             </div>
                                             <div className="flex items-center gap-2" title="Kecamatan">
                                                 <MapPin size={13} className="text-emerald-500 shrink-0"/>
-                                                <span className="truncate text-slate-500">{log.kecamatan || '-'}</span>
+                                                <span className="truncate text-slate-500">{log.kecamatan || log.id_kecamatan || '-'}</span>
                                             </div>
                                         </div>
 

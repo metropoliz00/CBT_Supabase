@@ -18,7 +18,7 @@ const StatusTesTab = ({ currentUser, students, refreshData }: { currentUser: Use
         } else if (currentUser.role === 'admin_kecamatan' && currentUser.id_kecamatan) {
             relevantStudents = students.filter(s => s.id_kecamatan === currentUser.id_kecamatan);
         }
-        const schools = new Set(relevantStudents.map(s => s.school).filter(Boolean));
+        const schools = new Set(relevantStudents.map(s => s.kelas_id || s.school).filter(Boolean));
         return Array.from(schools).sort() as string[];
     }, [students, currentUser]);
     const uniqueKecamatans = useMemo(() => {
@@ -28,7 +28,7 @@ const StatusTesTab = ({ currentUser, students, refreshData }: { currentUser: Use
         } else if (currentUser.role === 'admin_kecamatan' && currentUser.id_kecamatan) {
             relevantStudents = students.filter(s => s.id_kecamatan === currentUser.id_kecamatan);
         }
-        const kecs = new Set(relevantStudents.map(s => s.kecamatan).filter(Boolean).filter(k => k !== '-'));
+        const kecs = new Set(relevantStudents.map(s => s.kecamatan || s.id_kecamatan).filter(Boolean).filter(k => k !== '-'));
         return Array.from(kecs).sort();
     }, [students, currentUser]);
     
@@ -42,22 +42,24 @@ const StatusTesTab = ({ currentUser, students, refreshData }: { currentUser: Use
             filteredStudents = filteredStudents.filter(s => s.id_kecamatan === currentUser.id_kecamatan);
         } else if (currentUser.role === 'admin_sekolah') {
             const mySchoolName = (currentUser.kelas_id || '').toLowerCase();
-            filteredStudents = filteredStudents.filter(s => (s.school || '').toLowerCase() === mySchoolName);
+            filteredStudents = filteredStudents.filter(s => (s.kelas_id || s.school || '').toLowerCase() === mySchoolName);
         }
 
         // Apply search term
-        filteredStudents = filteredStudents.filter(s => 
-            s.fullname.toLowerCase().includes(searchTerm.toLowerCase()) || 
-            s.username.toLowerCase().includes(searchTerm.toLowerCase())
-        );
+        filteredStudents = filteredStudents.filter(s => {
+            const name = String(s.nama_lengkap || s.fullname || '').toLowerCase();
+            const username = String(s.username || '').toLowerCase();
+            const lowerSearch = searchTerm.toLowerCase();
+            return name.includes(lowerSearch) || username.includes(lowerSearch);
+        });
 
         // Apply dropdown filters for admin_pusat (or if no specific role filter applied)
         if (currentUser.role === 'admin_pusat' || (!currentUser.id_sekolah && !currentUser.id_kecamatan)) {
             if (filterSchool !== 'all') {
-                filteredStudents = filteredStudents.filter(s => s.school === filterSchool);
+                filteredStudents = filteredStudents.filter(s => s.kelas_id === filterSchool || s.school === filterSchool);
             }
             if (filterKecamatan !== 'all') {
-                filteredStudents = filteredStudents.filter(s => (s.kecamatan || '').toLowerCase() === filterKecamatan.toLowerCase());
+                filteredStudents = filteredStudents.filter(s => (String(s.kecamatan || '').toLowerCase() === filterKecamatan.toLowerCase() || String(s.id_kecamatan || '').toLowerCase() === filterKecamatan.toLowerCase()));
             }
         }
 
@@ -112,7 +114,7 @@ const StatusTesTab = ({ currentUser, students, refreshData }: { currentUser: Use
                     <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} /><input type="text" placeholder="Cari Peserta..." className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-100 w-full" value={searchTerm} onChange={e => setSearchTerm(e.target.value)}/></div>
                 </div>
              </div>
-             <div className="overflow-x-auto"><table className="w-full text-sm text-left"><thead className="bg-slate-50 text-slate-500 font-bold uppercase text-xs"><tr><th className="p-4">Nama Peserta</th><th className="p-4">Username</th><th className="p-4">Sekolah</th><th className="p-4">Kecamatan</th><th className="p-4">Status</th><th className="p-4">Ujian Aktif</th><th className="p-4 text-center">Aksi</th></tr></thead><tbody className="divide-y divide-slate-50">{filtered.length === 0 ? <tr><td colSpan={7} className="p-8 text-center text-slate-400">Tidak ada data.</td></tr> : filtered.map((s, i) => (<tr key={i} className="hover:bg-slate-50"><td className="p-4 font-bold text-slate-700">{s.fullname}</td><td className="p-4 font-mono text-slate-500">{s.username}</td><td className="p-4 text-slate-600">{s.school}</td><td className="p-4 text-slate-600">{s.kecamatan || '-'}</td><td className="p-4">{renderStatusBadge(s.status)}</td><td className="p-4 text-slate-600">{s.active_exam || '-'}</td><td className="p-4 text-center"><button onClick={() => handleReset(s.username)} disabled={!!resetting} className="bg-amber-50 text-amber-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-amber-100 transition border border-amber-100 flex items-center gap-2 mx-auto disabled:opacity-50 disabled:cursor-not-allowed">{resetting === s.username ? <><Loader2 size={12} className="animate-spin"/> Processing...</> : "Reset Login"}</button></td></tr>))}</tbody></table></div>
+             <div className="overflow-x-auto"><table className="w-full text-sm text-left"><thead className="bg-slate-50 text-slate-500 font-bold uppercase text-xs"><tr><th className="p-4">Nama Peserta</th><th className="p-4">Username</th><th className="p-4">Sekolah</th><th className="p-4">Kecamatan</th><th className="p-4">Status</th><th className="p-4">Ujian Aktif</th><th className="p-4 text-center">Aksi</th></tr></thead><tbody className="divide-y divide-slate-50">{filtered.length === 0 ? <tr><td colSpan={7} className="p-8 text-center text-slate-400">Tidak ada data.</td></tr> : filtered.map((s, i) => (<tr key={i} className="hover:bg-slate-50"><td className="p-4 font-bold text-slate-700">{s.nama_lengkap || s.fullname}</td><td className="p-4 font-mono text-slate-500">{s.username}</td><td className="p-4 text-slate-600">{s.kelas_id || s.school}</td><td className="p-4 text-slate-600">{s.kecamatan || s.id_kecamatan || '-'}</td><td className="p-4">{renderStatusBadge(s.status)}</td><td className="p-4 text-slate-600">{s.active_exam || '-'}</td><td className="p-4 text-center"><button onClick={() => handleReset(s.username)} disabled={!!resetting} className="bg-amber-50 text-amber-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-amber-100 transition border border-amber-100 flex items-center gap-2 mx-auto disabled:opacity-50 disabled:cursor-not-allowed">{resetting === s.username ? <><Loader2 size={12} className="animate-spin"/> Processing...</> : "Reset Login"}</button></td></tr>))}</tbody></table></div>
         </div>
     )
 };

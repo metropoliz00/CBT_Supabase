@@ -335,6 +335,16 @@ export const api = {
       if (error || !data) return [];
       return data.map((u: any) => ({
           ...u,
+          username: String(u.username || ''),
+          nama_lengkap: String(u.nama_lengkap || ''),
+          kelas_id: String(u.kelas_id || ''),
+          kecamatan: String(u.kecamatan || ''),
+          id_sekolah: String(u.id_sekolah || ''),
+          id_gugus: String(u.id_gugus || ''),
+          id_kecamatan: String(u.id_kecamatan || ''),
+          active_exam: String(u.active_exam || ''),
+          session: String(u.session || ''),
+          id_paket: String(u.id_paket || ''),
           photo_url: formatGoogleDriveUrl(u.photo_url)
       }));
   },
@@ -459,16 +469,16 @@ export const api = {
       
       return data.map((r: any) => ({
           ...r,
-          nama: r.users?.nama_lengkap || '',
-          sekolah: r.users?.kelas_id || '',
-          mapel: r.exam_id || '',
-          durasi: r.end_time ? Math.round((r.end_time - r.start_time) / 60000) : 0,
-          nilai: r.score || 0,
-          kecamatan: r.users?.kecamatan || '',
-          id_sekolah: r.users?.id_sekolah || '',
-          id_gugus: r.users?.id_gugus || '',
-          id_kecamatan: r.users?.id_kecamatan || '',
-          id_paket: r.users?.id_paket || ''
+          nama: String(r.users?.nama_lengkap || ''),
+          sekolah: String(r.users?.kelas_id || ''),
+          mapel: String(r.exam_id || ''),
+          durasi: r.end_time ? Math.round((Number(r.end_time) - Number(r.start_time)) / 60000) : 0,
+          nilai: Number(r.score || 0),
+          kecamatan: String(r.users?.kecamatan || ''),
+          id_sekolah: String(r.users?.id_sekolah || ''),
+          id_gugus: String(r.users?.id_gugus || ''),
+          id_kecamatan: String(r.users?.id_kecamatan || ''),
+          id_paket: String(r.users?.id_paket || '')
       }));
   },
 
@@ -532,11 +542,26 @@ export const api = {
   },
 
   getDashboardData: async () => {
-      const { data: users } = await supabase.from('users').select('*');
+      const { data: usersData } = await supabase.from('users').select('*');
       const { data: exams } = await supabase.from('exams').select('*');
       const { data: configData } = await supabase.from('config').select('*');
       const { data: schedules } = await supabase.from('school_schedules').select('*');
       
+      const users = (usersData || []).map((u: any) => ({
+          ...u,
+          username: String(u.username || ''),
+          nama_lengkap: String(u.nama_lengkap || ''),
+          kelas_id: String(u.kelas_id || ''),
+          kecamatan: String(u.kecamatan || ''),
+          id_sekolah: String(u.id_sekolah || ''),
+          id_gugus: String(u.id_gugus || ''),
+          id_kecamatan: String(u.id_kecamatan || ''),
+          active_exam: String(u.active_exam || ''),
+          session: String(u.session || ''),
+          id_paket: String(u.id_paket || ''),
+          photo_url: formatGoogleDriveUrl(u.photo_url)
+      }));
+
       const configs = configData?.reduce((acc, curr) => ({ ...acc, [curr.key]: curr.value }), {}) || {};
       
       const activeSessions = [];

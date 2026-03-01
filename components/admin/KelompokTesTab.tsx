@@ -51,28 +51,31 @@ const KelompokTesTab = ({ currentUser, students, refreshData }: { currentUser: U
     const studentList = useMemo(() => students.filter(s => s.role === 'siswa'), [students]);
 
     const uniqueSchools = useMemo(() => {
-        const schools = new Set(studentList.map(s => s.school).filter(Boolean));
+        const schools = new Set(studentList.map(s => s.kelas_id || s.school).filter(Boolean));
         return Array.from(schools).sort() as string[];
     }, [studentList]);
 
     const uniqueKecamatans = useMemo(() => {
-        const kecs = new Set(studentList.map(s => s.kecamatan).filter(Boolean).filter(k => k !== '-'));
+        const kecs = new Set(studentList.map(s => s.kecamatan || s.id_kecamatan).filter(Boolean).filter(k => k !== '-'));
         return Array.from(kecs).sort();
     }, [studentList]);
 
     const filteredStudents = useMemo(() => {
         return studentList.filter(s => {
-            const matchName = s.fullname.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                              s.username.toLowerCase().includes(searchTerm.toLowerCase());
+            const name = String(s.nama_lengkap || s.fullname || '');
+            const username = String(s.username || '');
+            const matchName = name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                              username.toLowerCase().includes(searchTerm.toLowerCase());
             
             if (currentUser.role === 'admin_sekolah' || currentUser.role === 'proktor') {
                 const mySchool = (currentUser.kelas_id || '').toLowerCase();
-                return matchName && (s.school || '').toLowerCase() === mySchool;
+                const studentSchool = (s.kelas_id || s.school || '').toLowerCase();
+                return matchName && studentSchool === mySchool;
             }
             
             let matchFilter = true;
-            if (filterSchool !== 'all') matchFilter = matchFilter && s.school === filterSchool;
-            if (filterKecamatan !== 'all') matchFilter = matchFilter && (s.kecamatan || '').toLowerCase() === filterKecamatan.toLowerCase();
+            if (filterSchool !== 'all') matchFilter = matchFilter && (s.kelas_id === filterSchool || s.school === filterSchool);
+            if (filterKecamatan !== 'all') matchFilter = matchFilter && (String(s.kecamatan || '').toLowerCase() === filterKecamatan.toLowerCase() || String(s.id_kecamatan || '').toLowerCase() === filterKecamatan.toLowerCase());
 
             return matchName && matchFilter;
         });
@@ -230,9 +233,9 @@ const KelompokTesTab = ({ currentUser, students, refreshData }: { currentUser: U
                                         }}/>
                                     )}
                                 </td>
-                                <td className="p-4 font-bold text-slate-700">{s.fullname}</td>
-                                <td className="p-4 text-slate-600">{s.school}</td>
-                                <td className="p-4 text-slate-600">{s.kecamatan || '-'}</td>
+                                <td className="p-4 font-bold text-slate-700">{s.nama_lengkap || s.fullname}</td>
+                                <td className="p-4 text-slate-600">{s.kelas_id || s.school}</td>
+                                <td className="p-4 text-slate-600">{s.kecamatan || s.id_kecamatan || '-'}</td>
                                 <td className="p-4">
                                     <span className={`px-2 py-1 rounded text-xs font-bold ${s.active_exam ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-slate-100 text-slate-400'}`}>
                                         {s.active_exam || 'Belum Ada'}
