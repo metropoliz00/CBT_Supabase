@@ -45,6 +45,12 @@ export const api = {
       throw new Error('Password salah.');
     }
 
+    // Check Status: Only allow login if status is 'OFFLINE' (or null/empty)
+    // The user request specifically asked for: "username bisa login jika status testnya 'OFFLINE'"
+    if (data.status && data.status !== 'OFFLINE') {
+        throw new Error(`Status peserta sedang ${data.status}. Hubungi proktor untuk reset login.`);
+    }
+
     // Update status to ONLINE
     await supabase.from('users').update({ status: 'ONLINE', last_active: new Date().toISOString() }).eq('username', username);
 

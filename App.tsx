@@ -365,10 +365,11 @@ function App() {
         } else {
             // Check for Survey Logic
             const examName = selectedExamId.toLowerCase();
+            const showSurvey = configs['SHOW_SURVEY'] === 'TRUE';
             
-            // Check if survey is actually enabled in allExams (based on SHOW_SURVEY config)
-            const surveyKarakterEnabled = allExams.some(e => e.id === 'Survey_Karakter');
-            const surveyLingkunganEnabled = allExams.some(e => e.id === 'Survey_Lingkungan');
+            // Check if survey is actually enabled in allExams AND enabled in config
+            const surveyKarakterEnabled = showSurvey && allExams.some(e => e.id === 'Survey_Karakter');
+            const surveyLingkunganEnabled = showSurvey && allExams.some(e => e.id === 'Survey_Lingkungan');
 
             if (surveyKarakterEnabled && (examName.includes('bahasa') || examName.includes('indo'))) {
                 setActiveSurveyType('Survey_Karakter');
