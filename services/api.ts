@@ -23,6 +23,7 @@ export const api = {
   // Helper to log activity
   logActivity: async (username: string, action: string, subject?: string, meta?: any) => {
       try {
+          // Use upsert or insert. Insert is fine.
           await supabase.from('activity_logs').insert({
               username,
               action,
@@ -30,7 +31,8 @@ export const api = {
               meta
           });
       } catch (e) {
-          console.error("Failed to log activity:", e);
+          // Silent fail is okay, but maybe warn in dev
+          console.warn("Activity log failed:", e);
       }
   },
 
@@ -633,22 +635,25 @@ export const api = {
       const { data: configData } = await supabase.from('config').select('*');
       const { data: schedules } = await supabase.from('school_schedules').select('*');
       
-      // Fetch Activity Logs
+      // Fetch Activity Logs - JOIN IN MEMORY (More robust if FK is missing)
       const { data: activityFeed } = await supabase
           .from('activity_logs')
-          .select('*, users(nama_lengkap, kelas_id, kecamatan, id_sekolah, id_kecamatan)')
+          .select('*')
           .order('created_at', { ascending: false })
           .limit(50);
 
-      const feed = activityFeed?.map((log: any) => ({
-          ...log,
-          nama_lengkap: log.users?.nama_lengkap,
-          school: log.users?.kelas_id,
-          kelas_id: log.users?.kelas_id,
-          kecamatan: log.users?.kecamatan,
-          id_sekolah: log.users?.id_sekolah,
-          id_kecamatan: log.users?.id_kecamatan
-      })) || [];
+      const feed = activityFeed?.map((log: any) => {
+          const user = (usersData || []).find((u: any) => u.username === log.username);
+          return {
+              ...log,
+              nama_lengkap: user?.nama_lengkap || log.username,
+              school: user?.kelas_id || user?.id_sekolah || '-',
+              kelas_id: user?.kelas_id || '-',
+              kecamatan: user?.kecamatan || user?.id_kecamatan || '-',
+              id_sekolah: user?.id_sekolah || '-',
+              id_kecamatan: user?.id_kecamatan || '-'
+          };
+      }) || [];
       
       const users = (usersData || []).map((u: any) => ({
           ...u,

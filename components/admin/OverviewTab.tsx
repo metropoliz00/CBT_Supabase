@@ -30,14 +30,17 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ dashboardData, currentUserSta
 
         const localCounts: Record<string, number> = { OFFLINE: 0, LOGGED_IN: 0, WORKING: 0, FINISHED: 0 };
         relevantUsers.forEach((u: any) => {
-            let status = u.status;
-            if (status === 'ONLINE') status = 'LOGGED_IN';
-            if (status === 'EXAM') status = 'WORKING';
+            // Normalize status
+            const rawStatus = String(u.status || 'OFFLINE').toUpperCase().trim();
             
-            if (localCounts[status] !== undefined) {
-                localCounts[status]++;
+            if (rawStatus === 'ONLINE' || rawStatus === 'LOGGED_IN' || rawStatus === 'LOGIN') {
+                localCounts['LOGGED_IN']++;
+            } else if (rawStatus === 'EXAM' || rawStatus === 'WORKING' || rawStatus === 'MENGERJAKAN' || rawStatus === 'ONGOING') {
+                localCounts['WORKING']++;
+            } else if (rawStatus === 'FINISHED' || rawStatus === 'SELESAI' || rawStatus === 'COMPLETED') {
+                localCounts['FINISHED']++;
             } else {
-                // Fallback for unknown status, maybe count as OFFLINE or ignore
+                // Default to OFFLINE for 'OFFLINE', 'RESET', null, or unknown
                 localCounts['OFFLINE']++;
             }
         });
@@ -307,6 +310,13 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ dashboardData, currentUserSta
                                             <div className="flex items-center gap-2" title="Kecamatan">
                                                 <MapPin size={13} className="text-emerald-500 shrink-0"/>
                                                 <span className="truncate text-slate-500">{log.kecamatan || log.id_kecamatan || '-'}</span>
+                                            </div>
+                                            {/* Time Display */}
+                                            <div className="flex items-center gap-2" title="Waktu">
+                                                <Clock size={13} className="text-slate-400 shrink-0"/>
+                                                <span className="truncate text-xs text-slate-400">
+                                                    {log.time || (log.created_at ? new Date(log.created_at).toLocaleTimeString('id-ID') : '-')}
+                                                </span>
                                             </div>
                                         </div>
 

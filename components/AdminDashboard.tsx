@@ -206,7 +206,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
     if (activeTab === 'overview') {
         const interval = setInterval(() => {
             fetchData(true);
-        }, 10000); // 10 seconds
+        }, 5000); // 5 seconds (User Request)
         return () => clearInterval(interval);
     }
   }, [activeTab]);
