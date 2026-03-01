@@ -305,10 +305,6 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ dashboardData, currentUserSta
                         <span>Selesai ({FINISHED}) - {totalStatus > 0 ? ((FINISHED/totalStatus)*100).toFixed(1) : 0}%</span>
                     </div>
                 </div>
-                {/* Debug Info */}
-                <div className="mt-4 w-full bg-slate-50 p-2 rounded text-[10px] text-slate-400 font-mono break-all border border-slate-100">
-                    Raw Statuses: {debugString || 'None'}
-                </div>
             </div>
 
             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 col-span-2">
