@@ -269,10 +269,22 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ dashboardData, currentUserSta
                 </h3>
                 <SimpleDonutChart data={statusData} />
                 <div className="grid grid-cols-2 gap-4 mt-6 w-full text-xs font-bold text-slate-500">
-                    <div className="flex items-center gap-2"><div className="w-3 h-3 bg-slate-200 rounded"></div> Belum Login ({totalStatus > 0 ? Math.round((OFFLINE/totalStatus)*100) : 0}%)</div>
-                    <div className="flex items-center gap-2"><div className="w-3 h-3 bg-yellow-400 rounded"></div> Login ({totalStatus > 0 ? Math.round((LOGGED_IN/totalStatus)*100) : 0}%)</div>
-                    <div className="flex items-center gap-2"><div className="w-3 h-3 bg-blue-500 rounded"></div> Mengerjakan ({totalStatus > 0 ? Math.round((WORKING/totalStatus)*100) : 0}%)</div>
-                    <div className="flex items-center gap-2"><div className="w-3 h-3 bg-emerald-500 rounded"></div> Selesai ({totalStatus > 0 ? Math.round((FINISHED/totalStatus)*100) : 0}%)</div>
+                    <div className="flex items-center gap-2" title="Belum Login">
+                        <div className="w-3 h-3 bg-slate-200 rounded"></div> 
+                        <span>Belum Login ({OFFLINE}) - {totalStatus > 0 ? ((OFFLINE/totalStatus)*100).toFixed(1) : 0}%</span>
+                    </div>
+                    <div className="flex items-center gap-2" title="Login">
+                        <div className="w-3 h-3 bg-yellow-400 rounded"></div> 
+                        <span>Login ({LOGGED_IN}) - {totalStatus > 0 ? ((LOGGED_IN/totalStatus)*100).toFixed(1) : 0}%</span>
+                    </div>
+                    <div className="flex items-center gap-2" title="Mengerjakan">
+                        <div className="w-3 h-3 bg-blue-500 rounded"></div> 
+                        <span>Mengerjakan ({WORKING}) - {totalStatus > 0 ? ((WORKING/totalStatus)*100).toFixed(1) : 0}%</span>
+                    </div>
+                    <div className="flex items-center gap-2" title="Selesai">
+                        <div className="w-3 h-3 bg-emerald-500 rounded"></div> 
+                        <span>Selesai ({FINISHED}) - {totalStatus > 0 ? ((FINISHED/totalStatus)*100).toFixed(1) : 0}%</span>
+                    </div>
                 </div>
             </div>
 
