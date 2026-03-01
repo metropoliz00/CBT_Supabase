@@ -159,6 +159,9 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ dashboardData, currentUserSta
                 <AlertCircle className="mx-auto text-red-500 mb-2" size={32} />
                 <h3 className="font-bold text-red-800">Data User Kosong</h3>
                 <p className="text-sm text-red-600">Tidak ada data siswa yang dimuat. Kemungkinan masalah koneksi database atau permission (RLS).</p>
+                <div className="mt-4 text-xs text-red-400 font-mono bg-red-100 p-2 rounded inline-block">
+                    Raw Users: {dashboardData.allUsers?.length || 0} | Raw Logs: {dashboardData.activityFeed?.length || 0}
+                </div>
             </div>
         );
     }
@@ -166,15 +169,23 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ dashboardData, currentUserSta
     return (
     <div className="space-y-6 fade-in max-w-7xl mx-auto">
         {/* Welcome Section */}
-        <div className="mb-4">
-            <p className="text-base text-slate-500 font-medium mb-0.5">
-                Selamat Datang, <span className="font-bold text-indigo-600">{currentUserState.nama_lengkap || currentUserState.username}</span>
-            </p>
-            <p className="text-slate-400 text-sm mt-1">
-                {currentUserState.role === 'admin_pusat' 
-                    ? 'Panel Admin Pusat: Pantau dan kelola seluruh aktivitas sistem CBT.' 
-                    : 'Panel Proktor Sekolah: Pantau status peserta dan sesi ujian sekolah.'}
-            </p>
+        <div className="mb-4 flex justify-between items-end">
+            <div>
+                <p className="text-base text-slate-500 font-medium mb-0.5">
+                    Selamat Datang, <span className="font-bold text-indigo-600">{currentUserState.nama_lengkap || currentUserState.username}</span>
+                </p>
+                <p className="text-slate-400 text-sm mt-1">
+                    {currentUserState.role === 'admin_pusat' 
+                        ? 'Panel Admin Pusat: Pantau dan kelola seluruh aktivitas sistem CBT.' 
+                        : 'Panel Proktor Sekolah: Pantau status peserta dan sesi ujian sekolah.'}
+                </p>
+            </div>
+            <button 
+                onClick={() => window.location.reload()} 
+                className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-500 px-3 py-1 rounded font-bold transition flex items-center gap-1"
+            >
+                <Activity size={12}/> Force Refresh
+            </button>
         </div>
 
         {currentUserState.role === 'admin_sekolah' && (
