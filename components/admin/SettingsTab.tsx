@@ -132,9 +132,33 @@ const SettingsTab = ({ currentUser, onDataChange, configs }: { currentUser: User
         <div className="space-y-8">
             {/* General Settings Section */}
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
-                    <Settings size={18} className="text-indigo-600" />
-                    <h3 className="font-bold text-slate-700">Pengaturan Umum</h3>
+                <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Settings size={18} className="text-indigo-600" />
+                        <h3 className="font-bold text-slate-700">Pengaturan Umum</h3>
+                    </div>
+                    <button 
+                        onClick={async () => {
+                            setIsSaving(true);
+                            try {
+                                const res = await api.syncExamsDuration();
+                                if (res.success) {
+                                    await showAlert("Semua durasi ujian telah disinkronkan dengan konfigurasi.", { type: 'success' });
+                                } else {
+                                    throw new Error(res.message);
+                                }
+                            } catch (e: any) {
+                                await showAlert("Gagal sinkronisasi durasi: " + e.message, { type: 'error' });
+                            } finally {
+                                setIsSaving(false);
+                            }
+                        }}
+                        disabled={isSaving}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold hover:bg-indigo-200 transition"
+                    >
+                        <RefreshCw size={14} className={isSaving ? 'animate-spin' : ''} />
+                        Sinkronkan Durasi
+                    </button>
                 </div>
                 <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Show Survey Toggle */}

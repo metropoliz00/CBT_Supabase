@@ -135,7 +135,9 @@ export const api = {
   },
 
   addExam: async (id: string, nama_ujian: string): Promise<{success: boolean, message: string}> => {
-      const { error } = await supabase.from('exams').insert({ id, nama_ujian, is_active: true });
+      const { data: configData } = await supabase.from('config').select('value').eq('key', 'DURATION').single();
+      const duration = parseInt(configData?.value || '60');
+      const { error } = await supabase.from('exams').insert({ id, nama_ujian, durasi: duration, is_active: true });
       return { success: !error, message: error ? error.message : 'Berhasil ditambahkan' };
   },
 
@@ -152,9 +154,47 @@ export const api = {
   },
 
   saveToken: async (newToken: string) => api.saveConfig('TOKEN', newToken),
-  saveDuration: async (minutes: number) => api.saveConfig('DURATION', minutes),
-  saveSurveyDuration: async (minutes: number) => api.saveConfig('SURVEY_DURATION', minutes),
+  saveDuration: async (minutes: number) => {
+      const res = await api.saveConfig('DURATION', minutes);
+      if (res.success) await api.syncExamsDuration();
+      return res;
+  },
+  saveSurveyDuration: async (minutes: number) => {
+      const res = await api.saveConfig('SURVEY_DURATION', minutes);
+      if (res.success) await api.syncExamsDuration();
+      return res;
+  },
   saveMaxQuestions: async (amount: number) => api.saveConfig('MAX_QUESTIONS', amount),
+
+  // Sync exam durations with config
+  syncExamsDuration: async (): Promise<{success: boolean, message: string}> => {
+      try {
+          const { data: configData } = await supabase.from('config').select('*');
+          const configs = configData?.reduce((acc, curr) => ({ ...acc, [curr.key]: curr.value }), {}) || {};
+          
+          const duration = parseInt(configs['DURATION'] || '60');
+          const surveyDuration = parseInt(configs['SURVEY_DURATION'] || '30');
+
+          // Update regular exams
+          const { error: err1 } = await supabase
+            .from('exams')
+            .update({ durasi: duration })
+            .not('id', 'ilike', 'Survey_%');
+
+          // Update survey exams
+          const { error: err2 } = await supabase
+            .from('exams')
+            .update({ durasi: surveyDuration })
+            .ilike('id', 'Survey_%');
+
+          if (err1 || err2) {
+              return { success: false, message: (err1?.message || '') + ' ' + (err2?.message || '') };
+          }
+          return { success: true, message: 'Durasi ujian berhasil disinkronkan' };
+      } catch (e: any) {
+          return { success: false, message: e.message };
+      }
+  },
 
   // Get All Config
   getAllConfig: async (): Promise<Record<string, string>> => {
@@ -358,10 +398,14 @@ export const api = {
   },
 
   seedSurveys: async (): Promise<{success: boolean, message: string}> => {
+      // Ambil durasi survey dari config
+      const { data: configData } = await supabase.from('config').select('value').eq('key', 'SURVEY_DURATION').single();
+      const surveyDuration = parseInt(configData?.value || '30');
+
       // Pastikan data ujian survey ada di tabel exams untuk menghindari error foreign key
       const surveyExams = [
-          { id: 'Survey_Karakter', nama_ujian: 'Survey Karakter', durasi: 60, is_active: true },
-          { id: 'Survey_Lingkungan', nama_ujian: 'Survey Lingkungan Belajar', durasi: 60, is_active: true }
+          { id: 'Survey_Karakter', nama_ujian: 'Survey Karakter', durasi: surveyDuration, is_active: true },
+          { id: 'Survey_Lingkungan', nama_ujian: 'Survey Lingkungan Belajar', durasi: surveyDuration, is_active: true }
       ];
 
       const { error: examErr } = await supabase.from('exams').upsert(surveyExams);
