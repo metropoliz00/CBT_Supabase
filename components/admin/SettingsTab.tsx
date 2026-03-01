@@ -334,7 +334,7 @@ const SettingsTab = ({ currentUser, onDataChange, configs }: { currentUser: User
                     <div className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200">
                         <div className="mb-4 md:mb-0">
                             <h4 className="font-bold text-slate-700 text-sm">Generate Soal Survey Default</h4>
-                            <p className="text-xs text-slate-500 mt-1">Buat soal default untuk Survey Karakter dan Survey Lingkungan Belajar jika belum ada di database.</p>
+                            <p className="text-xs text-slate-500 mt-1">Buat soal default untuk survey jika belum ada di database.</p>
                         </div>
                         <button 
                             onClick={async () => {

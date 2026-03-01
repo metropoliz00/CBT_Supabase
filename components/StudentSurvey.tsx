@@ -27,7 +27,7 @@ const StudentSurvey: React.FC<StudentSurveyProps> = ({ user, surveyType, onFinis
     const [duration, setDuration] = useState(30); // Default local fallback
     const [timeLeft, setTimeLeft] = useState(0);
 
-    const title = surveyType === 'Survey_Karakter' ? "Survey Karakter" : "Survey Lingkungan Belajar";
+    const [title, setTitle] = useState('Survey');
 
     useEffect(() => {
         const init = async () => {
@@ -38,6 +38,7 @@ const StudentSurvey: React.FC<StudentSurveyProps> = ({ user, surveyType, onFinis
                 const dur = surveyConfig ? surveyConfig.durasi : 30;
                 setDuration(dur);
                 setTimeLeft(dur * 60);
+                if (surveyConfig) setTitle(surveyConfig.nama_ujian);
 
                 const qData = await api.getSurveyQuestions(surveyType);
                 setQuestions(qData);

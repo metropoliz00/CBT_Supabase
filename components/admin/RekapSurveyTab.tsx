@@ -14,7 +14,22 @@ const RekapSurveyTab = ({ students, currentUser }: { students: any[], currentUse
     const [filterSchool, setFilterSchool] = useState('all');
     const [filterKecamatan, setFilterKecamatan] = useState('all');
 
+    const [surveyOptions, setSurveyOptions] = useState<{id: string, name: string}[]>([]);
+    
+    useEffect(() => {
+        api.getExams().then(exams => {
+            const surveys = exams
+                .filter(e => e.id.startsWith('Survey_'))
+                .map(e => ({ id: e.id, name: e.nama_ujian }));
+            setSurveyOptions(surveys);
+            if (surveys.length > 0 && !surveys.find(s => s.id === selectedSurvey)) {
+                setSelectedSurvey(surveys[0].id);
+            }
+        });
+    }, []);
+
     const loadData = async () => {
+        if (!selectedSurvey) return;
         setLoading(true);
         try {
             const res = await api.getSurveyRecap(selectedSurvey);
@@ -163,8 +178,9 @@ const RekapSurveyTab = ({ students, currentUser }: { students: any[], currentUse
                             <RefreshCw size={16} className={loading ? "animate-spin" : ""}/>
                         </button>
                         <select className="p-2 border border-slate-200 rounded-lg bg-slate-50 font-bold text-sm w-full lg:w-auto outline-none focus:ring-2 focus:ring-indigo-100" value={selectedSurvey} onChange={e => setSelectedSurvey(e.target.value)}>
-                            <option value="Survey_Karakter">Survey Karakter</option>
-                            <option value="Survey_Lingkungan">Survey Lingkungan Belajar</option>
+                            {surveyOptions.map(s => (
+                                <option key={s.id} value={s.id}>{s.name}</option>
+                            ))}
                         </select>
                         <button onClick={handleExport} disabled={filteredData.length === 0} className="bg-emerald-50 text-emerald-600 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-emerald-100 border border-emerald-100 transition shadow-sm disabled:opacity-50">
                             <FileText size={14}/> Export

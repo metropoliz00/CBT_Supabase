@@ -27,8 +27,7 @@ const BankSoalTab = () => {
             let names = list.map(l => l.nama_ujian);
             const listIds = list.map(l => l.id);
             const forbidden = ['Rangking', 'Nilai', 'Rekap_Analisis', 'Config', 'Users', 'Ranking', 'Logs'];
-            const filtered = listIds.filter(n => !forbidden.includes(n) && !n.startsWith('Survey_'));
-            filtered.push('Survey_Karakter', 'Survey_Lingkungan');
+            const filtered = listIds.filter(n => !forbidden.includes(n));
             
             setSubjects(filtered);
             if (filtered.length > 0) setSelectedSubject(filtered[0]);

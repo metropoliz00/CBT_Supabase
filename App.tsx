@@ -656,8 +656,8 @@ function App() {
   }
 
   if (view === 'survey_confirm' && currentUser && activeSurveyType) {
-    const surveyName = activeSurveyType === 'Survey_Karakter' ? 'Survey Karakter' : 'Survey Lingkungan Belajar';
     const surveyConfig = allExams.find(e => e.id === activeSurveyType);
+    const surveyName = surveyConfig ? surveyConfig.nama_ujian : 'Survey';
     const duration = surveyConfig ? surveyConfig.durasi : 30;
 
     return (

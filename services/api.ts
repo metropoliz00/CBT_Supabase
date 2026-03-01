@@ -96,41 +96,26 @@ export const api = {
     
     let exams: Exam[] = [];
     if (subjects && !error) {
-        exams = subjects.map((s: any) => ({
-            id: String(s.id || ''),
-            nama_ujian: String(s.nama_ujian || ''),
-            waktu_mulai: String(s.waktu_mulai || new Date().toISOString()),
-            durasi: Number(s.durasi || duration),
-            token_akses: String(s.token_akses || 'TOKEN'), 
-            is_active: s.is_active !== false,
-            max_questions: Number(s.max_questions || maxQuestions),
-            id_sekolah: String(s.id_sekolah || ''), 
-            id_kecamatan: String(s.id_kecamatan || ''),
-            id_gelombang: String(s.id_gelombang || '') 
-        }));
+        const uniqueExams = new Map();
+        subjects.forEach((s: any) => {
+            const id = String(s.id || '');
+            if (!uniqueExams.has(id)) {
+                uniqueExams.set(id, {
+                    id: id,
+                    nama_ujian: String(s.nama_ujian || ''),
+                    waktu_mulai: String(s.waktu_mulai || new Date().toISOString()),
+                    durasi: Number(s.durasi || duration),
+                    token_akses: String(s.token_akses || 'TOKEN'), 
+                    is_active: s.is_active !== false,
+                    max_questions: Number(s.max_questions || maxQuestions),
+                    id_sekolah: String(s.id_sekolah || ''), 
+                    id_kecamatan: String(s.id_kecamatan || ''),
+                    id_gelombang: String(s.id_gelombang || '') 
+                });
+            }
+        });
+        exams = Array.from(uniqueExams.values());
     }
-
-    // Always add surveys
-    exams.push(
-        {
-            id: 'Survey_Karakter',
-            nama_ujian: 'Survey Karakter',
-            waktu_mulai: new Date().toISOString(),
-            durasi: surveyDuration,
-            token_akses: '',
-            is_active: true,
-            max_questions: 0
-        },
-        {
-            id: 'Survey_Lingkungan',
-            nama_ujian: 'Survey Lingkungan Belajar',
-            waktu_mulai: new Date().toISOString(),
-            durasi: surveyDuration,
-            token_akses: '',
-            is_active: true,
-            max_questions: 0
-        }
-    );
     return exams;
   },
 
