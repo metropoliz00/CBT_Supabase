@@ -59,17 +59,20 @@ export const api = {
       throw new Error('Password salah.');
     }
 
-    // Check Status: Only allow login if status is 'OFFLINE' or 'RESET' (or null/empty)
+    // Check Status: Only allow login if status is NOT 'EXAM' or 'FINISHED'
+    // This is more robust: Allow OFFLINE, ONLINE (re-login), RESET, etc.
     // EXCEPTION: Admin/Proktor can bypass this check
     const isBypassRole = ['admin_pusat', 'proktor', 'admin_sekolah'].includes(data.role);
     
     if (!isBypassRole) {
-        // Normalize status: treat null/undefined as 'OFFLINE'
         const rawStatus = data.status || 'OFFLINE';
         const status = String(rawStatus).trim().toUpperCase();
         
-        // Allow ONLY these statuses
-        if (status !== 'OFFLINE' && status !== 'RESET') {
+        // BLOCK only if currently in exam or finished
+        // We allow 'ONLINE' to permit re-login if browser was closed
+        const blockedStatuses = ['EXAM', 'WORKING', 'MENGERJAKAN', 'FINISHED', 'SELESAI'];
+        
+        if (blockedStatuses.includes(status)) {
              throw new Error(`Status peserta sedang ${data.status}. Hubungi proktor untuk reset login.`);
         }
     }
