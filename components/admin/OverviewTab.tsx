@@ -10,51 +10,50 @@ interface OverviewTabProps {
 
 const OverviewTab: React.FC<OverviewTabProps> = ({ dashboardData, currentUserState }) => {
     const stats = useMemo(() => {
-        let counts = dashboardData.statusCounts || { OFFLINE: 0, LOGGED_IN: 0, WORKING: 0, FINISHED: 0 };
-        let total = dashboardData.totalUsers || 0;
-
-        let filteredUsers = dashboardData.allUsers || [];
-
+        // 1. Get all users
+        let allUsers = dashboardData.allUsers || [];
+        
+        // 2. Filter based on role (Robust matching)
         if (currentUserState.role === 'proktor' && currentUserState.id_sekolah) {
-            filteredUsers = filteredUsers.filter((u: any) => u.id_sekolah === currentUserState.id_sekolah);
+            const mySchoolId = String(currentUserState.id_sekolah).trim();
+            allUsers = allUsers.filter((u: any) => String(u.id_sekolah || '').trim() === mySchoolId);
         } else if (currentUserState.role === 'admin_kecamatan' && currentUserState.id_kecamatan) {
-            filteredUsers = filteredUsers.filter((u: any) => u.id_kecamatan === currentUserState.id_kecamatan);
+            const myKecamatanId = String(currentUserState.id_kecamatan).trim();
+            allUsers = allUsers.filter((u: any) => String(u.id_kecamatan || '').trim() === myKecamatanId);
         } else if (currentUserState.role === 'admin_sekolah') {
-            // admin_sekolah uses kelas_id which maps to school name
-            const mySchoolName = (currentUserState.kelas_id || '').toLowerCase();
-            filteredUsers = filteredUsers.filter((u: any) => (u.kelas_id || u.school || '').toLowerCase() === mySchoolName);
+            const mySchoolName = (currentUserState.kelas_id || '').trim().toLowerCase();
+            allUsers = allUsers.filter((u: any) => (u.kelas_id || u.school || '').trim().toLowerCase() === mySchoolName);
         }
 
-        // Only count 'siswa' for these stats
-        const relevantUsers = filteredUsers.filter((u: any) => u.role === 'siswa');
+        // 3. Filter only students
+        const students = allUsers.filter((u: any) => u.role === 'siswa');
 
-        const localCounts: Record<string, number> = { OFFLINE: 0, LOGGED_IN: 0, WORKING: 0, FINISHED: 0 };
-        relevantUsers.forEach((u: any) => {
-            // Normalize status
-            const rawStatus = String(u.status || 'OFFLINE').toUpperCase().trim();
+        // 4. Count Statuses
+        let offline = 0, loggedIn = 0, working = 0, finished = 0;
+
+        students.forEach((u: any) => {
+            const status = String(u.status || 'OFFLINE').toUpperCase().trim();
             
-            if (rawStatus === 'ONLINE' || rawStatus === 'LOGGED_IN' || rawStatus === 'LOGIN') {
-                localCounts['LOGGED_IN']++;
-            } else if (rawStatus === 'EXAM' || rawStatus === 'WORKING' || rawStatus === 'MENGERJAKAN' || rawStatus === 'ONGOING') {
-                localCounts['WORKING']++;
-            } else if (rawStatus === 'FINISHED' || rawStatus === 'SELESAI' || rawStatus === 'COMPLETED') {
-                localCounts['FINISHED']++;
+            if (['EXAM', 'WORKING', 'MENGERJAKAN', 'ONGOING'].includes(status)) {
+                working++;
+            } else if (['FINISHED', 'SELESAI', 'COMPLETED'].includes(status)) {
+                finished++;
+            } else if (['ONLINE', 'LOGGED_IN', 'LOGIN'].includes(status)) {
+                loggedIn++;
             } else {
-                // Default to OFFLINE for 'OFFLINE', 'RESET', null, or unknown
-                localCounts['OFFLINE']++;
+                // Everything else is OFFLINE (including RESET, null, undefined)
+                offline++;
             }
         });
 
-        counts = localCounts;
-        total = relevantUsers.length;
-
-        return { counts, total };
-    }, [dashboardData, currentUserState]);
+        return {
+            counts: { OFFLINE: offline, LOGGED_IN: loggedIn, WORKING: working, FINISHED: finished },
+            total: students.length
+        };
+    }, [dashboardData.allUsers, currentUserState]);
 
     const { OFFLINE, LOGGED_IN, WORKING, FINISHED } = stats.counts;
-    // Calculate Not Yet Exam (Offline + Logged In but not started)
     const BELUM_UJIAN = OFFLINE + LOGGED_IN;
-
     const displayTotalUsers = stats.total;
     const totalStatus = OFFLINE + LOGGED_IN + WORKING + FINISHED;
     
@@ -75,12 +74,14 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ dashboardData, currentUserSta
         let filteredActivity = feed;
 
         if (currentUserState.role === 'proktor' && currentUserState.id_sekolah) {
-            filteredActivity = filteredActivity.filter((log: any) => log.id_sekolah === currentUserState.id_sekolah);
+            const mySchoolId = String(currentUserState.id_sekolah).trim();
+            filteredActivity = filteredActivity.filter((log: any) => String(log.id_sekolah || '').trim() === mySchoolId);
         } else if (currentUserState.role === 'admin_kecamatan' && currentUserState.id_kecamatan) {
-            filteredActivity = filteredActivity.filter((log: any) => log.id_kecamatan === currentUserState.id_kecamatan);
+            const myKecamatanId = String(currentUserState.id_kecamatan).trim();
+            filteredActivity = filteredActivity.filter((log: any) => String(log.id_kecamatan || '').trim() === myKecamatanId);
         } else if (currentUserState.role === 'admin_sekolah') {
             const mySchoolName = (currentUserState.kelas_id || '').trim().toLowerCase();
-            filteredActivity = filteredActivity.filter((log: any) => (log.school || '').trim().toLowerCase() === mySchoolName);
+            filteredActivity = filteredActivity.filter((log: any) => (log.school || log.kelas_id || '').trim().toLowerCase() === mySchoolName);
         }
         return filteredActivity;
     }, [dashboardData.activityFeed, currentUserState]);

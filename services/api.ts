@@ -643,7 +643,9 @@ export const api = {
           .limit(50);
 
       const feed = activityFeed?.map((log: any) => {
-          const user = (usersData || []).find((u: any) => u.username === log.username);
+          const logUsername = String(log.username || '').toLowerCase();
+          const user = (usersData || []).find((u: any) => String(u.username || '').toLowerCase() === logUsername);
+          
           return {
               ...log,
               nama_lengkap: user?.nama_lengkap || log.username,
