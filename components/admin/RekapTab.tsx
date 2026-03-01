@@ -23,6 +23,9 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
     }>({ id_bi: '', nilai_bi: '', id_mtk: '', nilai_mtk: '' });
     const [saving, setSaving] = useState(false);
 
+    const [pageSize, setPageSize] = useState(10);
+    const [currentPage, setCurrentPage] = useState(1);
+
     const userMap = useMemo(() => {
         const map: Record<string, any> = {};
         students.forEach(s => map[s.username] = s);
@@ -40,10 +43,32 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
 
     const pivotedData = useMemo(() => {
         const map = new Map();
-        data.forEach(d => {
-            if (filterPaket !== 'all' && d.id_paket !== filterPaket) return;
+        
+        // Initialize with all students
+        students.forEach(s => {
+            const paket = s.id_paket || 'none';
+            if (filterPaket !== 'all' && paket !== filterPaket && paket !== 'none') return;
+            
+            const key = s.username;
+            map.set(key, {
+                username: s.username,
+                nama: s.fullname || s.nama || '-',
+                sekolah: s.school || s.sekolah || '-',
+                kecamatan: s.kecamatan || '-',
+                id_sekolah: s.id_sekolah || '',
+                id_kecamatan: s.id_kecamatan || '',
+                id_paket: s.id_paket || '-',
+                nilai_bi: '-',
+                nilai_mtk: '-',
+                durasi_bi: '-',
+                durasi_mtk: '-',
+                id_bi: '',
+                id_mtk: ''
+            });
+        });
 
-            const key = `${d.username}_${d.id_paket || 'none'}`;
+        data.forEach(d => {
+            const key = d.username;
             if (!map.has(key)) {
                 map.set(key, {
                     username: d.username,
@@ -62,6 +87,11 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
                 });
             }
             const entry = map.get(key);
+            
+            if (d.id_paket && entry.id_paket === '-') {
+                entry.id_paket = d.id_paket;
+            }
+
             const subject = (d.subject || d.mapel || '').toLowerCase();
             const val = d.score ?? d.nilai;
             const displayVal = (val !== undefined && val !== null && val !== '') ? val : '-';
@@ -78,8 +108,13 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
                 entry.id_mtk = idVal;
             }
         });
-        return Array.from(map.values());
-    }, [data, userMap, filterPaket]);
+        
+        let result = Array.from(map.values());
+        if (filterPaket !== 'all') {
+            result = result.filter(r => r.id_paket === filterPaket);
+        }
+        return result;
+    }, [data, students, userMap, filterPaket]);
 
     const filteredData = useMemo(() => {
         let filtered = pivotedData;
@@ -166,19 +201,42 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
         setSaving(true);
         try {
             const promises = [];
+            
+            // Handle Bahasa Indonesia
             if (editForm.id_bi) {
                 promises.push(api.updateExamResult(editForm.id_bi, { score: Number(editForm.nilai_bi) }));
+            } else if (editForm.nilai_bi !== '') {
+                promises.push(api.createExamResult({
+                    username: editingStudent.username,
+                    exam_id: 'Bahasa Indonesia',
+                    score: Number(editForm.nilai_bi),
+                    start_time: new Date().getTime(),
+                    end_time: new Date().getTime() + (120 * 60000), // Dummy duration 120 mins
+                    answers: {}
+                }));
             }
+
+            // Handle Matematika
             if (editForm.id_mtk) {
                 promises.push(api.updateExamResult(editForm.id_mtk, { score: Number(editForm.nilai_mtk) }));
+            } else if (editForm.nilai_mtk !== '') {
+                promises.push(api.createExamResult({
+                    username: editingStudent.username,
+                    exam_id: 'Matematika',
+                    score: Number(editForm.nilai_mtk),
+                    start_time: new Date().getTime(),
+                    end_time: new Date().getTime() + (120 * 60000), // Dummy duration 120 mins
+                    answers: {}
+                }));
             }
+
             await Promise.all(promises);
-            await showAlert("Nilai berhasil diperbarui", { type: 'success' });
+            await showAlert("Nilai berhasil disimpan", { type: 'success' });
             setEditingStudent(null);
             loadData();
         } catch (e) {
             console.error(e);
-            await showAlert("Gagal memperbarui nilai", { type: 'error' });
+            await showAlert("Gagal menyimpan nilai", { type: 'error' });
         } finally {
             setSaving(false);
         }
@@ -312,6 +370,13 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
         printWindow.document.close();
     };
 
+    const paginatedData = useMemo(() => {
+        const start = (currentPage - 1) * pageSize;
+        return filteredData.slice(start, start + pageSize);
+    }, [filteredData, currentPage, pageSize]);
+
+    const totalPages = Math.ceil(filteredData.length / pageSize);
+
     return (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 fade-in p-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
@@ -385,13 +450,13 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                         {loading ? (
-                            <tr><td colSpan={currentUser.role === 'admin_pusat' ? 8 : 7} className="p-8 text-center text-slate-400"><Loader2 className="animate-spin inline mr-2"/> Memuat data nilai...</td></tr>
-                        ) : filteredData.length === 0 ? (
-                            <tr><td colSpan={currentUser.role === 'admin_pusat' ? 8 : 7} className="p-8 text-center text-slate-400 italic">Data tidak ditemukan untuk filter ini.</td></tr>
+                            <tr><td colSpan={currentUser.role === 'admin_pusat' ? 9 : 8} className="p-8 text-center text-slate-400"><Loader2 className="animate-spin inline mr-2"/> Memuat data nilai...</td></tr>
+                        ) : paginatedData.length === 0 ? (
+                            <tr><td colSpan={currentUser.role === 'admin_pusat' ? 9 : 8} className="p-8 text-center text-slate-400 italic">Data tidak ditemukan untuk filter ini.</td></tr>
                         ) : (
-                            filteredData.map((d, i) => (
+                            paginatedData.map((d, i) => (
                                 <tr key={i} className="hover:bg-slate-50 transition">
-                                    <td className="p-4 text-center text-slate-500">{i + 1}</td>
+                                    <td className="p-4 text-center text-slate-500">{(currentPage - 1) * pageSize + i + 1}</td>
                                     <td className="p-4 font-mono text-slate-600">{d.username}</td>
                                     <td className="p-4 font-bold text-slate-700">{d.nama}</td>
                                     <td className="p-4 text-slate-600">{d.sekolah}</td>
@@ -419,8 +484,47 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
                 </table>
             </div>
 
-            <div className="mt-4 flex justify-between items-center text-xs text-slate-400">
-                <span>Total Data: {filteredData.length}</span>
+            <div className="mt-4 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-400 gap-4">
+                <div className="flex items-center gap-2">
+                    <span>Tampilkan</span>
+                    <select 
+                        className="p-1 border border-slate-200 rounded outline-none text-slate-600"
+                        value={pageSize}
+                        onChange={(e) => {
+                            setPageSize(Number(e.target.value));
+                            setCurrentPage(1);
+                        }}
+                    >
+                        <option value={10}>10</option>
+                        <option value={20}>20</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                        <option value={300}>300</option>
+                        <option value={500}>500</option>
+                    </select>
+                    <span>baris per halaman</span>
+                </div>
+                
+                <div className="flex items-center gap-4">
+                    <span>Total Data: {filteredData.length}</span>
+                    <div className="flex items-center gap-1">
+                        <button 
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                            className="px-2 py-1 border border-slate-200 rounded hover:bg-slate-50 disabled:opacity-50"
+                        >
+                            Prev
+                        </button>
+                        <span className="px-2">Hal {currentPage} dari {totalPages || 1}</span>
+                        <button 
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            disabled={currentPage === totalPages || totalPages === 0}
+                            className="px-2 py-1 border border-slate-200 rounded hover:bg-slate-50 disabled:opacity-50"
+                        >
+                            Next
+                        </button>
+                    </div>
+                </div>
             </div>
 
             {/* EDIT MODAL */}
@@ -455,10 +559,9 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
                                         placeholder="Nilai (0-100)"
                                         value={editForm.nilai_bi}
                                         onChange={e => setEditForm({...editForm, nilai_bi: e.target.value})}
-                                        disabled={!editForm.id_bi}
                                     />
                                 </div>
-                                {!editForm.id_bi && <p className="text-xs text-slate-400 italic">Belum ada nilai.</p>}
+                                {!editForm.id_bi && <p className="text-xs text-slate-400 italic">Belum ada nilai. Masukkan nilai untuk menambahkan.</p>}
                             </div>
 
                             {/* Matematika */}
@@ -478,10 +581,9 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
                                         placeholder="Nilai (0-100)"
                                         value={editForm.nilai_mtk}
                                         onChange={e => setEditForm({...editForm, nilai_mtk: e.target.value})}
-                                        disabled={!editForm.id_mtk}
                                     />
                                 </div>
-                                {!editForm.id_mtk && <p className="text-xs text-slate-400 italic">Belum ada nilai.</p>}
+                                {!editForm.id_mtk && <p className="text-xs text-slate-400 italic">Belum ada nilai. Masukkan nilai untuk menambahkan.</p>}
                             </div>
                         </div>
                         <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-2">

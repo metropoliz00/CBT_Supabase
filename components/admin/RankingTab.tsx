@@ -15,6 +15,9 @@ const RankingTab = ({ students, currentUser }: { students: any[], currentUser: U
     const [filterPaket, setFilterPaket] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
     
+    const [pageSize, setPageSize] = useState(10);
+    const [currentPage, setCurrentPage] = useState(1);
+    
     const userMap = useMemo(() => {
         const map: Record<string, any> = {};
         students.forEach(s => map[s.username] = s);
@@ -36,18 +39,18 @@ const RankingTab = ({ students, currentUser }: { students: any[], currentUser: U
     }, [students, currentUser]);
     
     const uniqueSchools = useMemo(() => {
-        let relevantData = data;
+        let relevantData = students.length > 0 ? students : data;
         if (currentUser.role === 'proktor' && currentUser.id_sekolah) {
-            relevantData = data.filter(d => d.id_sekolah === currentUser.id_sekolah);
+            relevantData = relevantData.filter(d => d.id_sekolah === currentUser.id_sekolah);
         } else if (currentUser.role === 'admin_kecamatan' && currentUser.id_kecamatan) {
-            relevantData = data.filter(d => d.id_kecamatan === currentUser.id_kecamatan);
+            relevantData = relevantData.filter(d => d.id_kecamatan === currentUser.id_kecamatan);
         } else if (currentUser.role === 'admin_sekolah') {
             const mySchoolName = (currentUser.kelas_id || '').toLowerCase();
-            relevantData = data.filter(d => (d.sekolah || '').toLowerCase() === mySchoolName);
+            relevantData = relevantData.filter(d => (d.school || d.sekolah || '').toLowerCase() === mySchoolName);
         }
-        const schools = new Set(relevantData.map(d => d.sekolah).filter(Boolean));
+        const schools = new Set(relevantData.map(d => d.school || d.sekolah).filter(Boolean));
         return Array.from(schools).sort();
-    }, [data, currentUser]);
+    }, [students, data, currentUser]);
 
     const uniquePakets = useMemo(() => {
         const pakets = new Set(data.map(d => d.id_paket).filter(Boolean));
@@ -61,10 +64,28 @@ const RankingTab = ({ students, currentUser }: { students: any[], currentUser: U
     
     const pivotedData = useMemo(() => {
         const map = new Map<string, any>();
-        data.forEach(d => {
-            if (filterPaket !== 'all' && d.id_paket !== filterPaket) return;
+        
+        // Initialize with all students
+        students.forEach(s => {
+            const paket = s.id_paket || 'none';
+            if (filterPaket !== 'all' && paket !== filterPaket && paket !== 'none') return;
             
-            const key = `${d.username}_${d.id_paket || 'none'}`;
+            const key = s.username;
+            map.set(key, {
+                username: s.username,
+                nama: s.fullname || s.nama || '-',
+                sekolah: s.school || s.sekolah || '-',
+                kecamatan: s.kecamatan || '-',
+                id_sekolah: s.id_sekolah || '',
+                id_kecamatan: s.id_kecamatan || '',
+                id_paket: s.id_paket || '-',
+                score_bi: null,
+                score_mtk: null
+            });
+        });
+
+        data.forEach(d => {
+            const key = d.username;
             if (!map.has(key)) {
                 map.set(key, {
                     username: d.username,
@@ -79,6 +100,11 @@ const RankingTab = ({ students, currentUser }: { students: any[], currentUser: U
                 });
             }
             const entry = map.get(key);
+            
+            if (d.id_paket && entry.id_paket === '-') {
+                entry.id_paket = d.id_paket;
+            }
+
             const subject = (d.subject || d.mapel || '').toLowerCase();
             const rawVal = d.score ?? d.nilai;
             const val = parseFloat(rawVal);
@@ -89,14 +115,19 @@ const RankingTab = ({ students, currentUser }: { students: any[], currentUser: U
                 entry.score_mtk = safeVal;
             }
         });
-        const result = Array.from(map.values()).map(item => {
+        
+        let result = Array.from(map.values());
+        if (filterPaket !== 'all') {
+            result = result.filter(r => r.id_paket === filterPaket);
+        }
+        
+        return result.map(item => {
             const bi = item.score_bi !== null ? item.score_bi : 0;
             const mtk = item.score_mtk !== null ? item.score_mtk : 0;
             const avg = (bi + mtk) / 2;
             return { ...item, avg };
-        });
-        return result.sort((a, b) => b.avg - a.avg);
-    }, [data, userMap, filterPaket]);
+        }).sort((a, b) => b.avg - a.avg);
+    }, [data, students, userMap, filterPaket]);
     
     const filteredData = useMemo(() => {
         let filtered = pivotedData;
@@ -250,6 +281,13 @@ const RankingTab = ({ students, currentUser }: { students: any[], currentUser: U
         printWindow.document.close();
     };
     
+    const paginatedData = useMemo(() => {
+        const start = (currentPage - 1) * pageSize;
+        return filteredData.slice(start, start + pageSize);
+    }, [filteredData, currentPage, pageSize]);
+
+    const totalPages = Math.ceil(filteredData.length / pageSize);
+
     return (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 fade-in p-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
@@ -314,13 +352,15 @@ const RankingTab = ({ students, currentUser }: { students: any[], currentUser: U
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                         {loading ? (
-                            <tr><td colSpan={9} className="p-8 text-center text-slate-400"><Loader2 className="animate-spin inline mr-2"/> Memuat data...</td></tr>
-                        ) : filteredData.length === 0 ? (
-                            <tr><td colSpan={9} className="p-8 text-center text-slate-400 italic">Data tidak ditemukan.</td></tr>
+                            <tr><td colSpan={10} className="p-8 text-center text-slate-400"><Loader2 className="animate-spin inline mr-2"/> Memuat data...</td></tr>
+                        ) : paginatedData.length === 0 ? (
+                            <tr><td colSpan={10} className="p-8 text-center text-slate-400 italic">Data tidak ditemukan.</td></tr>
                         ) : (
-                            filteredData.map((d, i) => (
+                            paginatedData.map((d, i) => {
+                                const rank = (currentPage - 1) * pageSize + i + 1;
+                                return (
                                 <tr key={i} className="border-b hover:bg-slate-50 transition">
-                                    <td className="p-4 font-bold text-center text-slate-500"><div className={`w-8 h-8 rounded-full flex items-center justify-center mx-auto ${i < 3 ? 'bg-yellow-100 text-yellow-700 font-black' : 'bg-slate-100'}`}>{i+1}</div></td>
+                                    <td className="p-4 font-bold text-center text-slate-500"><div className={`w-8 h-8 rounded-full flex items-center justify-center mx-auto ${rank <= 3 ? 'bg-yellow-100 text-yellow-700 font-black' : 'bg-slate-100'}`}>{rank}</div></td>
                                     <td className="p-4 font-mono text-slate-600">{d.username}</td>
                                     <td className="p-4 font-bold text-slate-600">{d.nama}</td>
                                     <td className="p-4 text-slate-600">{d.sekolah}</td>
@@ -333,10 +373,54 @@ const RankingTab = ({ students, currentUser }: { students: any[], currentUser: U
                                     <td className="p-4 text-center font-extrabold text-indigo-600 text-lg border-l border-slate-100">{d.avg.toFixed(2)}</td>
                                     <td className="p-4 text-center border-l border-slate-100">{getPredicateBadge(d.avg)}</td>
                                 </tr>
-                            ))
+                                )
+                            })
                         )}
                     </tbody>
                 </table>
+            </div>
+
+            <div className="mt-4 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-400 gap-4">
+                <div className="flex items-center gap-2">
+                    <span>Tampilkan</span>
+                    <select 
+                        className="p-1 border border-slate-200 rounded outline-none text-slate-600"
+                        value={pageSize}
+                        onChange={(e) => {
+                            setPageSize(Number(e.target.value));
+                            setCurrentPage(1);
+                        }}
+                    >
+                        <option value={10}>10</option>
+                        <option value={20}>20</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                        <option value={300}>300</option>
+                        <option value={500}>500</option>
+                    </select>
+                    <span>baris per halaman</span>
+                </div>
+                
+                <div className="flex items-center gap-4">
+                    <span>Total Data: {filteredData.length}</span>
+                    <div className="flex items-center gap-1">
+                        <button 
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                            className="px-2 py-1 border border-slate-200 rounded hover:bg-slate-50 disabled:opacity-50"
+                        >
+                            Prev
+                        </button>
+                        <span className="px-2">Hal {currentPage} dari {totalPages || 1}</span>
+                        <button 
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            disabled={currentPage === totalPages || totalPages === 0}
+                            className="px-2 py-1 border border-slate-200 rounded hover:bg-slate-50 disabled:opacity-50"
+                        >
+                            Next
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     );

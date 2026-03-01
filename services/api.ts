@@ -509,6 +509,11 @@ export const api = {
       return { success: !error, message: error ? error.message : 'Berhasil diupdate' };
   },
 
+  createExamResult: async (payload: any): Promise<{success: boolean, message: string}> => {
+      const { error } = await supabase.from('exam_results').insert(payload);
+      return { success: !error, message: error ? error.message : 'Berhasil ditambahkan' };
+  },
+
   getRecap: async (): Promise<any[]> => {
       const { data, error } = await supabase
         .from('exam_results')
