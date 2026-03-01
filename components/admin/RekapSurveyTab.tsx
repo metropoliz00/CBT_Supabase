@@ -15,9 +15,6 @@ const RekapSurveyTab = ({ students, currentUser }: { students: any[], currentUse
     const [filterKecamatan, setFilterKecamatan] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
 
-    const [pageSize, setPageSize] = useState(10);
-    const [currentPage, setCurrentPage] = useState(1);
-
     const [surveyOptions, setSurveyOptions] = useState<{id: string, name: string}[]>([]);
     
     useEffect(() => {
@@ -75,52 +72,9 @@ const RekapSurveyTab = ({ students, currentUser }: { students: any[], currentUse
         return Array.from(kecs).sort();
     }, [students, data, currentUser]);
 
-    const combinedData = useMemo(() => {
-        const map = new Map();
-        
-        // Initialize with all students
-        students.forEach(s => {
-            map.set(s.username, {
-                username: s.username,
-                nama: s.fullname || s.nama || '-',
-                sekolah: s.school || s.sekolah || '-',
-                kecamatan: s.kecamatan || '-',
-                id_sekolah: s.id_sekolah || '',
-                id_kecamatan: s.id_kecamatan || '',
-                total: '-',
-                rata: '-',
-                items: {}
-            });
-        });
-
-        // Merge with actual survey data
-        data.forEach(d => {
-            if (map.has(d.username)) {
-                const entry = map.get(d.username);
-                entry.total = d.total;
-                entry.rata = d.rata;
-                entry.items = d.items || {};
-            } else {
-                map.set(d.username, {
-                    username: d.username,
-                    nama: d.nama || '-',
-                    sekolah: d.sekolah || '-',
-                    kecamatan: d.kecamatan || '-',
-                    id_sekolah: d.id_sekolah || '',
-                    id_kecamatan: d.id_kecamatan || '',
-                    total: d.total,
-                    rata: d.rata,
-                    items: d.items || {}
-                });
-            }
-        });
-
-        return Array.from(map.values());
-    }, [data, students]);
-
     // FIX: Case-insensitive and trimmed filtering
     const filteredData = useMemo(() => {
-        let filtered = combinedData;
+        let filtered = data;
 
         // Apply role-based filtering first
         if (currentUser.role === 'proktor' && currentUser.id_sekolah) {
@@ -217,13 +171,6 @@ const RekapSurveyTab = ({ students, currentUser }: { students: any[], currentUse
         });
     }, [data]);
 
-    const paginatedData = useMemo(() => {
-        const start = (currentPage - 1) * pageSize;
-        return filteredData.slice(start, start + pageSize);
-    }, [filteredData, currentPage, pageSize]);
-
-    const totalPages = Math.ceil(filteredData.length / pageSize);
-
     return (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden fade-in">
              <div className="p-5 border-b border-slate-100 flex flex-col gap-4">
@@ -310,25 +257,25 @@ const RekapSurveyTab = ({ students, currentUser }: { students: any[], currentUse
                      <tbody className="divide-y divide-slate-50">
                          {loading ? (
                              <tr><td colSpan={8 + questionKeys.length} className="p-8 text-center text-slate-400"><Loader2 className="animate-spin inline mr-2"/> Memuat data survey...</td></tr>
-                         ) : paginatedData.length === 0 ? (
+                         ) : filteredData.length === 0 ? (
                              <tr><td colSpan={8 + questionKeys.length} className="p-8 text-center text-slate-400">
                                  Tidak ada data untuk filter ini.<br/>
                                  <span className="text-xs">Pastikan siswa sudah mengerjakan survey dan filter sekolah sesuai.</span>
                              </td></tr>
-                         ) : paginatedData.map((d, i) => {
+                         ) : filteredData.map((d, i) => {
                              const pred = getSurveyPredicate(d.rata);
                              return (
                              <tr key={i} className="hover:bg-slate-50 transition">
-                                 <td className="p-4 text-center text-slate-500 border-r border-slate-100">{(currentPage - 1) * pageSize + i + 1}</td>
+                                 <td className="p-4 text-center text-slate-500 border-r border-slate-100">{i + 1}</td>
                                  <td className="p-4 font-mono text-slate-600 border-r border-slate-100">{d.username}</td>
                                  <td className="p-4 font-bold text-slate-700 sticky left-0 bg-white border-r border-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">{d.nama}</td>
                                  <td className="p-4 text-slate-600 text-xs">{d.sekolah}</td>
                                  <td className="p-4 text-slate-600 text-xs">{d.kecamatan}</td>
-                                 <td className="p-4 text-center font-bold text-indigo-600">{d.total !== '-' ? d.total : '-'}</td>
-                                 <td className="p-4 text-center font-bold bg-indigo-50 text-indigo-700 border-r border-slate-100">{d.rata !== '-' ? d.rata : '-'}</td>
+                                 <td className="p-4 text-center font-bold text-indigo-600">{d.total}</td>
+                                 <td className="p-4 text-center font-bold bg-indigo-50 text-indigo-700 border-r border-slate-100">{d.rata}</td>
                                  <td className="p-4 text-center border-r border-slate-100">
-                                     <span className={`px-2 py-1 rounded text-xs font-bold border ${d.rata !== '-' ? getPredicateColor(pred) : 'bg-slate-100 text-slate-500 border-slate-200'}`}>
-                                         {d.rata !== '-' ? pred : '-'}
+                                     <span className={`px-2 py-1 rounded text-xs font-bold border ${getPredicateColor(pred)}`}>
+                                         {pred}
                                      </span>
                                  </td>
                                  {questionKeys.map(k => {
@@ -352,49 +299,6 @@ const RekapSurveyTab = ({ students, currentUser }: { students: any[], currentUse
                      </tbody>
                  </table>
              </div>
-             
-             <div className="p-4 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-400 gap-4 bg-slate-50">
-                <div className="flex items-center gap-2">
-                    <span>Tampilkan</span>
-                    <select 
-                        className="p-1 border border-slate-200 rounded outline-none text-slate-600"
-                        value={pageSize}
-                        onChange={(e) => {
-                            setPageSize(Number(e.target.value));
-                            setCurrentPage(1);
-                        }}
-                    >
-                        <option value={10}>10</option>
-                        <option value={20}>20</option>
-                        <option value={50}>50</option>
-                        <option value={100}>100</option>
-                        <option value={300}>300</option>
-                        <option value={500}>500</option>
-                    </select>
-                    <span>baris per halaman</span>
-                </div>
-                
-                <div className="flex items-center gap-4">
-                    <span>Total Data: {filteredData.length}</span>
-                    <div className="flex items-center gap-1">
-                        <button 
-                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                            disabled={currentPage === 1}
-                            className="px-2 py-1 border border-slate-200 rounded hover:bg-slate-100 bg-white disabled:opacity-50"
-                        >
-                            Prev
-                        </button>
-                        <span className="px-2 font-bold text-slate-600">Hal {currentPage} dari {totalPages || 1}</span>
-                        <button 
-                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                            disabled={currentPage === totalPages || totalPages === 0}
-                            className="px-2 py-1 border border-slate-200 rounded hover:bg-slate-100 bg-white disabled:opacity-50"
-                        >
-                            Next
-                        </button>
-                    </div>
-                </div>
-            </div>
         </div>
     );
 };
