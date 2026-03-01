@@ -59,12 +59,15 @@ export const api = {
       throw new Error('Password salah.');
     }
 
-    // Check Status: Only allow login if status is 'OFFLINE' (or null/empty)
+    // Check Status: Only allow login if status is 'OFFLINE' or 'RESET' (or null/empty)
     // EXCEPTION: Admin/Proktor can bypass this check
     const isBypassRole = ['admin_pusat', 'proktor', 'admin_sekolah'].includes(data.role);
     
-    if (!isBypassRole && data.status && data.status !== 'OFFLINE') {
-        throw new Error(`Status peserta sedang ${data.status}. Hubungi proktor untuk reset login.`);
+    if (!isBypassRole && data.status) {
+        const normalizedStatus = String(data.status).trim().toUpperCase();
+        if (normalizedStatus !== 'OFFLINE' && normalizedStatus !== 'RESET') {
+            throw new Error(`Status peserta sedang ${data.status}. Hubungi proktor untuk reset login.`);
+        }
     }
 
     // Update status to ONLINE
