@@ -46,8 +46,10 @@ export const api = {
     }
 
     // Check Status: Only allow login if status is 'OFFLINE' (or null/empty)
-    // The user request specifically asked for: "username bisa login jika status testnya 'OFFLINE'"
-    if (data.status && data.status !== 'OFFLINE') {
+    // EXCEPTION: Admin/Proktor can bypass this check
+    const isBypassRole = ['admin_pusat', 'proktor', 'admin_sekolah'].includes(data.role);
+    
+    if (!isBypassRole && data.status && data.status !== 'OFFLINE') {
         throw new Error(`Status peserta sedang ${data.status}. Hubungi proktor untuk reset login.`);
     }
 
