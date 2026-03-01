@@ -314,7 +314,8 @@ const SettingsTab = ({ currentUser, onDataChange, configs }: { currentUser: User
                         </div>
                         <button 
                             onClick={async () => {
-                                if (window.confirm('Apakah Anda yakin ingin men-generate soal survey default? Ini akan menambahkan soal ke database.')) {
+                                const confirmed = await showAlert('Apakah Anda yakin ingin men-generate soal survey default? Ini akan menambahkan soal ke database.', { type: 'confirm' });
+                                if (confirmed) {
                                     setIsSaving(true);
                                     try {
                                         const res = await api.seedSurveys();

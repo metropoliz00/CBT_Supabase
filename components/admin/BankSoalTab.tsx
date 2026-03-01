@@ -16,6 +16,9 @@ const BankSoalTab = () => {
     const [modalOpen, setModalOpen] = useState(false);
     const [currentQ, setCurrentQ] = useState<QuestionRow | null>(null);
     const [importing, setImporting] = useState(false);
+    const [addSubjectModalOpen, setAddSubjectModalOpen] = useState(false);
+    const [newSubjectId, setNewSubjectId] = useState('');
+    const [newSubjectName, setNewSubjectName] = useState('');
 
     useEffect(() => {
         const loadSubjects = async () => {
@@ -241,21 +244,10 @@ const BankSoalTab = () => {
                         {subjects.length === 0 ? <option value="">-- Belum ada Mapel --</option> : subjects.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
 
-                    <button onClick={async () => {
-                        const newSubjectId = prompt("Masukkan ID Mata Pelajaran Baru (tanpa spasi, contoh: Matematika, Bahasa_Indonesia):");
-                        if (newSubjectId) {
-                            const nama = prompt("Masukkan Nama Mata Pelajaran (contoh: Matematika, Bahasa Indonesia):");
-                            if (nama) {
-                                const res = await api.addExam(newSubjectId, nama);
-                                if (res.success) {
-                                    setSubjects([...subjects, newSubjectId]);
-                                    setSelectedSubject(newSubjectId);
-                                    await showAlert("Mata pelajaran berhasil ditambahkan", { type: 'success' });
-                                } else {
-                                    await showAlert("Gagal: " + res.message, { type: 'error' });
-                                }
-                            }
-                        }
+                    <button onClick={() => {
+                        setNewSubjectId('');
+                        setNewSubjectName('');
+                        setAddSubjectModalOpen(true);
                     }} className="bg-indigo-100 text-indigo-600 px-4 py-2.5 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-indigo-200 transition">
                         <Plus size={16}/> Mapel Baru
                     </button>
@@ -494,6 +486,49 @@ const BankSoalTab = () => {
                                 {loadingData ? <><div className="loader w-4 h-4 border-2"></div> Menyimpan...</> : <><Save size={18}/> Simpan Data</>}
                             </button>
                         </div>
+                     </div>
+                 </div>
+             )}
+
+             {/* ADD SUBJECT MODAL */}
+             {addSubjectModalOpen && (
+                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                     <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl flex flex-col">
+                         <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-2xl">
+                             <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2"><Plus size={20} className="text-indigo-600"/> Tambah Mapel Baru</h3>
+                             <button onClick={() => setAddSubjectModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={24}/></button>
+                         </div>
+                         <div className="p-6 space-y-4">
+                             <div>
+                                 <label className="block text-xs font-bold text-slate-500 uppercase mb-1">ID Mata Pelajaran</label>
+                                 <input type="text" className="w-full p-3 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-100 outline-none" placeholder="Contoh: Matematika, Bahasa_Indonesia" value={newSubjectId} onChange={e => setNewSubjectId(e.target.value)} />
+                                 <p className="text-[10px] text-slate-400 mt-1">Tanpa spasi, gunakan underscore (_) jika perlu.</p>
+                             </div>
+                             <div>
+                                 <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Nama Mata Pelajaran</label>
+                                 <input type="text" className="w-full p-3 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-100 outline-none" placeholder="Contoh: Matematika, Bahasa Indonesia" value={newSubjectName} onChange={e => setNewSubjectName(e.target.value)} />
+                             </div>
+                         </div>
+                         <div className="p-6 border-t border-slate-100 bg-slate-50 rounded-b-2xl flex justify-end gap-3">
+                             <button onClick={() => setAddSubjectModalOpen(false)} className="px-6 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-200 transition">Batal</button>
+                             <button onClick={async () => {
+                                 if (!newSubjectId || !newSubjectName) {
+                                     await showAlert("ID dan Nama Mata Pelajaran harus diisi", { type: 'warning' });
+                                     return;
+                                 }
+                                 const res = await api.addExam(newSubjectId, newSubjectName);
+                                 if (res.success) {
+                                     setSubjects([...subjects, newSubjectId]);
+                                     setSelectedSubject(newSubjectId);
+                                     setAddSubjectModalOpen(false);
+                                     await showAlert("Mata pelajaran berhasil ditambahkan", { type: 'success' });
+                                 } else {
+                                     await showAlert("Gagal: " + res.message, { type: 'error' });
+                                 }
+                             }} className="px-6 py-3 rounded-xl font-bold bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition flex items-center gap-2">
+                                 <Save size={18}/> Simpan
+                             </button>
+                         </div>
                      </div>
                  </div>
              )}
