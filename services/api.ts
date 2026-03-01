@@ -20,6 +20,20 @@ const formatGoogleDriveUrl = (url?: string): string | undefined => {
 };
 
 export const api = {
+  // Helper to log activity
+  logActivity: async (username: string, action: string, subject?: string, meta?: any) => {
+      try {
+          await supabase.from('activity_logs').insert({
+              username,
+              action,
+              subject,
+              meta
+          });
+      } catch (e) {
+          console.error("Failed to log activity:", e);
+      }
+  },
+
   // Unified Login Function
   login: async (username: string, password?: string): Promise<User> => {
     const { data, error } = await supabase
@@ -56,6 +70,11 @@ export const api = {
     // Update status to ONLINE
     await supabase.from('users').update({ status: 'ONLINE', last_active: new Date().toISOString() }).eq('username', username);
 
+    // Log Login Activity
+    if (data.role === 'siswa') {
+        await api.logActivity(username, 'LOGIN');
+    }
+
     return {
         id: data.username || data.id || '',
         username: String(data.username || ''),
@@ -77,6 +96,7 @@ export const api = {
   // Start Exam
   startExam: async (username: string, fullname: string, subject: string): Promise<any> => {
       await supabase.from('users').update({ status: 'EXAM', last_active: new Date().toISOString() }).eq('username', username);
+      await api.logActivity(username, 'START', subject);
       return { success: true };
   },
 
@@ -269,6 +289,9 @@ export const api = {
           const res = await supabase.from('survey_results').insert(resultPayload);
           error = res.error;
       }
+
+      // Log Survey Activity
+      await api.logActivity(payload.user.username, 'SURVEY', payload.surveyType);
 
       return { success: !error };
   },
@@ -579,6 +602,9 @@ export const api = {
       
       await supabase.from('users').update({ status: 'FINISHED' }).eq('username', payload.user.username);
       
+      // Log Finish Activity
+      await api.logActivity(payload.user.username, 'FINISH', payload.subject, { score: score });
+      
       return { success: !error };
   },
   
@@ -591,6 +617,23 @@ export const api = {
       const { data: exams } = await supabase.from('exams').select('*');
       const { data: configData } = await supabase.from('config').select('*');
       const { data: schedules } = await supabase.from('school_schedules').select('*');
+      
+      // Fetch Activity Logs
+      const { data: activityFeed } = await supabase
+          .from('activity_logs')
+          .select('*, users(nama_lengkap, kelas_id, kecamatan, id_sekolah, id_kecamatan)')
+          .order('created_at', { ascending: false })
+          .limit(50);
+
+      const feed = activityFeed?.map((log: any) => ({
+          ...log,
+          nama_lengkap: log.users?.nama_lengkap,
+          school: log.users?.kelas_id,
+          kelas_id: log.users?.kelas_id,
+          kecamatan: log.users?.kecamatan,
+          id_sekolah: log.users?.id_sekolah,
+          id_kecamatan: log.users?.id_kecamatan
+      })) || [];
       
       const users = (usersData || []).map((u: any) => ({
           ...u,
@@ -626,7 +669,8 @@ export const api = {
           surveyDuration: parseInt(configs['SURVEY_DURATION'] || '30'),
           configs: configs,
           activeSessions: activeSessions,
-          schedules: schedules || []
+          schedules: schedules || [],
+          activityFeed: feed
       };
   },
 
