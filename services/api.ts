@@ -50,19 +50,19 @@ export const api = {
 
     return {
         id: data.username || data.id || '',
-        username: data.username || '',
+        username: String(data.username || ''),
         role: data.role || 'siswa',
-        nama_lengkap: data.nama_lengkap || '',
-        jenis_kelamin: data.jenis_kelamin || 'L', 
-        kelas_id: data.kelas_id || '',
-        kecamatan: data.kecamatan || '', 
-        active_exam: data.active_exam || '', 
-        session: data.session || '',
+        nama_lengkap: String(data.nama_lengkap || ''),
+        jenis_kelamin: String(data.jenis_kelamin || 'L'), 
+        kelas_id: String(data.kelas_id || ''),
+        kecamatan: String(data.kecamatan || ''), 
+        active_exam: String(data.active_exam || ''), 
+        session: String(data.session || ''),
         photo_url: formatGoogleDriveUrl(data.photo_url),
-        id_sekolah: data.id_sekolah || '',
-        id_gugus: data.id_gugus || '',
-        id_kecamatan: data.id_kecamatan || '',
-        id_paket: data.id_paket || ''
+        id_sekolah: String(data.id_sekolah || ''),
+        id_gugus: String(data.id_gugus || ''),
+        id_kecamatan: String(data.id_kecamatan || ''),
+        id_paket: String(data.id_paket || '')
     };
   },
 
@@ -97,16 +97,16 @@ export const api = {
     let exams: Exam[] = [];
     if (subjects && !error) {
         exams = subjects.map((s: any) => ({
-            id: s.id,
-            nama_ujian: s.nama_ujian,
-            waktu_mulai: s.waktu_mulai || new Date().toISOString(),
-            durasi: s.durasi || duration,
-            token_akses: s.token_akses || 'TOKEN', 
+            id: String(s.id || ''),
+            nama_ujian: String(s.nama_ujian || ''),
+            waktu_mulai: String(s.waktu_mulai || new Date().toISOString()),
+            durasi: Number(s.durasi || duration),
+            token_akses: String(s.token_akses || 'TOKEN'), 
             is_active: s.is_active !== false,
-            max_questions: s.max_questions || maxQuestions,
-            id_sekolah: s.id_sekolah, 
-            id_kecamatan: s.id_kecamatan,
-            id_gelombang: s.id_gelombang 
+            max_questions: Number(s.max_questions || maxQuestions),
+            id_sekolah: String(s.id_sekolah || ''), 
+            id_kecamatan: String(s.id_kecamatan || ''),
+            id_gelombang: String(s.id_gelombang || '') 
         }));
     }
 
@@ -210,19 +210,19 @@ export const api = {
 
     return questions.map((q: any) => {
         const options = [];
-        if (q.opsi_a) options.push({ id: 'A', question_id: q.id, text_jawaban: q.opsi_a, is_correct: q.kunci_jawaban === 'A' });
-        if (q.opsi_b) options.push({ id: 'B', question_id: q.id, text_jawaban: q.opsi_b, is_correct: q.kunci_jawaban === 'B' });
-        if (q.opsi_c) options.push({ id: 'C', question_id: q.id, text_jawaban: q.opsi_c, is_correct: q.kunci_jawaban === 'C' });
-        if (q.opsi_d) options.push({ id: 'D', question_id: q.id, text_jawaban: q.opsi_d, is_correct: q.kunci_jawaban === 'D' });
+        if (q.opsi_a !== undefined && q.opsi_a !== null) options.push({ id: 'A', question_id: String(q.id), text_jawaban: String(q.opsi_a), is_correct: String(q.kunci_jawaban) === 'A' });
+        if (q.opsi_b !== undefined && q.opsi_b !== null) options.push({ id: 'B', question_id: String(q.id), text_jawaban: String(q.opsi_b), is_correct: String(q.kunci_jawaban) === 'B' });
+        if (q.opsi_c !== undefined && q.opsi_c !== null) options.push({ id: 'C', question_id: String(q.id), text_jawaban: String(q.opsi_c), is_correct: String(q.kunci_jawaban) === 'C' });
+        if (q.opsi_d !== undefined && q.opsi_d !== null) options.push({ id: 'D', question_id: String(q.id), text_jawaban: String(q.opsi_d), is_correct: String(q.kunci_jawaban) === 'D' });
 
         return {
-            id: q.id,
-            exam_id: subject,
-            text_soal: q.text_soal || "Pertanyaan tanpa teks",
-            tipe_soal: q.tipe_soal || 'PG',
-            bobot_nilai: q.bobot_nilai || 10,
-            gambar: q.gambar || undefined,
-            keterangan_gambar: q.keterangan_gambar || undefined,
+            id: String(q.id),
+            exam_id: String(subject),
+            text_soal: String(q.text_soal || "Pertanyaan tanpa teks"),
+            tipe_soal: (q.tipe_soal || 'PG') as any,
+            bobot_nilai: Number(q.bobot_nilai || 10),
+            gambar: q.gambar ? String(q.gambar) : undefined,
+            keterangan_gambar: q.keterangan_gambar ? String(q.keterangan_gambar) : undefined,
             options: options
         };
     });
@@ -235,15 +235,15 @@ export const api = {
 
       return questions.map((q: any) => {
           const options = [];
-          if (q.opsi_a) options.push({ id: 'A', question_id: q.id, text_jawaban: q.opsi_a, is_correct: false });
-          if (q.opsi_b) options.push({ id: 'B', question_id: q.id, text_jawaban: q.opsi_b, is_correct: false });
-          if (q.opsi_c) options.push({ id: 'C', question_id: q.id, text_jawaban: q.opsi_c, is_correct: false });
-          if (q.opsi_d) options.push({ id: 'D', question_id: q.id, text_jawaban: q.opsi_d, is_correct: false });
+          if (q.opsi_a !== undefined && q.opsi_a !== null) options.push({ id: 'A', question_id: String(q.id), text_jawaban: String(q.opsi_a), is_correct: false });
+          if (q.opsi_b !== undefined && q.opsi_b !== null) options.push({ id: 'B', question_id: String(q.id), text_jawaban: String(q.opsi_b), is_correct: false });
+          if (q.opsi_c !== undefined && q.opsi_c !== null) options.push({ id: 'C', question_id: String(q.id), text_jawaban: String(q.opsi_c), is_correct: false });
+          if (q.opsi_d !== undefined && q.opsi_d !== null) options.push({ id: 'D', question_id: String(q.id), text_jawaban: String(q.opsi_d), is_correct: false });
 
           return {
-              id: q.id,
-              exam_id: surveyType,
-              text_soal: q.text_soal || "Pertanyaan tanpa teks",
+              id: String(q.id),
+              exam_id: String(surveyType),
+              text_soal: String(q.text_soal || "Pertanyaan tanpa teks"),
               tipe_soal: 'LIKERT',
               bobot_nilai: 0,
               options: options
