@@ -495,7 +495,7 @@ export const api = {
   },
 
   saveSchoolSchedules: async (schedules: SchoolSchedule[]): Promise<{success: boolean}> => {
-      const { error } = await supabase.from('school_schedules').upsert(schedules);
+      const { error } = await supabase.from('school_schedules').upsert(schedules, { onConflict: 'school' });
       return { success: !error };
   },
 
