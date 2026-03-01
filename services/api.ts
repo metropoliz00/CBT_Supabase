@@ -64,14 +64,22 @@ export const api = {
     const isBypassRole = ['admin_pusat', 'proktor', 'admin_sekolah'].includes(data.role);
     
     if (!isBypassRole && data.status) {
-        const normalizedStatus = String(data.status).trim().toUpperCase();
-        if (normalizedStatus !== 'OFFLINE' && normalizedStatus !== 'RESET') {
+        const s = String(data.status).trim().toUpperCase();
+        // Allow OFFLINE and RESET
+        if (s !== 'OFFLINE' && s !== 'RESET') {
             throw new Error(`Status peserta sedang ${data.status}. Hubungi proktor untuk reset login.`);
         }
     }
 
     // Update status to ONLINE
-    await supabase.from('users').update({ status: 'ONLINE', last_active: new Date().toISOString() }).eq('username', username);
+    const { error: updateError } = await supabase.from('users').update({ status: 'ONLINE', last_active: new Date().toISOString() }).eq('username', username);
+    
+    if (updateError) {
+        console.error("Login status update failed:", updateError);
+        // If we can't update status, the user will be kicked out by heartbeat immediately.
+        // Better to fail login.
+        throw new Error("Gagal mengupdate status login. Silakan coba lagi.");
+    }
 
     // Log Login Activity
     if (data.role === 'siswa') {
