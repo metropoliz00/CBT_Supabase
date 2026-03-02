@@ -139,6 +139,19 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ dashboardData, currentUserSta
         return schools.size;
     }, [dashboardData.allUsers, currentUserState]);
 
+    const sessionsStatus = useMemo(() => {
+        const configs = dashboardData.configs || {};
+        const sessions = [];
+        for (let i = 1; i <= 4; i++) {
+            const status = String(configs[`SESI_${i}_STATUS`] || configs[`SESSION_${i}_STATUS`] || 'OFF').toUpperCase();
+            sessions.push({
+                id: i,
+                active: status === 'ON' || status === 'AKTIF' || status === 'ACTIVE' || status === 'TRUE' || status === '1'
+            });
+        }
+        return sessions;
+    }, [dashboardData.configs]);
+
     // Helper to format full date: Hari, Tanggal Bulan Tahun
     const formatDateFull = (dateStr: string) => {
         if (!dateStr) return '';
@@ -281,28 +294,55 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ dashboardData, currentUserSta
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center">
-                <h3 className="text-slate-700 font-bold mb-6 text-sm uppercase tracking-wide w-full border-b pb-2 flex justify-between">
-                    <span>Status Peserta (%)</span>
-                    <span className="text-xs text-slate-400 normal-case">Total: {totalStatus} Siswa</span>
-                </h3>
-                <SimpleDonutChart data={statusData} />
-                <div className="grid grid-cols-2 gap-4 mt-6 w-full text-xs font-bold text-slate-500">
-                    <div className="flex items-center gap-2" title="Belum Login">
-                        <div className="w-3 h-3 bg-slate-200 rounded"></div> 
-                        <span>Belum Login ({OFFLINE}) - {totalStatus > 0 ? ((OFFLINE/totalStatus)*100).toFixed(1) : 0}%</span>
+            <div className="space-y-6 md:col-span-1">
+                {/* Session Status Card (Read Only) */}
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div className="px-5 py-3 border-b border-slate-50 bg-slate-50/50 flex items-center gap-2">
+                        <Clock size={16} className="text-indigo-500" />
+                        <h3 className="font-bold text-slate-700 text-sm">Status Sesi Ujian</h3>
                     </div>
-                    <div className="flex items-center gap-2" title="Login">
-                        <div className="w-3 h-3 bg-yellow-400 rounded"></div> 
-                        <span>Login ({LOGGED_IN}) - {totalStatus > 0 ? ((LOGGED_IN/totalStatus)*100).toFixed(1) : 0}%</span>
+                    <div className="p-4 grid grid-cols-2 gap-3">
+                        {sessionsStatus.map((s) => (
+                            <div key={s.id} className={`p-3 rounded-xl border flex flex-col items-center gap-1 transition-all ${s.active ? 'bg-emerald-50 border-emerald-100' : 'bg-slate-50 border-slate-100 opacity-60'}`}>
+                                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shadow-sm ${s.active ? 'bg-emerald-500 text-white' : 'bg-slate-300 text-slate-500'}`}>
+                                    {s.id}
+                                </div>
+                                <span className={`text-[10px] font-bold uppercase tracking-wider ${s.active ? 'text-emerald-600' : 'text-slate-400'}`}>
+                                    {s.active ? 'Aktif' : 'Off'}
+                                </span>
+                            </div>
+                        ))}
                     </div>
-                    <div className="flex items-center gap-2" title="Mengerjakan">
-                        <div className="w-3 h-3 bg-blue-500 rounded"></div> 
-                        <span>Mengerjakan ({WORKING}) - {totalStatus > 0 ? ((WORKING/totalStatus)*100).toFixed(1) : 0}%</span>
+                    <div className="px-4 pb-4">
+                        <p className="text-[10px] text-slate-400 text-center leading-tight italic">
+                            *Status sesi diatur oleh Admin Pusat. Hanya sesi aktif yang dapat melakukan login.
+                        </p>
                     </div>
-                    <div className="flex items-center gap-2" title="Selesai">
-                        <div className="w-3 h-3 bg-emerald-500 rounded"></div> 
-                        <span>Selesai ({FINISHED}) - {totalStatus > 0 ? ((FINISHED/totalStatus)*100).toFixed(1) : 0}%</span>
+                </div>
+
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center">
+                    <h3 className="text-slate-700 font-bold mb-6 text-sm uppercase tracking-wide w-full border-b pb-2 flex justify-between">
+                        <span>Status Peserta (%)</span>
+                        <span className="text-xs text-slate-400 normal-case">Total: {totalStatus} Siswa</span>
+                    </h3>
+                    <SimpleDonutChart data={statusData} />
+                    <div className="grid grid-cols-2 gap-4 mt-6 w-full text-xs font-bold text-slate-500">
+                        <div className="flex items-center gap-2" title="Belum Login">
+                            <div className="w-3 h-3 bg-slate-200 rounded"></div> 
+                            <span>Belum Login ({OFFLINE}) - {totalStatus > 0 ? ((OFFLINE/totalStatus)*100).toFixed(1) : 0}%</span>
+                        </div>
+                        <div className="flex items-center gap-2" title="Login">
+                            <div className="w-3 h-3 bg-yellow-400 rounded"></div> 
+                            <span>Login ({LOGGED_IN}) - {totalStatus > 0 ? ((LOGGED_IN/totalStatus)*100).toFixed(1) : 0}%</span>
+                        </div>
+                        <div className="flex items-center gap-2" title="Mengerjakan">
+                            <div className="w-3 h-3 bg-blue-500 rounded"></div> 
+                            <span>Mengerjakan ({WORKING}) - {totalStatus > 0 ? ((WORKING/totalStatus)*100).toFixed(1) : 0}%</span>
+                        </div>
+                        <div className="flex items-center gap-2" title="Selesai">
+                            <div className="w-3 h-3 bg-emerald-500 rounded"></div> 
+                            <span>Selesai ({FINISHED}) - {totalStatus > 0 ? ((FINISHED/totalStatus)*100).toFixed(1) : 0}%</span>
+                        </div>
                     </div>
                 </div>
             </div>

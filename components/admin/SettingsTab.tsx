@@ -6,7 +6,7 @@ import { User } from '../../types';
 import { useAlert } from '../../context/AlertContext';
 import AdminManagement from './AdminManagement';
 
-const SettingsTab = ({ currentUser, onDataChange, configs }: { currentUser: User, onDataChange: () => void, configs: Record<string, string> }) => {
+const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { currentUser: User, onDataChange: () => void, configs: Record<string, string>, mode?: 'all' | 'config' | 'dev' | 'session' | 'admin' }) => {
     const { showAlert } = useAlert();
     const [isInitializing, setIsInitializing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -141,351 +141,361 @@ const SettingsTab = ({ currentUser, onDataChange, configs }: { currentUser: User
     return (
         <div className="space-y-8">
             {/* General Settings Section */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <Settings size={18} className="text-indigo-600" />
-                        <h3 className="font-bold text-slate-700">Pengaturan Umum</h3>
-                    </div>
-                    <button 
-                        onClick={async () => {
-                            setIsSaving(true);
-                            try {
-                                const res = await api.syncExamsDuration();
-                                if (res.success) {
-                                    await showAlert("Semua durasi ujian telah disinkronkan dengan konfigurasi.", { type: 'success' });
-                                } else {
-                                    throw new Error(res.message);
-                                }
-                            } catch (e: any) {
-                                await showAlert("Gagal sinkronisasi durasi: " + e.message, { type: 'error' });
-                            } finally {
-                                setIsSaving(false);
-                            }
-                        }}
-                        disabled={isSaving}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold hover:bg-indigo-200 transition"
-                    >
-                        <RefreshCw size={14} className={isSaving ? 'animate-spin' : ''} />
-                        Sinkronkan Durasi
-                    </button>
-                </div>
-                <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Show Survey Toggle */}
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200">
-                        <div>
-                            <h4 className="font-bold text-slate-700 text-sm">Tampilkan Survey</h4>
-                            <p className="text-xs text-slate-500 mt-1">Aktifkan survey karakter & lingkungan belajar setelah ujian.</p>
-                        </div>
-                        <button 
-                            onClick={() => {
-                                const newValue = !showSurvey;
-                                setShowSurvey(newValue);
-                                handleSaveConfig('SHOW_SURVEY', newValue ? 'TRUE' : 'FALSE');
-                            }}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${showSurvey ? 'bg-indigo-600' : 'bg-slate-300'}`}
-                        >
-                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showSurvey ? 'translate-x-6' : 'translate-x-1'}`} />
-                        </button>
-                    </div>
-
-                    {/* Allow Proctor Session Edit Toggle */}
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200">
-                        <div>
-                            <h4 className="font-bold text-slate-700 text-sm">Akses Atur Sesi (Proktor)</h4>
-                            <p className="text-xs text-slate-500 mt-1">Izinkan Admin Sekolah/Proktor untuk mengatur sesi siswa.</p>
-                        </div>
-                        <button 
-                            onClick={() => {
-                                const newValue = !allowProctorSessionEdit;
-                                setAllowProctorSessionEdit(newValue);
-                                handleSaveConfig('ALLOW_PROCTOR_SESSION_EDIT', newValue ? 'TRUE' : 'FALSE');
-                            }}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${allowProctorSessionEdit ? 'bg-indigo-600' : 'bg-slate-300'}`}
-                        >
-                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${allowProctorSessionEdit ? 'translate-x-6' : 'translate-x-1'}`} />
-                        </button>
-                    </div>
-
-                    {/* Show Rekap to Proctor Toggle */}
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200">
-                        <div>
-                            <h4 className="font-bold text-slate-700 text-sm">Tampilkan Rekap & Peringkat (Proktor)</h4>
-                            <p className="text-xs text-slate-500 mt-1">Izinkan Admin Sekolah/Proktor untuk melihat Rekap Nilai dan Peringkat.</p>
-                        </div>
-                        <button 
-                            onClick={() => {
-                                const newValue = !showRekapToProctor;
-                                setShowRekapToProctor(newValue);
-                                handleSaveConfig('SHOW_REKAP_TO_PROCTOR', newValue ? 'TRUE' : 'FALSE');
-                            }}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${showRekapToProctor ? 'bg-indigo-600' : 'bg-slate-300'}`}
-                        >
-                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showRekapToProctor ? 'translate-x-6' : 'translate-x-1'}`} />
-                        </button>
-                    </div>
-
-                    {/* Exam Duration */}
-                    <div className="space-y-2">
-                        <label className="block text-xs font-bold text-slate-500 uppercase">Durasi Ujian (Menit)</label>
-                        <div className="flex gap-2">
-                            <input 
-                                type="number" 
-                                className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 outline-none"
-                                value={examDuration}
-                                onChange={(e) => setExamDuration(Number(e.target.value))}
-                            />
-                            <button 
-                                onClick={() => handleSaveConfig('DURATION', String(examDuration))}
-                                disabled={isSaving}
-                                className="px-4 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition shadow-sm disabled:opacity-50"
-                            >
-                                <Save size={18}/>
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Survey Duration */}
-                    <div className="space-y-2">
-                        <label className="block text-xs font-bold text-slate-500 uppercase">Durasi Survey (Menit)</label>
-                        <div className="flex gap-2">
-                            <input 
-                                type="number" 
-                                className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 outline-none"
-                                value={surveyDuration}
-                                onChange={(e) => setSurveyDuration(Number(e.target.value))}
-                            />
-                            <button 
-                                onClick={() => handleSaveConfig('SURVEY_DURATION', String(surveyDuration))}
-                                disabled={isSaving}
-                                className="px-4 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition shadow-sm disabled:opacity-50"
-                            >
-                                <Save size={18}/>
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Max Questions */}
-                    <div className="space-y-2">
-                        <label className="block text-xs font-bold text-slate-500 uppercase">Max Soal (0 = Semua)</label>
-                        <div className="flex gap-2">
-                            <input 
-                                type="number" 
-                                className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 outline-none"
-                                value={maxQuestions}
-                                onChange={(e) => setMaxQuestions(Number(e.target.value))}
-                            />
-                            <button 
-                                onClick={() => handleSaveConfig('MAX_QUESTIONS', String(maxQuestions))}
-                                disabled={isSaving}
-                                className="px-4 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition shadow-sm disabled:opacity-50"
-                            >
-                                <Save size={18}/>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Developer Popup Settings Section */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <Globe size={18} className="text-indigo-600" />
-                        <h3 className="font-bold text-slate-700">Pengaturan Pop-up Pengembang</h3>
-                    </div>
-                </div>
-                <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Show Developer Popup Toggle */}
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200 md:col-span-2">
-                        <div>
-                            <h4 className="font-bold text-slate-700 text-sm">Tampilkan Pop-up Pengembang</h4>
-                            <p className="text-xs text-slate-500 mt-1">Tampilkan tombol pop-up pengembang di halaman System Check dan Login.</p>
-                        </div>
-                        <button 
-                            onClick={() => {
-                                const newValue = !devShow;
-                                setDevShow(newValue);
-                                handleSaveConfig('DEV_SHOW', newValue ? 'TRUE' : 'FALSE');
-                            }}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${devShow ? 'bg-indigo-600' : 'bg-slate-300'}`}
-                        >
-                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${devShow ? 'translate-x-6' : 'translate-x-1'}`} />
-                        </button>
-                    </div>
-
-                    {/* Developer Name */}
-                    <div className="space-y-2">
-                        <label className="block text-xs font-bold text-slate-500 uppercase">Nama Pengembang</label>
-                        <div className="flex gap-2">
-                            <input 
-                                type="text" 
-                                className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 outline-none"
-                                value={devName}
-                                onChange={(e) => setDevName(e.target.value)}
-                                placeholder="Contoh: MeyGa Team"
-                            />
-                            <button 
-                                onClick={() => handleSaveConfig('DEV_NAME', devName)}
-                                disabled={isSaving}
-                                className="px-4 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition shadow-sm disabled:opacity-50"
-                            >
-                                <Save size={18}/>
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Developer Photo URL */}
-                    <div className="space-y-2">
-                        <label className="block text-xs font-bold text-slate-500 uppercase">URL Foto Pengembang</label>
-                        <div className="flex gap-2">
-                            <input 
-                                type="text" 
-                                className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 outline-none"
-                                value={devPhoto}
-                                onChange={(e) => setDevPhoto(e.target.value)}
-                                placeholder="https://..."
-                            />
-                            <button 
-                                onClick={() => handleSaveConfig('DEV_PHOTO_URL', devPhoto)}
-                                disabled={isSaving}
-                                className="px-4 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition shadow-sm disabled:opacity-50"
-                            >
-                                <Save size={18}/>
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Developer Quote */}
-                    <div className="space-y-2 md:col-span-2">
-                        <label className="block text-xs font-bold text-slate-500 uppercase">Quote Pengembang</label>
-                        <div className="flex gap-2">
-                            <textarea 
-                                className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 outline-none min-h-[80px]"
-                                value={devQuote}
-                                onChange={(e) => setDevQuote(e.target.value)}
-                                placeholder="Tuliskan quote atau pesan..."
-                            />
-                            <button 
-                                onClick={() => handleSaveConfig('DEV_QUOTE', devQuote)}
-                                disabled={isSaving}
-                                className="px-4 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition shadow-sm disabled:opacity-50"
-                            >
-                                <Save size={18}/>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Session Management Section */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                        <Clock size={18} className="text-indigo-600" />
-                        <div>
-                            <h3 className="font-bold text-slate-700">Manajemen Sesi</h3>
-                            <p className="text-[10px] text-slate-400 font-mono mt-0.5 flex items-center gap-1">
-                                <Clock size={10} />
-                                Server Time: {serverTime} WIB
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                <div className="p-6">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {Object.keys(sessionTimes).sort().map((sessionNum) => {
-                            const session = sessionTimes[sessionNum];
-                            return (
-                            <div key={sessionNum} className={`p-5 border rounded-2xl space-y-4 transition-all group ${session.active ? 'bg-indigo-50 border-indigo-200 shadow-sm' : 'bg-slate-50 border-slate-200 opacity-80 hover:opacity-100'}`}>
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shadow-sm transition-colors ${session.active ? 'bg-indigo-600 text-white' : 'bg-slate-300 text-slate-500'}`}>
-                                            {sessionNum}
-                                        </div>
-                                        <div>
-                                            <h4 className={`font-bold ${session.active ? 'text-indigo-900' : 'text-slate-500'}`}>Sesi {sessionNum}</h4>
-                                            <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${session.active ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-200 text-slate-500'}`}>
-                                                {session.active ? 'Aktif' : 'Non-Aktif'}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                        <button 
-                                            onClick={() => setSessionTimes({
-                                                ...sessionTimes,
-                                                [sessionNum]: { ...session, active: !session.active }
-                                            })}
-                                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${session.active ? 'bg-emerald-500' : 'bg-slate-300'}`}
-                                            title={session.active ? "Non-aktifkan Sesi" : "Aktifkan Sesi"}
-                                        >
-                                            <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${session.active ? 'translate-x-5' : 'translate-x-1'}`} />
-                                        </button>
-                                        <button 
-                                            onClick={() => handleSaveSessionStatus(sessionNum)}
-                                            disabled={isSaving}
-                                            className={`p-2 rounded-xl transition disabled:opacity-50 border shadow-sm ${session.active ? 'bg-white text-indigo-600 hover:bg-indigo-50 border-indigo-100' : 'bg-white text-slate-400 hover:bg-slate-50 border-slate-200'}`}
-                                            title="Simpan Status Sesi"
-                                        >
-                                            <Save size={16} />
-                                        </button>
-                                    </div>
-                                </div>
-                                <div className="text-xs text-slate-500 leading-relaxed">
-                                    {session.active 
-                                        ? "Siswa pada sesi ini diizinkan untuk login dan mengerjakan ujian." 
-                                        : "Siswa pada sesi ini dilarang login. Muncul peringatan saat mencoba masuk."}
-                                </div>
-                            </div>
-                        );
-                    })}
-                    </div>
-                </div>
-            </div>
-
-            {/* Database Setup Section */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
-                    <Database size={18} className="text-indigo-600" />
-                    <h3 className="font-bold text-slate-700">Setup Database</h3>
-                </div>
-                <div className="p-6">
-                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200">
-                        <div className="mb-4 md:mb-0">
-                            <h4 className="font-bold text-slate-700 text-sm">Generate Soal Survey Default</h4>
-                            <p className="text-xs text-slate-500 mt-1">Buat soal default untuk survey jika belum ada di database.</p>
+            {(mode === 'all' || mode === 'config') && (
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <Settings size={18} className="text-indigo-600" />
+                            <h3 className="font-bold text-slate-700">Pengaturan Umum</h3>
                         </div>
                         <button 
                             onClick={async () => {
-                                const confirmed = await showAlert('Apakah Anda yakin ingin men-generate soal survey default? Ini akan menambahkan soal ke database.', { type: 'confirm' });
-                                if (confirmed) {
-                                    setIsSaving(true);
-                                    try {
-                                        const res = await api.seedSurveys();
-                                        if (res.success) {
-                                            await showAlert(res.message, { type: 'success' });
-                                        } else {
-                                            await showAlert("Gagal: " + res.message, { type: 'error' });
-                                        }
-                                    } catch (e: any) {
-                                        await showAlert("Terjadi kesalahan sistem.", { type: 'error' });
-                                    } finally {
-                                        setIsSaving(false);
+                                setIsSaving(true);
+                                try {
+                                    const res = await api.syncExamsDuration();
+                                    if (res.success) {
+                                        await showAlert("Semua durasi ujian telah disinkronkan dengan konfigurasi.", { type: 'success' });
+                                    } else {
+                                        throw new Error(res.message);
                                     }
+                                } catch (e: any) {
+                                    await showAlert("Gagal sinkronisasi durasi: " + e.message, { type: 'error' });
+                                } finally {
+                                    setIsSaving(false);
                                 }
                             }}
                             disabled={isSaving}
-                            className="px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-sm disabled:opacity-50 flex items-center gap-2 text-sm whitespace-nowrap"
+                            className="flex items-center gap-2 px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold hover:bg-indigo-200 transition"
                         >
-                            {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Database size={16} />}
-                            Generate Soal Survey
+                            <RefreshCw size={14} className={isSaving ? 'animate-spin' : ''} />
+                            Sinkronkan Durasi
                         </button>
                     </div>
+                    <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Show Survey Toggle */}
+                        <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200">
+                            <div>
+                                <h4 className="font-bold text-slate-700 text-sm">Tampilkan Survey</h4>
+                                <p className="text-xs text-slate-500 mt-1">Aktifkan survey karakter & lingkungan belajar setelah ujian.</p>
+                            </div>
+                            <button 
+                                onClick={() => {
+                                    const newValue = !showSurvey;
+                                    setShowSurvey(newValue);
+                                    handleSaveConfig('SHOW_SURVEY', newValue ? 'TRUE' : 'FALSE');
+                                }}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${showSurvey ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                            >
+                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showSurvey ? 'translate-x-6' : 'translate-x-1'}`} />
+                            </button>
+                        </div>
+
+                        {/* Allow Proctor Session Edit Toggle */}
+                        <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200">
+                            <div>
+                                <h4 className="font-bold text-slate-700 text-sm">Akses Atur Sesi (Proktor)</h4>
+                                <p className="text-xs text-slate-500 mt-1">Izinkan Admin Sekolah/Proktor untuk mengatur sesi siswa.</p>
+                            </div>
+                            <button 
+                                onClick={() => {
+                                    const newValue = !allowProctorSessionEdit;
+                                    setAllowProctorSessionEdit(newValue);
+                                    handleSaveConfig('ALLOW_PROCTOR_SESSION_EDIT', newValue ? 'TRUE' : 'FALSE');
+                                }}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${allowProctorSessionEdit ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                            >
+                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${allowProctorSessionEdit ? 'translate-x-6' : 'translate-x-1'}`} />
+                            </button>
+                        </div>
+
+                        {/* Show Rekap to Proctor Toggle */}
+                        <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200">
+                            <div>
+                                <h4 className="font-bold text-slate-700 text-sm">Tampilkan Rekap & Peringkat (Proktor)</h4>
+                                <p className="text-xs text-slate-500 mt-1">Izinkan Admin Sekolah/Proktor untuk melihat Rekap Nilai dan Peringkat.</p>
+                            </div>
+                            <button 
+                                onClick={() => {
+                                    const newValue = !showRekapToProctor;
+                                    setShowRekapToProctor(newValue);
+                                    handleSaveConfig('SHOW_REKAP_TO_PROCTOR', newValue ? 'TRUE' : 'FALSE');
+                                }}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${showRekapToProctor ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                            >
+                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showRekapToProctor ? 'translate-x-6' : 'translate-x-1'}`} />
+                            </button>
+                        </div>
+
+                        {/* Exam Duration */}
+                        <div className="space-y-2">
+                            <label className="block text-xs font-bold text-slate-500 uppercase">Durasi Ujian (Menit)</label>
+                            <div className="flex gap-2">
+                                <input 
+                                    type="number" 
+                                    className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 outline-none"
+                                    value={examDuration}
+                                    onChange={(e) => setExamDuration(Number(e.target.value))}
+                                />
+                                <button 
+                                    onClick={() => handleSaveConfig('DURATION', String(examDuration))}
+                                    disabled={isSaving}
+                                    className="px-4 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition shadow-sm disabled:opacity-50"
+                                >
+                                    <Save size={18}/>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Survey Duration */}
+                        <div className="space-y-2">
+                            <label className="block text-xs font-bold text-slate-500 uppercase">Durasi Survey (Menit)</label>
+                            <div className="flex gap-2">
+                                <input 
+                                    type="number" 
+                                    className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 outline-none"
+                                    value={surveyDuration}
+                                    onChange={(e) => setSurveyDuration(Number(e.target.value))}
+                                />
+                                <button 
+                                    onClick={() => handleSaveConfig('SURVEY_DURATION', String(surveyDuration))}
+                                    disabled={isSaving}
+                                    className="px-4 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition shadow-sm disabled:opacity-50"
+                                >
+                                    <Save size={18}/>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Max Questions */}
+                        <div className="space-y-2">
+                            <label className="block text-xs font-bold text-slate-500 uppercase">Max Soal (0 = Semua)</label>
+                            <div className="flex gap-2">
+                                <input 
+                                    type="number" 
+                                    className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 outline-none"
+                                    value={maxQuestions}
+                                    onChange={(e) => setMaxQuestions(Number(e.target.value))}
+                                />
+                                <button 
+                                    onClick={() => handleSaveConfig('MAX_QUESTIONS', String(maxQuestions))}
+                                    disabled={isSaving}
+                                    className="px-4 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition shadow-sm disabled:opacity-50"
+                                >
+                                    <Save size={18}/>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            )}
+
+            {/* Developer Popup Settings Section */}
+            {(mode === 'all' || mode === 'dev') && (
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <Globe size={18} className="text-indigo-600" />
+                            <h3 className="font-bold text-slate-700">Pengaturan Pop-up Pengembang</h3>
+                        </div>
+                    </div>
+                    <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Show Developer Popup Toggle */}
+                        <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200 md:col-span-2">
+                            <div>
+                                <h4 className="font-bold text-slate-700 text-sm">Tampilkan Pop-up Pengembang</h4>
+                                <p className="text-xs text-slate-500 mt-1">Tampilkan tombol pop-up pengembang di halaman System Check dan Login.</p>
+                            </div>
+                            <button 
+                                onClick={() => {
+                                    const newValue = !devShow;
+                                    setDevShow(newValue);
+                                    handleSaveConfig('DEV_SHOW', newValue ? 'TRUE' : 'FALSE');
+                                }}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${devShow ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                            >
+                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${devShow ? 'translate-x-6' : 'translate-x-1'}`} />
+                            </button>
+                        </div>
+
+                        {/* Developer Name */}
+                        <div className="space-y-2">
+                            <label className="block text-xs font-bold text-slate-500 uppercase">Nama Pengembang</label>
+                            <div className="flex gap-2">
+                                <input 
+                                    type="text" 
+                                    className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 outline-none"
+                                    value={devName}
+                                    onChange={(e) => setDevName(e.target.value)}
+                                    placeholder="Contoh: MeyGa Team"
+                                />
+                                <button 
+                                    onClick={() => handleSaveConfig('DEV_NAME', devName)}
+                                    disabled={isSaving}
+                                    className="px-4 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition shadow-sm disabled:opacity-50"
+                                >
+                                    <Save size={18}/>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Developer Photo URL */}
+                        <div className="space-y-2">
+                            <label className="block text-xs font-bold text-slate-500 uppercase">URL Foto Pengembang</label>
+                            <div className="flex gap-2">
+                                <input 
+                                    type="text" 
+                                    className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 outline-none"
+                                    value={devPhoto}
+                                    onChange={(e) => setDevPhoto(e.target.value)}
+                                    placeholder="https://..."
+                                />
+                                <button 
+                                    onClick={() => handleSaveConfig('DEV_PHOTO_URL', devPhoto)}
+                                    disabled={isSaving}
+                                    className="px-4 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition shadow-sm disabled:opacity-50"
+                                >
+                                    <Save size={18}/>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Developer Quote */}
+                        <div className="space-y-2 md:col-span-2">
+                            <label className="block text-xs font-bold text-slate-500 uppercase">Quote Pengembang</label>
+                            <div className="flex gap-2">
+                                <textarea 
+                                    className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 outline-none min-h-[80px]"
+                                    value={devQuote}
+                                    onChange={(e) => setDevQuote(e.target.value)}
+                                    placeholder="Tuliskan quote atau pesan..."
+                                />
+                                <button 
+                                    onClick={() => handleSaveConfig('DEV_QUOTE', devQuote)}
+                                    disabled={isSaving}
+                                    className="px-4 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition shadow-sm disabled:opacity-50"
+                                >
+                                    <Save size={18}/>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Session Management Section */}
+            {(mode === 'all' || mode === 'session') && (
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                            <Clock size={18} className="text-indigo-600" />
+                            <div>
+                                <h3 className="font-bold text-slate-700">Manajemen Sesi</h3>
+                                <p className="text-[10px] text-slate-400 font-mono mt-0.5 flex items-center gap-1">
+                                    <Clock size={10} />
+                                    Server Time: {serverTime} WIB
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="p-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            {Object.keys(sessionTimes).sort().map((sessionNum) => {
+                                const session = sessionTimes[sessionNum];
+                                return (
+                                <div key={sessionNum} className={`p-5 border rounded-2xl space-y-4 transition-all group ${session.active ? 'bg-indigo-50 border-indigo-200 shadow-sm' : 'bg-slate-50 border-slate-200 opacity-80 hover:opacity-100'}`}>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shadow-sm transition-colors ${session.active ? 'bg-indigo-600 text-white' : 'bg-slate-300 text-slate-500'}`}>
+                                                {sessionNum}
+                                            </div>
+                                            <div>
+                                                <h4 className={`font-bold ${session.active ? 'text-indigo-900' : 'text-slate-500'}`}>Sesi {sessionNum}</h4>
+                                                <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${session.active ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-200 text-slate-500'}`}>
+                                                    {session.active ? 'Aktif' : 'Non-Aktif'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            <button 
+                                                onClick={() => setSessionTimes({
+                                                    ...sessionTimes,
+                                                    [sessionNum]: { ...session, active: !session.active }
+                                                })}
+                                                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${session.active ? 'bg-emerald-500' : 'bg-slate-300'}`}
+                                                title={session.active ? "Non-aktifkan Sesi" : "Aktifkan Sesi"}
+                                            >
+                                                <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${session.active ? 'translate-x-5' : 'translate-x-1'}`} />
+                                            </button>
+                                            <button 
+                                                onClick={() => handleSaveSessionStatus(sessionNum)}
+                                                disabled={isSaving}
+                                                className={`p-2 rounded-xl transition disabled:opacity-50 border shadow-sm ${session.active ? 'bg-white text-indigo-600 hover:bg-indigo-50 border-indigo-100' : 'bg-white text-slate-400 hover:bg-slate-50 border-slate-200'}`}
+                                                title="Simpan Status Sesi"
+                                            >
+                                                <Save size={16} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="text-xs text-slate-500 leading-relaxed">
+                                        {session.active 
+                                            ? "Siswa pada sesi ini diizinkan untuk login dan mengerjakan ujian." 
+                                            : "Siswa pada sesi ini dilarang login. Muncul peringatan saat mencoba masuk."}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Database Setup Section */}
+            {(mode === 'all' || mode === 'config') && (
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
+                        <Database size={18} className="text-indigo-600" />
+                        <h3 className="font-bold text-slate-700">Setup Database</h3>
+                    </div>
+                    <div className="p-6">
+                        <div className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200">
+                            <div className="mb-4 md:mb-0">
+                                <h4 className="font-bold text-slate-700 text-sm">Generate Soal Survey Default</h4>
+                                <p className="text-xs text-slate-500 mt-1">Buat soal default untuk survey jika belum ada di database.</p>
+                            </div>
+                            <button 
+                                onClick={async () => {
+                                    const confirmed = await showAlert('Apakah Anda yakin ingin men-generate soal survey default? Ini akan menambahkan soal ke database.', { type: 'confirm' });
+                                    if (confirmed) {
+                                        setIsSaving(true);
+                                        try {
+                                            const res = await api.seedSurveys();
+                                            if (res.success) {
+                                                await showAlert(res.message, { type: 'success' });
+                                            } else {
+                                                await showAlert("Gagal: " + res.message, { type: 'error' });
+                                            }
+                                        } catch (e: any) {
+                                            await showAlert("Terjadi kesalahan sistem.", { type: 'error' });
+                                        } finally {
+                                            setIsSaving(false);
+                                        }
+                                    }
+                                }}
+                                disabled={isSaving}
+                                className="px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-sm disabled:opacity-50 flex items-center gap-2 text-sm whitespace-nowrap"
+                            >
+                                {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Database size={16} />}
+                                Generate Soal Survey
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Admin Management Section */}
-            <AdminManagement currentUser={currentUser} onDataChange={onDataChange} />
+            {(mode === 'all' || mode === 'admin') && (
+                <AdminManagement currentUser={currentUser} onDataChange={onDataChange} />
+            )}
         </div>
     );
 };

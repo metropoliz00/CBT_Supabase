@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Home, LogOut, Menu, Monitor, Group, Clock, Printer, List, Calendar, Key, FileQuestion, LayoutDashboard, ClipboardList, BarChart3, Award, RefreshCw, X, CreditCard, ChevronDown, ChevronRight, Settings, AlertCircle } from 'lucide-react';
+import { Home, LogOut, Menu, Monitor, Group, Clock, Printer, List, Calendar, Key, FileQuestion, LayoutDashboard, ClipboardList, BarChart3, Award, RefreshCw, X, CreditCard, ChevronDown, ChevronRight, Settings, AlertCircle, ShieldCheck, Globe } from 'lucide-react';
 import { api } from '../services/api';
 import { supabase } from '../services/supabase';
 import { User } from '../types';
@@ -28,7 +28,7 @@ interface AdminDashboardProps {
     onLogout: () => void;
 }
 
-type TabType = 'overview' | 'rekap' | 'rekap_survey' | 'analisis' | 'ranking' | 'bank_soal' | 'data_user' | 'status_tes' | 'kelompok_tes' | 'rilis_token' | 'atur_sesi' | 'atur_gelombang' | 'cetak_absensi' | 'cetak_kartu' | 'settings';
+type TabType = 'overview' | 'rekap' | 'rekap_survey' | 'analisis' | 'ranking' | 'bank_soal' | 'data_user' | 'status_tes' | 'kelompok_tes' | 'rilis_token' | 'atur_sesi' | 'atur_gelombang' | 'cetak_absensi' | 'cetak_kartu' | 'settings' | 'dev_settings' | 'admin_management' | 'session_management' | 'system_config';
 
 // Define Menu Structure Interface
 interface MenuItem {
@@ -41,6 +41,7 @@ interface MenuItem {
 interface MenuGroup {
     id: string;
     label: string;
+    icon?: React.ElementType;
     items: MenuItem[];
 }
 
@@ -73,7 +74,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
       'main': true,
       'ujian': true,
-      'laporan': false
+      'laporan': false,
+      'sistem': false
   });
 
   // FIX: Local state for current user to allow updates without re-login
@@ -138,10 +140,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
         ]
     },
     {
-        id: 'pengaturan',
-        label: 'Pengaturan',
+        id: 'sistem',
+        label: 'Sistem',
         items: [
-            { id: 'settings', label: 'Setting Sistem', icon: Settings, roles: ['admin_pusat'] },
+            { id: 'system_config', label: 'Konfigurasi', icon: Settings, roles: ['admin_pusat'] },
+            { id: 'session_management', label: 'Pengaturan Sesi', icon: Clock, roles: ['admin_pusat'] },
+            { id: 'admin_management', label: 'Manajemen Akun', icon: ShieldCheck, roles: ['admin_pusat'] },
+            { id: 'dev_settings', label: 'Pengaturan Pop-up', icon: Globe, roles: ['admin_pusat'] },
         ]
     }
   ];
@@ -473,7 +478,38 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                 {activeTab === 'rekap_survey' && currentUserState.role === 'admin_pusat' && <RekapSurveyTab students={dashboardData.allUsers || []} currentUser={currentUserState} />}
                 {activeTab === 'ranking' && (currentUserState.role === 'admin_pusat' || (currentUserState.role === 'admin_sekolah' && dashboardData.configs?.SHOW_REKAP_TO_PROCTOR === 'TRUE')) && <RankingTab students={dashboardData.allUsers} currentUser={currentUserState} />}
                 {activeTab === 'analisis' && currentUserState.role === 'admin_pusat' && <AnalisisTab students={dashboardData.allUsers} />}
-                {activeTab === 'settings' && currentUserState.role === 'admin_pusat' && <SettingsTab currentUser={currentUserState} onDataChange={fetchData} configs={dashboardData.configs || {}} />}
+                {activeTab === 'system_config' && currentUserState.role === 'admin_pusat' && (
+                    <SettingsTab 
+                        currentUser={currentUserState} 
+                        onDataChange={fetchData} 
+                        configs={dashboardData.configs || {}} 
+                        mode="config"
+                    />
+                )}
+                {activeTab === 'session_management' && currentUserState.role === 'admin_pusat' && (
+                    <SettingsTab 
+                        currentUser={currentUserState} 
+                        onDataChange={fetchData} 
+                        configs={dashboardData.configs || {}} 
+                        mode="session"
+                    />
+                )}
+                {activeTab === 'admin_management' && currentUserState.role === 'admin_pusat' && (
+                    <SettingsTab 
+                        currentUser={currentUserState} 
+                        onDataChange={fetchData} 
+                        configs={dashboardData.configs || {}} 
+                        mode="admin"
+                    />
+                )}
+                {activeTab === 'dev_settings' && currentUserState.role === 'admin_pusat' && (
+                    <SettingsTab 
+                        currentUser={currentUserState} 
+                        onDataChange={fetchData} 
+                        configs={dashboardData.configs || {}} 
+                        mode="dev"
+                    />
+                )}
              </>
 
           )}
