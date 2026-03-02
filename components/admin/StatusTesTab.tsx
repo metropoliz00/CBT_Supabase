@@ -4,6 +4,7 @@ import { Monitor, Search, PlayCircle, Key, CheckCircle2, Loader2 } from 'lucide-
 import { api } from '../../services/api';
 import { User } from '../../types';
 import { useAlert } from '../../context/AlertContext';
+import Pagination from './Pagination';
 
 const StatusTesTab = ({ currentUser, students, refreshData }: { currentUser: User, students: any[], refreshData: () => void }) => {
     const { showAlert } = useAlert();
@@ -11,6 +12,8 @@ const StatusTesTab = ({ currentUser, students, refreshData }: { currentUser: Use
     const [filterSchool, setFilterSchool] = useState('all');
     const [filterKecamatan, setFilterKecamatan] = useState('all');
     const [resetting, setResetting] = useState<string | null>(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
     const uniqueSchools = useMemo<string[]>(() => {
         let relevantStudents = students;
         if (currentUser.role === 'proktor' && currentUser.id_sekolah) {
@@ -66,6 +69,11 @@ const StatusTesTab = ({ currentUser, students, refreshData }: { currentUser: Use
         return filteredStudents;
     }, [students, searchTerm, currentUser, filterSchool, filterKecamatan]);
     
+    const paginatedData = useMemo(() => {
+        const startIndex = (currentPage - 1) * rowsPerPage;
+        return filtered.slice(startIndex, startIndex + rowsPerPage);
+    }, [filtered, currentPage, rowsPerPage]);
+
     const handleReset = async (username: string) => { 
         const confirmed = await showAlert(`Reset login untuk ${username}? Siswa akan logout otomatis dan status menjadi OFFLINE.`, { type: 'confirm' });
         if(!confirmed) return; 
@@ -114,7 +122,16 @@ const StatusTesTab = ({ currentUser, students, refreshData }: { currentUser: Use
                     <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} /><input type="text" placeholder="Cari Peserta..." className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-100 w-full" value={searchTerm} onChange={e => setSearchTerm(e.target.value)}/></div>
                 </div>
              </div>
-             <div className="overflow-x-auto"><table className="w-full text-sm text-left"><thead className="bg-slate-50 text-slate-500 font-bold uppercase text-xs"><tr><th className="p-4">Nama Peserta</th><th className="p-4">Username</th><th className="p-4">Sekolah</th><th className="p-4">Kecamatan</th><th className="p-4">Status</th><th className="p-4">Ujian Aktif</th><th className="p-4 text-center">Aksi</th></tr></thead><tbody className="divide-y divide-slate-50">{filtered.length === 0 ? <tr><td colSpan={7} className="p-8 text-center text-slate-400">Tidak ada data.</td></tr> : filtered.map((s, i) => (<tr key={i} className="hover:bg-slate-50"><td className="p-4 font-bold text-slate-700">{s.nama_lengkap || s.fullname}</td><td className="p-4 font-mono text-slate-500">{s.username}</td><td className="p-4 text-slate-600">{s.kelas_id || s.school}</td><td className="p-4 text-slate-600">{s.kecamatan || s.id_kecamatan || '-'}</td><td className="p-4">{renderStatusBadge(s.status)}</td><td className="p-4 text-slate-600">{s.active_exam || '-'}</td><td className="p-4 text-center"><button onClick={() => handleReset(s.username)} disabled={!!resetting} className="bg-amber-50 text-amber-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-amber-100 transition border border-amber-100 flex items-center gap-2 mx-auto disabled:opacity-50 disabled:cursor-not-allowed">{resetting === s.username ? <><Loader2 size={12} className="animate-spin"/> Processing...</> : "Reset Login"}</button></td></tr>))}</tbody></table></div>
+             <div className="overflow-x-auto"><table className="w-full text-sm text-left"><thead className="bg-slate-50 text-slate-500 font-bold uppercase text-xs"><tr><th className="p-4">Nama Peserta</th><th className="p-4">Username</th><th className="p-4">Sekolah</th><th className="p-4">Kecamatan</th><th className="p-4">Status</th><th className="p-4">Ujian Aktif</th><th className="p-4 text-center">Aksi</th></tr></thead><tbody className="divide-y divide-slate-50">{paginatedData.length === 0 ? <tr><td colSpan={7} className="p-8 text-center text-slate-400">Tidak ada data.</td></tr> : paginatedData.map((s, i) => (<tr key={i} className="hover:bg-slate-50"><td className="p-4 font-bold text-slate-700">{s.nama_lengkap || s.fullname}</td><td className="p-4 font-mono text-slate-500">{s.username}</td><td className="p-4 text-slate-600">{s.kelas_id || s.school}</td><td className="p-4 text-slate-600">{s.kecamatan || s.id_kecamatan || '-'}</td><td className="p-4">{renderStatusBadge(s.status)}</td><td className="p-4 text-slate-600">{s.active_exam || '-'}</td><td className="p-4 text-center"><button onClick={() => handleReset(s.username)} disabled={!!resetting} className="bg-amber-50 text-amber-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-amber-100 transition border border-amber-100 flex items-center gap-2 mx-auto disabled:opacity-50 disabled:cursor-not-allowed">{resetting === s.username ? <><Loader2 size={12} className="animate-spin"/> Processing...</> : "Reset Login"}</button></td></tr>))}</tbody></table></div>
+             <div className="p-4 border-t border-slate-100">
+                 <Pagination 
+                     currentPage={currentPage} 
+                     totalRows={filtered.length} 
+                     rowsPerPage={rowsPerPage} 
+                     onPageChange={setCurrentPage} 
+                     onRowsPerPageChange={setRowsPerPage} 
+                 />
+             </div>
         </div>
     )
 };

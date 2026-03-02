@@ -17,6 +17,7 @@ const SettingsTab = ({ currentUser, onDataChange, configs }: { currentUser: User
     const [examDuration, setExamDuration] = useState<number>(Number(configs.DURATION) || 60);
     const [showSurvey, setShowSurvey] = useState<boolean>(configs.SHOW_SURVEY === 'TRUE');
     const [allowProctorSessionEdit, setAllowProctorSessionEdit] = useState<boolean>(configs.ALLOW_PROCTOR_SESSION_EDIT === 'TRUE');
+    const [showRekapToProctor, setShowRekapToProctor] = useState<boolean>(configs.SHOW_REKAP_TO_PROCTOR === 'TRUE');
     const [sessionTimes, setSessionTimes] = useState<Record<string, { active: boolean }>>(() => {
         const sessions: Record<string, { active: boolean }> = {};
         for (let i = 1; i <= 4; i++) {
@@ -56,6 +57,7 @@ const SettingsTab = ({ currentUser, onDataChange, configs }: { currentUser: User
             setExamDuration(Number(configs.DURATION) || 60);
             setShowSurvey(configs.SHOW_SURVEY === 'TRUE');
             setAllowProctorSessionEdit(configs.ALLOW_PROCTOR_SESSION_EDIT === 'TRUE');
+            setShowRekapToProctor(configs.SHOW_REKAP_TO_PROCTOR === 'TRUE');
             setSsSoalId(configs.SS_SOAL_ID || '');
             setSsHasilId(configs.SS_HASIL_ID || '');
             
@@ -194,6 +196,24 @@ const SettingsTab = ({ currentUser, onDataChange, configs }: { currentUser: User
                             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${allowProctorSessionEdit ? 'bg-indigo-600' : 'bg-slate-300'}`}
                         >
                             <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${allowProctorSessionEdit ? 'translate-x-6' : 'translate-x-1'}`} />
+                        </button>
+                    </div>
+
+                    {/* Show Rekap to Proctor Toggle */}
+                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200">
+                        <div>
+                            <h4 className="font-bold text-slate-700 text-sm">Tampilkan Rekap & Peringkat (Proktor)</h4>
+                            <p className="text-xs text-slate-500 mt-1">Izinkan Admin Sekolah/Proktor untuk melihat Rekap Nilai dan Peringkat.</p>
+                        </div>
+                        <button 
+                            onClick={() => {
+                                const newValue = !showRekapToProctor;
+                                setShowRekapToProctor(newValue);
+                                handleSaveConfig('SHOW_REKAP_TO_PROCTOR', newValue ? 'TRUE' : 'FALSE');
+                            }}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${showRekapToProctor ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                        >
+                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showRekapToProctor ? 'translate-x-6' : 'translate-x-1'}`} />
                         </button>
                     </div>
 

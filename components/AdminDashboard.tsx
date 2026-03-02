@@ -101,6 +101,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
 
   // Define Menu Configuration
   const menuConfig: MenuGroup[] = useMemo(() => {
+    const showRekapToProctor = dashboardData.configs?.SHOW_REKAP_TO_PROCTOR === 'TRUE';
+    const rekapRoles = showRekapToProctor ? ['admin_pusat', 'admin_sekolah'] : ['admin_pusat'];
+
     return [
     {
         id: 'main',
@@ -128,10 +131,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
         label: 'Laporan & Data',
         items: [
             { id: 'bank_soal', label: 'Bank Soal & Survey', icon: FileQuestion, roles: ['admin_pusat'] },
-            { id: 'rekap', label: 'Rekap Nilai', icon: LayoutDashboard, roles: ['admin_pusat'] },
+            { id: 'rekap', label: 'Rekap Nilai', icon: LayoutDashboard, roles: rekapRoles },
             { id: 'rekap_survey', label: 'Rekap Survey', icon: ClipboardList, roles: ['admin_pusat'] },
             { id: 'analisis', label: 'Analisis Soal', icon: BarChart3, roles: ['admin_pusat'] },
-            { id: 'ranking', label: 'Peringkat', icon: Award, roles: ['admin_pusat'] },
+            { id: 'ranking', label: 'Peringkat', icon: Award, roles: rekapRoles },
         ]
     },
     {
@@ -466,9 +469,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                 {activeTab === 'atur_gelombang' && currentUserState.role === 'admin_pusat' && <AturGelombangTab students={dashboardData.allUsers || []} currentUser={currentUserState} refreshData={() => fetchData(true)} />}
                 {activeTab === 'rilis_token' && <RilisTokenTab currentUser={currentUserState} token={dashboardData.token} duration={dashboardData.duration} maxQuestions={dashboardData.maxQuestions} surveyDuration={dashboardData.surveyDuration} refreshData={fetchData} isRefreshing={isRefreshing} configs={dashboardData.configs || {}} activeSessions={dashboardData.activeSessions || []} schedules={dashboardData.schedules || []} />}
                 {activeTab === 'bank_soal' && currentUserState.role === 'admin_pusat' && <BankSoalTab />}
-                {activeTab === 'rekap' && currentUserState.role === 'admin_pusat' && <RekapTab students={dashboardData.allUsers} currentUser={currentUserState} />}
+                {activeTab === 'rekap' && (currentUserState.role === 'admin_pusat' || (currentUserState.role === 'admin_sekolah' && dashboardData.configs?.SHOW_REKAP_TO_PROCTOR === 'TRUE')) && <RekapTab students={dashboardData.allUsers} currentUser={currentUserState} />}
                 {activeTab === 'rekap_survey' && currentUserState.role === 'admin_pusat' && <RekapSurveyTab students={dashboardData.allUsers || []} currentUser={currentUserState} />}
-                {activeTab === 'ranking' && currentUserState.role === 'admin_pusat' && <RankingTab students={dashboardData.allUsers} currentUser={currentUserState} />}
+                {activeTab === 'ranking' && (currentUserState.role === 'admin_pusat' || (currentUserState.role === 'admin_sekolah' && dashboardData.configs?.SHOW_REKAP_TO_PROCTOR === 'TRUE')) && <RankingTab students={dashboardData.allUsers} currentUser={currentUserState} />}
                 {activeTab === 'analisis' && currentUserState.role === 'admin_pusat' && <AnalisisTab students={dashboardData.allUsers} />}
                 {activeTab === 'settings' && currentUserState.role === 'admin_pusat' && <SettingsTab currentUser={currentUserState} onDataChange={fetchData} configs={dashboardData.configs || {}} />}
              </>
