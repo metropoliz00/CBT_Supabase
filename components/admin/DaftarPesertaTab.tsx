@@ -57,7 +57,8 @@ const DaftarPesertaTab = ({ currentUser, onDataChange }: { currentUser: User, on
             photo_url: user.photo_url || '',
             id_sekolah: user.id_sekolah || '', 
             id_gugus: user.id_gugus || '', 
-            id_kecamatan: user.id_kecamatan || ''
+            id_kecamatan: user.id_kecamatan || '',
+            active_exam: user.active_exam || ''
         }); 
         setIsModalOpen(true); 
     };
@@ -69,7 +70,8 @@ const DaftarPesertaTab = ({ currentUser, onDataChange }: { currentUser: User, on
             kecamatan: '', jenis_kelamin: 'L', photo: '', photo_url: '',
             id_sekolah: currentUser.role === 'admin_sekolah' ? (currentUser.id_sekolah || '') : '', 
             id_gugus: currentUser.role === 'admin_sekolah' ? (currentUser.id_gugus || '') : '',
-            id_kecamatan: currentUser.role === 'admin_sekolah' ? (currentUser.id_kecamatan || '') : ''
+            id_kecamatan: currentUser.role === 'admin_sekolah' ? (currentUser.id_kecamatan || '') : '',
+            active_exam: ''
         }); 
         setIsModalOpen(true); 
     };
@@ -89,6 +91,14 @@ const DaftarPesertaTab = ({ currentUser, onDataChange }: { currentUser: User, on
                 payload.id_sekolah = currentUser.id_sekolah || payload.id_sekolah;
                 payload.id_gugus = currentUser.id_gugus || payload.id_gugus;
                 payload.id_kecamatan = currentUser.id_kecamatan || payload.id_kecamatan;
+            }
+
+            // Check if active_exam changed
+            if (formData.id) {
+                const existingUser = users.find(u => u.id === formData.id);
+                if (existingUser && existingUser.active_exam !== payload.active_exam) {
+                    (payload as any).status = 'OFFLINE';
+                }
             }
 
             await api.saveUser(payload); 
@@ -386,7 +396,12 @@ const DaftarPesertaTab = ({ currentUser, onDataChange }: { currentUser: User, on
                                             <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">ID Sekolah</label><input type="text" className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-100 outline-none" value={formData.id_sekolah} onChange={e => setFormData({...formData, id_sekolah: e.target.value})} placeholder="SCH001" disabled={currentUser.role !== 'admin_pusat'} /></div>
                                             <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">ID Gugus</label><input type="text" className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-100 outline-none" value={formData.id_gugus} onChange={e => setFormData({...formData, id_gugus: e.target.value})} placeholder="G01" disabled={currentUser.role !== 'admin_pusat'} /></div>
                                         </div>
-                                        <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">ID Kecamatan</label><input type="text" className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-100 outline-none" value={formData.id_kecamatan} onChange={e => setFormData({...formData, id_kecamatan: e.target.value})} placeholder="KEC01" disabled={currentUser.role !== 'admin_pusat'} /></div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">ID Kecamatan</label><input type="text" className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-100 outline-none" value={formData.id_kecamatan} onChange={e => setFormData({...formData, id_kecamatan: e.target.value})} placeholder="KEC01" disabled={currentUser.role !== 'admin_pusat'} /></div>
+                                            {formData.role === 'siswa' && (
+                                                <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Ujian Aktif</label><input type="text" className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-100 outline-none" value={formData.active_exam || ''} onChange={e => setFormData({...formData, active_exam: e.target.value})} placeholder="Misal: matematika" /></div>
+                                            )}
+                                        </div>
                                     </>
                                 )}
                                 <div className="pt-4 flex gap-3"><button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-2.5 border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50">Batal</button><button type="submit" disabled={isSaving} className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 flex justify-center items-center gap-2">{isSaving ? <Loader2 size={18} className="animate-spin"/> : <Save size={18}/>} Simpan</button></div>
