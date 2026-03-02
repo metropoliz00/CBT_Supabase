@@ -4,6 +4,7 @@ import { Key, User as UserIcon, Monitor, AlertCircle, School, LogOut, Check, Eye
 import StudentExam from './components/StudentExam';
 import StudentSurvey from './components/StudentSurvey';
 import AdminDashboard from './components/AdminDashboard';
+import DeveloperPopup from './components/DeveloperPopup';
 import { api } from './services/api';
 import { useAlert } from './context/AlertContext';
 
@@ -431,6 +432,7 @@ function App() {
       const isOffline = sysInfo.status === 'Offline';
       return (
         <div className="min-h-screen relative flex items-center justify-center p-4 font-sans fade-in overflow-hidden" onClick={enterFullscreen}>
+            <DeveloperPopup configs={configs} />
             {/* Background Image Layer with 60% Opacity */}
             <div 
                 className="absolute inset-0 z-0 bg-cover bg-center"
@@ -495,6 +497,7 @@ function App() {
         <>
             {loading && <LoadingOverlay message={loadingMessage} />}
             <div className="min-h-screen flex items-center justify-center p-4 bg-slate-50 font-sans overflow-hidden relative" onClick={enterFullscreen}>
+                <DeveloperPopup configs={configs} />
                 {/* Background Image Layer with 20% Opacity */}
                 <div 
                     className="absolute inset-0 z-0 bg-cover bg-center"

@@ -18,6 +18,10 @@ const SettingsTab = ({ currentUser, onDataChange, configs }: { currentUser: User
     const [showSurvey, setShowSurvey] = useState<boolean>(configs.SHOW_SURVEY === 'TRUE');
     const [allowProctorSessionEdit, setAllowProctorSessionEdit] = useState<boolean>(configs.ALLOW_PROCTOR_SESSION_EDIT === 'TRUE');
     const [showRekapToProctor, setShowRekapToProctor] = useState<boolean>(configs.SHOW_REKAP_TO_PROCTOR === 'TRUE');
+    const [devShow, setDevShow] = useState<boolean>(configs.DEV_SHOW === 'TRUE');
+    const [devName, setDevName] = useState<string>(configs.DEV_NAME || '');
+    const [devPhoto, setDevPhoto] = useState<string>(configs.DEV_PHOTO_URL || '');
+    const [devQuote, setDevQuote] = useState<string>(configs.DEV_QUOTE || '');
     const [sessionTimes, setSessionTimes] = useState<Record<string, { active: boolean }>>(() => {
         const sessions: Record<string, { active: boolean }> = {};
         for (let i = 1; i <= 4; i++) {
@@ -58,6 +62,10 @@ const SettingsTab = ({ currentUser, onDataChange, configs }: { currentUser: User
             setShowSurvey(configs.SHOW_SURVEY === 'TRUE');
             setAllowProctorSessionEdit(configs.ALLOW_PROCTOR_SESSION_EDIT === 'TRUE');
             setShowRekapToProctor(configs.SHOW_REKAP_TO_PROCTOR === 'TRUE');
+            setDevShow(configs.DEV_SHOW === 'TRUE');
+            setDevName(configs.DEV_NAME || '');
+            setDevPhoto(configs.DEV_PHOTO_URL || '');
+            setDevQuote(configs.DEV_QUOTE || '');
             setSsSoalId(configs.SS_SOAL_ID || '');
             setSsHasilId(configs.SS_HASIL_ID || '');
             
@@ -269,6 +277,97 @@ const SettingsTab = ({ currentUser, onDataChange, configs }: { currentUser: User
                             />
                             <button 
                                 onClick={() => handleSaveConfig('MAX_QUESTIONS', String(maxQuestions))}
+                                disabled={isSaving}
+                                className="px-4 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition shadow-sm disabled:opacity-50"
+                            >
+                                <Save size={18}/>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Developer Popup Settings Section */}
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Globe size={18} className="text-indigo-600" />
+                        <h3 className="font-bold text-slate-700">Pengaturan Pop-up Pengembang</h3>
+                    </div>
+                </div>
+                <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Show Developer Popup Toggle */}
+                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200 md:col-span-2">
+                        <div>
+                            <h4 className="font-bold text-slate-700 text-sm">Tampilkan Pop-up Pengembang</h4>
+                            <p className="text-xs text-slate-500 mt-1">Tampilkan tombol pop-up pengembang di halaman System Check dan Login.</p>
+                        </div>
+                        <button 
+                            onClick={() => {
+                                const newValue = !devShow;
+                                setDevShow(newValue);
+                                handleSaveConfig('DEV_SHOW', newValue ? 'TRUE' : 'FALSE');
+                            }}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${devShow ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                        >
+                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${devShow ? 'translate-x-6' : 'translate-x-1'}`} />
+                        </button>
+                    </div>
+
+                    {/* Developer Name */}
+                    <div className="space-y-2">
+                        <label className="block text-xs font-bold text-slate-500 uppercase">Nama Pengembang</label>
+                        <div className="flex gap-2">
+                            <input 
+                                type="text" 
+                                className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 outline-none"
+                                value={devName}
+                                onChange={(e) => setDevName(e.target.value)}
+                                placeholder="Contoh: MeyGa Team"
+                            />
+                            <button 
+                                onClick={() => handleSaveConfig('DEV_NAME', devName)}
+                                disabled={isSaving}
+                                className="px-4 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition shadow-sm disabled:opacity-50"
+                            >
+                                <Save size={18}/>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Developer Photo URL */}
+                    <div className="space-y-2">
+                        <label className="block text-xs font-bold text-slate-500 uppercase">URL Foto Pengembang</label>
+                        <div className="flex gap-2">
+                            <input 
+                                type="text" 
+                                className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 outline-none"
+                                value={devPhoto}
+                                onChange={(e) => setDevPhoto(e.target.value)}
+                                placeholder="https://..."
+                            />
+                            <button 
+                                onClick={() => handleSaveConfig('DEV_PHOTO_URL', devPhoto)}
+                                disabled={isSaving}
+                                className="px-4 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition shadow-sm disabled:opacity-50"
+                            >
+                                <Save size={18}/>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Developer Quote */}
+                    <div className="space-y-2 md:col-span-2">
+                        <label className="block text-xs font-bold text-slate-500 uppercase">Quote Pengembang</label>
+                        <div className="flex gap-2">
+                            <textarea 
+                                className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 outline-none min-h-[80px]"
+                                value={devQuote}
+                                onChange={(e) => setDevQuote(e.target.value)}
+                                placeholder="Tuliskan quote atau pesan..."
+                            />
+                            <button 
+                                onClick={() => handleSaveConfig('DEV_QUOTE', devQuote)}
                                 disabled={isSaving}
                                 className="px-4 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition shadow-sm disabled:opacity-50"
                             >
