@@ -60,7 +60,7 @@ const DeveloperPopup: React.FC<DeveloperPopupProps> = ({ configs }) => {
                             </div>
                             
                             <div className="px-6 pb-8 pt-0 relative flex flex-col items-center text-center">
-                                <div className="w-24 h-24 rounded-full border-4 border-white shadow-md overflow-hidden -mt-12 bg-white mb-4">
+                                <div className="w-32 aspect-[4/6] rounded-xl border-4 border-white shadow-lg overflow-hidden -mt-24 bg-white mb-4">
                                     <img 
                                         src={devPhoto} 
                                         alt={devName} 
