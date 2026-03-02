@@ -146,7 +146,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
             { id: 'system_config', label: 'Konfigurasi', icon: Settings, roles: ['admin_pusat'] },
             { id: 'session_management', label: 'Pengaturan Sesi', icon: Clock, roles: ['admin_pusat'] },
             { id: 'admin_management', label: 'Manajemen Akun', icon: ShieldCheck, roles: ['admin_pusat'] },
-            { id: 'dev_settings', label: 'Pengaturan Pop-up', icon: Globe, roles: ['admin_pusat'] },
+            { id: 'dev_settings', label: 'Pengembang Aplikasi', icon: Globe, roles: ['admin_pusat'] },
         ]
     }
   ];

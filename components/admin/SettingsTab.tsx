@@ -295,7 +295,7 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
                     <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <Globe size={18} className="text-indigo-600" />
-                            <h3 className="font-bold text-slate-700">Pengaturan Pop-up Pengembang</h3>
+                            <h3 className="font-bold text-slate-700">Pengembang Aplikasi</h3>
                         </div>
                     </div>
                     <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
