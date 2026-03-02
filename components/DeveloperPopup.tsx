@@ -9,8 +9,8 @@ interface DeveloperPopupProps {
 const DeveloperPopup: React.FC<DeveloperPopupProps> = ({ configs }) => {
     const [isOpen, setIsOpen] = useState(false);
 
-    // Only show if DEV_SHOW is TRUE
-    if (configs.DEV_SHOW !== 'TRUE') return null;
+    // Only show if DEV_SHOW is TRUE (default to true if not explicitly set to FALSE)
+    if (configs.DEV_SHOW === 'FALSE') return null;
 
     const devName = configs.DEV_NAME || 'Pengembang Aplikasi';
     const devPhoto = configs.DEV_PHOTO_URL || 'https://picsum.photos/seed/dev/200/200';

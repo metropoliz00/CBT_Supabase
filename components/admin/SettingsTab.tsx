@@ -18,7 +18,7 @@ const SettingsTab = ({ currentUser, onDataChange, configs }: { currentUser: User
     const [showSurvey, setShowSurvey] = useState<boolean>(configs.SHOW_SURVEY === 'TRUE');
     const [allowProctorSessionEdit, setAllowProctorSessionEdit] = useState<boolean>(configs.ALLOW_PROCTOR_SESSION_EDIT === 'TRUE');
     const [showRekapToProctor, setShowRekapToProctor] = useState<boolean>(configs.SHOW_REKAP_TO_PROCTOR === 'TRUE');
-    const [devShow, setDevShow] = useState<boolean>(configs.DEV_SHOW === 'TRUE');
+    const [devShow, setDevShow] = useState<boolean>(configs.DEV_SHOW !== 'FALSE');
     const [devName, setDevName] = useState<string>(configs.DEV_NAME || '');
     const [devPhoto, setDevPhoto] = useState<string>(configs.DEV_PHOTO_URL || '');
     const [devQuote, setDevQuote] = useState<string>(configs.DEV_QUOTE || '');
@@ -62,7 +62,7 @@ const SettingsTab = ({ currentUser, onDataChange, configs }: { currentUser: User
             setShowSurvey(configs.SHOW_SURVEY === 'TRUE');
             setAllowProctorSessionEdit(configs.ALLOW_PROCTOR_SESSION_EDIT === 'TRUE');
             setShowRekapToProctor(configs.SHOW_REKAP_TO_PROCTOR === 'TRUE');
-            setDevShow(configs.DEV_SHOW === 'TRUE');
+            setDevShow(configs.DEV_SHOW !== 'FALSE');
             setDevName(configs.DEV_NAME || '');
             setDevPhoto(configs.DEV_PHOTO_URL || '');
             setDevQuote(configs.DEV_QUOTE || '');
