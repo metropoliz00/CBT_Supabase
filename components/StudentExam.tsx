@@ -221,7 +221,6 @@ const StudentExam: React.FC<StudentExamProps> = ({ exam, questions, userFullName
     } catch (error) {
       console.error("Error submitting:", error);
       setIsSubmitting(false);
-      await showAlert("Gagal mengirim jawaban. Silakan periksa koneksi internet anda dan coba lagi.", { type: 'error' });
     }
   };
 
@@ -230,12 +229,22 @@ const StudentExam: React.FC<StudentExamProps> = ({ exam, questions, userFullName
   useEffect(() => { executeFinishRef.current = executeFinish; });
 
   useEffect(() => {
-    if (timeLeft <= 0) return;
+    // Check initially
+    const now = Date.now();
+    const elapsedSeconds = Math.floor((now - startTime) / 1000);
+    const totalSeconds = exam.durasi * 60;
+    const initialRemaining = totalSeconds - elapsedSeconds;
+    
+    if (initialRemaining <= 0) {
+        setTimeLeft(0);
+        executeFinishRef.current(true);
+        return;
+    }
+
     const intervalId = setInterval(() => {
-      const now = Date.now();
-      const elapsedSeconds = Math.floor((now - startTime) / 1000);
-      const totalSeconds = exam.durasi * 60;
-      const remaining = totalSeconds - elapsedSeconds;
+      const currentNow = Date.now();
+      const currentElapsed = Math.floor((currentNow - startTime) / 1000);
+      const remaining = totalSeconds - currentElapsed;
       if (remaining <= 0) {
         clearInterval(intervalId);
         setTimeLeft(0);

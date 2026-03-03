@@ -361,7 +361,7 @@ function App() {
         localStorage.removeItem(lsKey);
         
         if (isTimeout) {
-            await showAlert("Waktu Ujian Telah Habis. Jawaban anda telah tersimpan secara otomatis. Sistem akan logout.", { type: 'warning', title: 'Waktu Habis' });
+            showAlert("Waktu Ujian Telah Habis. Jawaban anda telah tersimpan secara otomatis. Sistem akan logout.", { type: 'warning', title: 'Waktu Habis' });
             handleLogout();
         } else {
             // Check for Survey Logic
@@ -384,11 +384,19 @@ function App() {
                 handleLogout();
             }
         }
-    } catch (err) { await showAlert("Gagal menyimpan jawaban. Coba lagi.", { type: 'error' }); console.error(err); } finally { setLoading(false); }
+    } catch (err) { 
+        await showAlert("Gagal menyimpan jawaban. Coba lagi.", { type: 'error' }); 
+        console.error(err); 
+        throw err;
+    } finally { 
+        setLoading(false); 
+    }
   };
 
-  const handleFinishSurvey = async () => {
-      await showAlert("Survey Selesai! Terima kasih.", { type: 'success' });
+  const handleFinishSurvey = async (isTimeout?: boolean) => {
+      if (!isTimeout) {
+          await showAlert("Survey Selesai! Terima kasih.", { type: 'success' });
+      }
       handleLogout();
       setActiveSurveyType(null);
   };

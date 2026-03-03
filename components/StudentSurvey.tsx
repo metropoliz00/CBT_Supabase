@@ -7,7 +7,7 @@ import { useAlert } from '../context/AlertContext';
 interface StudentSurveyProps {
   user: User;
   surveyType: 'Survey_Karakter' | 'Survey_Lingkungan';
-  onFinish: () => void;
+  onFinish: (isTimeout?: boolean) => void;
 }
 
 const DEFAULT_LIKERT_OPTIONS = [
@@ -85,8 +85,10 @@ const StudentSurvey: React.FC<StudentSurveyProps> = ({ user, surveyType, onFinis
                 answers,
                 startTime
             });
-            if (isTimeout) await showAlert("Waktu survey habis. Jawaban tersimpan otomatis.", { type: 'warning', title: 'Waktu Habis' });
-            onFinish();
+            if (isTimeout) {
+                showAlert("Waktu survey habis. Jawaban tersimpan otomatis.", { type: 'warning', title: 'Waktu Habis' });
+            }
+            onFinish(isTimeout);
         } catch(e) {
             console.error(e);
             await showAlert("Gagal mengirim survey. Coba lagi.", { type: 'error' });
@@ -117,7 +119,7 @@ const StudentSurvey: React.FC<StudentSurveyProps> = ({ user, surveyType, onFinis
             <div className="min-h-screen flex items-center justify-center bg-slate-50 flex-col gap-4 p-8 text-center">
                 <AlertCircle size={48} className="text-slate-300"/>
                 <h2 className="text-xl font-bold text-slate-700">Survey Belum Tersedia</h2>
-                <button onClick={onFinish} className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold">Kembali</button>
+                <button onClick={() => onFinish()} className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold">Kembali</button>
             </div>
         );
     }
