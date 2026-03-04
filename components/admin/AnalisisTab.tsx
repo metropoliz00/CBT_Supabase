@@ -247,7 +247,7 @@ const AnalisisTab = ({ students }: { students: any[] }) => {
                             <th className="p-3 bg-slate-50" rowSpan={2}>Sekolah</th>
                             <th className="p-3 bg-slate-50" rowSpan={2}>Kecamatan</th>
                             <th className="p-3 border-r border-slate-200 bg-slate-50" rowSpan={2}>Nilai</th>
-                            {questionIds.map(q => (<th key={q} className="p-3 text-center min-w-[40px] bg-slate-50 border-b border-slate-200">{q}</th>))}
+                            {questionIds.map((q, index) => (<th key={q} className="p-3 text-center min-w-[40px] bg-slate-50 border-b border-slate-200">Q{index + 1}</th>))}
                         </tr>
                         <tr>
                             {questionIds.map(q => (<th key={q} className="p-1 text-[10px] font-normal text-slate-400 text-center min-w-[40px] bg-slate-50 truncate max-w-[100px]" title={questionMap[q]}>{questionMap[q] || '-'}</th>))}
