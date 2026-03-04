@@ -262,7 +262,15 @@ const AnalisisTab = ({ students }: { students: any[] }) => {
                             <td className="p-3 text-slate-600">{d.school || d.sekolah}</td>
                             <td className="p-3 text-slate-600">{d.kecamatan || userMap[d.username]?.kecamatan || '-'}</td>
                             <td className="p-3 font-bold text-indigo-600 border-r border-slate-100">{d.score || d.nilai}</td>
-                            {questionIds.map(q => { const val = d.ansMap[q]; const isCorrect = val === 1; return (<td key={q} className={`p-1 text-center font-bold border-l border-slate-50 ${val === undefined ? 'text-slate-300' : isCorrect ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>{val === undefined ? '-' : val}</td>); })}
+                            {questionIds.map(q => { 
+                                const val = d.ansMap[q]; 
+                                const isCorrect = Number(val) === 1; 
+                                return (
+                                    <td key={q} className={`p-2 text-center font-bold border-l border-slate-50 ${val === undefined ? 'text-slate-300' : isCorrect ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}`}>
+                                        {val === undefined ? '-' : isCorrect ? '✓' : '✗'}
+                                    </td>
+                                ); 
+                            })}
                         </tr>)))}
                     </tbody>
                     {filteredParsedData.length > 0 && (
