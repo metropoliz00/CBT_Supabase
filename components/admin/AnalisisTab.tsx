@@ -70,6 +70,11 @@ const AnalisisTab = ({ students }: { students: any[] }) => {
         return examConfig?.max_questions || 0;
     }, [exams, selectedExam]);
 
+    // Get question map for text display
+    const questionMap = useMemo(() => {
+        return Object.fromEntries(questions.map(q => [q.id, q.text_soal]));
+    }, [questions]);
+
     const { parsedData, questionIds } = useMemo(() => {
         const filteredByPaket = data.filter(d => selectedPaket === 'all' || d.id_paket === selectedPaket);
         
@@ -236,13 +241,16 @@ const AnalisisTab = ({ students }: { students: any[] }) => {
                 <table className="w-full text-xs text-left whitespace-nowrap">
                     <thead className="bg-slate-50 font-bold text-slate-600 uppercase sticky top-0 z-20 shadow-sm">
                         <tr>
-                            <th className="p-3 w-10 text-center border-r border-slate-200 bg-slate-50">No</th>
-                            <th className="p-3 border-r border-slate-200 bg-slate-50">Username</th>
-                            <th className="p-3 sticky left-0 bg-slate-50 z-30 border-r border-slate-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Nama Peserta</th>
-                            <th className="p-3 bg-slate-50">Sekolah</th>
-                            <th className="p-3 bg-slate-50">Kecamatan</th>
-                            <th className="p-3 border-r border-slate-200 bg-slate-50">Nilai</th>
-                            {questionIds.map(q => (<th key={q} className="p-3 text-center min-w-[40px] bg-slate-50">{q}</th>))}
+                            <th className="p-3 w-10 text-center border-r border-slate-200 bg-slate-50" rowSpan={2}>No</th>
+                            <th className="p-3 border-r border-slate-200 bg-slate-50" rowSpan={2}>Username</th>
+                            <th className="p-3 sticky left-0 bg-slate-50 z-30 border-r border-slate-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" rowSpan={2}>Nama Peserta</th>
+                            <th className="p-3 bg-slate-50" rowSpan={2}>Sekolah</th>
+                            <th className="p-3 bg-slate-50" rowSpan={2}>Kecamatan</th>
+                            <th className="p-3 border-r border-slate-200 bg-slate-50" rowSpan={2}>Nilai</th>
+                            {questionIds.map(q => (<th key={q} className="p-3 text-center min-w-[40px] bg-slate-50 border-b border-slate-200">{q}</th>))}
+                        </tr>
+                        <tr>
+                            {questionIds.map(q => (<th key={q} className="p-1 text-[10px] font-normal text-slate-400 text-center min-w-[40px] bg-slate-50 truncate max-w-[100px]" title={questionMap[q]}>{questionMap[q] || '-'}</th>))}
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">

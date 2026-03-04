@@ -299,7 +299,7 @@ const BankSoalTab = () => {
                                     <th className="p-4 w-24">Paket</th>
                                     <th className="p-4 min-w-[200px]">{isSurveyMode ? 'Pernyataan Survey' : 'Teks Soal'}</th>
                                     {!isSurveyMode && <th className="p-4 w-20">Tipe</th>}
-                                    {!isSurveyMode && <th className="p-4 w-20">Kunci</th>}
+                                    {!isSurveyMode && <th className="p-4 w-48">Kunci Jawaban</th>}
                                     {isSurveyMode && (
                                         <>
                                             <th className="p-4">Skala 1</th>
@@ -352,7 +352,28 @@ const BankSoalTab = () => {
                                             {!q.gambar && q.keterangan_gambar && <span className="text-[10px] text-slate-400 block mt-0.5 italic">"{q.keterangan_gambar}"</span>}
                                         </td>
                                         {!isSurveyMode && <td className="p-4"><span className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-bold">{q.tipe_soal}</span></td>}
-                                        {!isSurveyMode && <td className="p-4 font-mono text-emerald-600 font-bold">{q.kunci_jawaban}</td>}
+                                        {!isSurveyMode && (
+                                            <td className="p-4">
+                                                <div className="font-mono text-emerald-600 font-bold">{q.kunci_jawaban}</div>
+                                                <div className="text-xs text-slate-600 font-normal truncate max-w-[150px]" title={(() => {
+                                                    if (q.tipe_soal === 'BS') return q.kunci_jawaban;
+                                                    const key = q.kunci_jawaban.toUpperCase();
+                                                    if (key === 'A') return q.opsi_a;
+                                                    if (key === 'B') return q.opsi_b;
+                                                    if (key === 'C') return q.opsi_c;
+                                                    if (key === 'D') return q.opsi_d;
+                                                    return key;
+                                                })()}>{(() => {
+                                                    if (q.tipe_soal === 'BS') return q.kunci_jawaban;
+                                                    const key = q.kunci_jawaban.toUpperCase();
+                                                    if (key === 'A') return q.opsi_a;
+                                                    if (key === 'B') return q.opsi_b;
+                                                    if (key === 'C') return q.opsi_c;
+                                                    if (key === 'D') return q.opsi_d;
+                                                    return key;
+                                                })()}</div>
+                                            </td>
+                                        )}
                                         {isSurveyMode && (
                                             <>
                                                 <td className="p-4 text-xs text-slate-500">{q.opsi_a}</td>
