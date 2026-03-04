@@ -280,6 +280,19 @@ const AnalisisTab = ({ students }: { students: any[] }) => {
                                 ))}
                             </tr>
                             <tr>
+                                <td colSpan={6} className="p-3 text-right bg-slate-100 border-r border-slate-200">Kategori Soal</td>
+                                {questionIds.map(q => {
+                                    const percent = questionStats[q]?.percent || 0;
+                                    const category = percent >= 75 ? 'Mudah' : percent >= 50 ? 'Sedang' : 'Sulit';
+                                    const color = percent >= 75 ? 'text-emerald-700' : percent >= 50 ? 'text-yellow-700' : 'text-rose-700';
+                                    return (
+                                        <td key={q} className={`p-3 text-center ${color} bg-slate-100 border-l border-slate-200 font-bold`}>
+                                            {category}
+                                        </td>
+                                    );
+                                })}
+                            </tr>
+                            <tr>
                                 <td colSpan={6} className="p-3 text-right bg-slate-100 border-r border-slate-200">% Ketercapaian</td>
                                 {questionIds.map(q => {
                                     const percent = questionStats[q]?.percent || 0;
