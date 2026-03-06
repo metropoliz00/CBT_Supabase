@@ -10,10 +10,23 @@ interface OverviewTabProps {
 
 const OverviewTab: React.FC<OverviewTabProps> = ({ dashboardData, currentUserState }) => {
     const stats = useMemo(() => {
-        // 1. Get all users
+        // If the API provided pre-calculated stats, use them
+        if (dashboardData.stats) {
+            return {
+                counts: { 
+                    OFFLINE: dashboardData.stats.offline || 0, 
+                    LOGGED_IN: dashboardData.stats.loggedIn || 0, 
+                    WORKING: dashboardData.stats.working || 0, 
+                    FINISHED: dashboardData.stats.finished || 0 
+                },
+                total: dashboardData.stats.total || 0,
+                debug: {}
+            };
+        }
+
+        // Fallback for older data or if stats missing
         let allUsers = dashboardData.allUsers || [];
         
-        // 2. Filter based on role (Robust matching)
         if (currentUserState.role === 'proktor' && currentUserState.id_sekolah) {
             const mySchoolId = String(currentUserState.id_sekolah).trim();
             allUsers = allUsers.filter((u: any) => String(u.id_sekolah || '').trim() === mySchoolId);
@@ -25,21 +38,15 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ dashboardData, currentUserSta
             allUsers = allUsers.filter((u: any) => (u.kelas_id || u.school || '').trim().toLowerCase() === mySchoolName);
         }
 
-        // 3. Filter only students (Case insensitive)
         const students = allUsers.filter((u: any) => String(u.role || '').trim().toLowerCase() === 'siswa');
 
-        // 4. Count Statuses
         let offline = 0, loggedIn = 0, working = 0, finished = 0;
         const debugStatuses: Record<string, number> = {};
 
         students.forEach((u: any) => {
-            // Normalize status
             const rawStatus = String(u.status || 'OFFLINE').toUpperCase().trim();
-            
-            // Count raw statuses for debug
             debugStatuses[rawStatus] = (debugStatuses[rawStatus] || 0) + 1;
             
-            // Use includes for broader matching
             if (rawStatus.includes('ONLINE') || rawStatus.includes('LOGGED') || rawStatus.includes('LOGIN')) {
                 loggedIn++;
             } else if (rawStatus.includes('EXAM') || rawStatus.includes('WORKING') || rawStatus.includes('MENGERJAKAN') || rawStatus.includes('ONGOING') || rawStatus.includes('START')) {
@@ -47,7 +54,6 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ dashboardData, currentUserSta
             } else if (rawStatus.includes('FINISHED') || rawStatus.includes('SELESAI') || rawStatus.includes('COMPLETED') || rawStatus.includes('DONE')) {
                 finished++;
             } else {
-                // Everything else is OFFLINE (including RESET, null, undefined)
                 offline++;
             }
         });
@@ -57,7 +63,7 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ dashboardData, currentUserSta
             total: students.length,
             debug: debugStatuses
         };
-    }, [dashboardData.allUsers, currentUserState]);
+    }, [dashboardData.allUsers, dashboardData.stats, currentUserState]);
 
     const { OFFLINE, LOGGED_IN, WORKING, FINISHED } = stats.counts;
     const BELUM_UJIAN = OFFLINE + LOGGED_IN;
