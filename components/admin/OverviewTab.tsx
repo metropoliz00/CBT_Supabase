@@ -349,7 +349,7 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ dashboardData, currentUserSta
 
             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 col-span-2">
                 <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2"><Activity size={18} className="text-indigo-500"/> Aktivitas Terbaru</h3>
-                <div className="space-y-0 h-[300px] overflow-y-auto custom-scrollbar pr-2">
+                <div className="space-y-0 h-[600px] overflow-y-auto custom-scrollbar pr-2">
                     {filteredFeed && filteredFeed.length > 0 ? (
                         filteredFeed.map((log: any, i: number) => {
                             let icon = <AlertCircle size={20}/>;
