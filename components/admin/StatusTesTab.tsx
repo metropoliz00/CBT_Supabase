@@ -13,6 +13,8 @@ const StatusTesTab = ({ currentUser, students, refreshData }: { currentUser: Use
     const [filterKecamatan, setFilterKecamatan] = useState('all');
     const [filterStatus, setFilterStatus] = useState('all');
     const [resetting, setResetting] = useState<string | null>(null);
+    const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+    const [isMassResetting, setIsMassResetting] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const uniqueSchools = useMemo<string[]>(() => {
@@ -104,6 +106,46 @@ const StatusTesTab = ({ currentUser, students, refreshData }: { currentUser: Use
             setResetting(null); 
         } 
     }
+
+    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.checked) {
+            const allUsernames = filtered.map(s => s.username);
+            setSelectedUsers(new Set(allUsernames));
+        } else {
+            setSelectedUsers(new Set());
+        }
+    };
+
+    const handleSelectUser = (username: string) => {
+        const newSelected = new Set(selectedUsers);
+        if (newSelected.has(username)) {
+            newSelected.delete(username);
+        } else {
+            newSelected.add(username);
+        }
+        setSelectedUsers(newSelected);
+    };
+
+    const handleMassReset = async () => {
+        if (selectedUsers.size === 0) return;
+        
+        const confirmed = await showAlert(`Reset login untuk ${selectedUsers.size} siswa terpilih?`, { type: 'confirm' });
+        if (!confirmed) return;
+
+        setIsMassResetting(true);
+        try {
+            await api.resetLogins(Array.from(selectedUsers));
+            await new Promise(r => setTimeout(r, 1500));
+            refreshData();
+            setSelectedUsers(new Set());
+            await showAlert(`Berhasil mereset ${selectedUsers.size} siswa.`, { type: 'success' });
+        } catch (e) {
+            console.error(e);
+            await showAlert("Gagal melakukan mass reset.", { type: 'error' });
+        } finally {
+            setIsMassResetting(false);
+        }
+    };
     
     const renderStatusBadge = (status: string) => { switch (status) { case 'WORKING': case 'EXAM': return <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 w-fit"><PlayCircle size={12}/> Mengerjakan</span>; case 'LOGGED_IN': case 'ONLINE': return <span className="bg-yellow-100 text-yellow-600 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 w-fit"><Key size={12}/> Login</span>; case 'FINISHED': return <span className="bg-emerald-100 text-emerald-600 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 w-fit"><CheckCircle2 size={12}/> Selesai</span>; case 'OFFLINE': default: return <span className="bg-slate-100 text-slate-500 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 w-fit"><span className="opacity-50">⚠️</span> Offline</span>; } };
     return (
@@ -111,6 +153,16 @@ const StatusTesTab = ({ currentUser, students, refreshData }: { currentUser: Use
              <div className="p-5 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
                 <h3 className="font-bold text-slate-700 flex items-center gap-2"><Monitor size={20}/> Status Peserta</h3>
                 <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+                    {selectedUsers.size > 0 && (
+                        <button 
+                            onClick={handleMassReset} 
+                            disabled={isMassResetting}
+                            className="bg-red-50 text-red-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-100 transition border border-red-100 flex items-center gap-2 whitespace-nowrap"
+                        >
+                            {isMassResetting ? <Loader2 size={16} className="animate-spin"/> : <Monitor size={16}/>}
+                            Reset {selectedUsers.size} Terpilih
+                        </button>
+                    )}
                     {currentUser.role === 'admin_pusat' && (
                         <>
                         <select className="p-2 border border-slate-200 rounded-lg text-sm font-bold text-slate-600 outline-none focus:ring-2 focus:ring-indigo-100 bg-white" value={filterKecamatan} onChange={e => setFilterKecamatan(e.target.value)}><option value="all">Semua Kecamatan</option>{uniqueKecamatans.map((s:any) => <option key={s} value={s}>{s}</option>)}</select>
@@ -149,7 +201,7 @@ const StatusTesTab = ({ currentUser, students, refreshData }: { currentUser: Use
                     </select>
                 </div>
              </div>
-             <div className="overflow-x-auto"><table className="w-full text-sm text-left"><thead className="bg-slate-50 text-slate-500 font-bold uppercase text-xs"><tr><th className="p-4">Nama Peserta</th><th className="p-4">Username</th><th className="p-4">Sekolah</th><th className="p-4">Kecamatan</th><th className="p-4">Status</th><th className="p-4">Ujian Aktif</th><th className="p-4 text-center">Aksi</th></tr></thead><tbody className="divide-y divide-slate-50">{paginatedData.length === 0 ? <tr><td colSpan={7} className="p-8 text-center text-slate-400">Tidak ada data.</td></tr> : paginatedData.map((s, i) => (<tr key={i} className="hover:bg-slate-50"><td className="p-4 font-bold text-slate-700">{s.nama_lengkap || s.fullname}</td><td className="p-4 font-mono text-slate-500">{s.username}</td><td className="p-4 text-slate-600">{s.kelas_id || s.school}</td><td className="p-4 text-slate-600">{s.kecamatan || s.id_kecamatan || '-'}</td><td className="p-4">{renderStatusBadge(s.status)}</td><td className="p-4 text-slate-600">{s.active_exam || '-'}</td><td className="p-4 text-center"><button onClick={() => handleReset(s.username)} disabled={!!resetting} className="bg-amber-50 text-amber-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-amber-100 transition border border-amber-100 flex items-center gap-2 mx-auto disabled:opacity-50 disabled:cursor-not-allowed">{resetting === s.username ? <><Loader2 size={12} className="animate-spin"/> Processing...</> : "Reset Login"}</button></td></tr>))}</tbody></table></div>
+             <div className="overflow-x-auto"><table className="w-full text-sm text-left"><thead className="bg-slate-50 text-slate-500 font-bold uppercase text-xs"><tr><th className="p-4 w-10"><input type="checkbox" onChange={handleSelectAll} checked={filtered.length > 0 && selectedUsers.size === filtered.length} className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"/></th><th className="p-4">Nama Peserta</th><th className="p-4">Username</th><th className="p-4">Sekolah</th><th className="p-4">Kecamatan</th><th className="p-4">Status</th><th className="p-4">Ujian Aktif</th><th className="p-4 text-center">Aksi</th></tr></thead><tbody className="divide-y divide-slate-50">{paginatedData.length === 0 ? <tr><td colSpan={8} className="p-8 text-center text-slate-400">Tidak ada data.</td></tr> : paginatedData.map((s, i) => (<tr key={i} className="hover:bg-slate-50"><td className="p-4"><input type="checkbox" checked={selectedUsers.has(s.username)} onChange={() => handleSelectUser(s.username)} className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"/></td><td className="p-4 font-bold text-slate-700">{s.nama_lengkap || s.fullname}</td><td className="p-4 font-mono text-slate-500">{s.username}</td><td className="p-4 text-slate-600">{s.kelas_id || s.school}</td><td className="p-4 text-slate-600">{s.kecamatan || s.id_kecamatan || '-'}</td><td className="p-4">{renderStatusBadge(s.status)}</td><td className="p-4 text-slate-600">{s.active_exam || '-'}</td><td className="p-4 text-center"><button onClick={() => handleReset(s.username)} disabled={!!resetting} className="bg-amber-50 text-amber-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-amber-100 transition border border-amber-100 flex items-center gap-2 mx-auto disabled:opacity-50 disabled:cursor-not-allowed">{resetting === s.username ? <><Loader2 size={12} className="animate-spin"/> Processing...</> : "Reset Login"}</button></td></tr>))}</tbody></table></div>
              <div className="p-4 border-t border-slate-100">
                  <Pagination 
                      currentPage={currentPage} 

@@ -434,6 +434,11 @@ export const api = {
       const { error } = await supabase.from('users').update({ status: 'RESET' }).eq('username', username);
       return { success: !error };
   },
+
+  resetLogins: async (usernames: string[]): Promise<{success: boolean}> => {
+      const { error } = await supabase.from('users').update({ status: 'RESET' }).in('username', usernames);
+      return { success: !error };
+  },
   
   checkSession: async (username: string): Promise<{success: boolean, message: string}> => {
       const { data, error } = await supabase.from('users').select('status').eq('username', username).single();
