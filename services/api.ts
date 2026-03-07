@@ -649,45 +649,13 @@ export const api = {
       return { success: true, message: 'Cache cleared' };
   },
 
-  getDashboardData: async (page: number = 0, pageSize: number = 50, filters: any = {}) => {
-      // 1. Fetch Global Stats (Counts) - Efficient for 3000+ users
-      // We do this separately to ensure charts are always accurate for the WHOLE population
-      const getCount = async (statusFilter?: string[]) => {
-          let query = supabase.from('users').select('*', { count: 'exact', head: true });
-          if (statusFilter && statusFilter.length > 0) {
-              query = query.in('status', statusFilter);
-          }
-          const { count } = await query;
-          return count || 0;
-      };
-
-      // Parallel count fetching
-      const [totalCount, offlineCount, loggedInCount, workingCount, finishedCount] = await Promise.all([
-          getCount(),
-          getCount(['OFFLINE', 'RESET', 'null']), // Treat null/RESET as offline
-          getCount(['ONLINE', 'LOGGED_IN', 'LOGIN']),
-          getCount(['EXAM', 'WORKING', 'MENGERJAKAN', 'ONGOING', 'START']),
-          getCount(['FINISHED', 'SELESAI', 'COMPLETED', 'DONE'])
-      ]);
-
-      // 2. Fetch Paginated Users
-      let usersQuery = supabase.from('users').select('*', { count: 'exact' });
-      
-      // Apply filters if any
-      if (filters.role) usersQuery = usersQuery.eq('role', filters.role);
-      if (filters.id_sekolah) usersQuery = usersQuery.eq('id_sekolah', filters.id_sekolah);
-      if (filters.id_kecamatan) usersQuery = usersQuery.eq('id_kecamatan', filters.id_kecamatan);
-      if (filters.search) usersQuery = usersQuery.or(`username.ilike.%${filters.search}%,nama_lengkap.ilike.%${filters.search}%`);
-
-      const { data: usersData, count: filteredTotal } = await usersQuery
-          .order('username', { ascending: true })
-          .range(page * pageSize, (page + 1) * pageSize - 1);
-
+  getDashboardData: async () => {
+      const { data: usersData } = await supabase.from('users').select('*');
       const { data: exams } = await supabase.from('exams').select('*');
       const { data: configData } = await supabase.from('config').select('*');
       const { data: schedules } = await supabase.from('school_schedules').select('*');
       
-      // Fetch Activity Logs
+      // Fetch Activity Logs - JOIN IN MEMORY (More robust if FK is missing)
       const { data: activityFeed } = await supabase
           .from('activity_logs')
           .select('*')
@@ -713,8 +681,8 @@ export const api = {
           ...u,
           username: String(u.username || ''),
           nama_lengkap: String(u.nama_lengkap || ''),
-          role: String(u.role || 'siswa'),
-          status: String(u.status || 'OFFLINE'),
+          role: String(u.role || 'siswa'), // Default to siswa
+          status: String(u.status || 'OFFLINE'), // Default to OFFLINE
           kelas_id: String(u.kelas_id || ''),
           kecamatan: String(u.kecamatan || ''),
           id_sekolah: String(u.id_sekolah || ''),
@@ -738,19 +706,6 @@ export const api = {
 
       return {
           allUsers: users || [],
-          pagination: {
-              page,
-              pageSize,
-              total: filteredTotal || 0,
-              totalPages: Math.ceil((filteredTotal || 0) / pageSize)
-          },
-          stats: {
-              total: totalCount,
-              offline: offlineCount,
-              loggedIn: loggedInCount,
-              working: workingCount,
-              finished: finishedCount
-          },
           activeExams: exams || [],
           token: configs['TOKEN'] || 'TOKEN',
           duration: parseInt(configs['DURATION'] || '60'),

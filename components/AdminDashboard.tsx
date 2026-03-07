@@ -59,17 +59,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
       token: 'TOKEN',
       duration: 60,
       maxQuestions: 0, 
-      surveyDuration: 30,
+      surveyDuration: 30, // Initialize
       statusCounts: { OFFLINE: 0, LOGGED_IN: 0, WORKING: 0, FINISHED: 0 },
       activityFeed: [],
       allUsers: [], 
-      pagination: { page: 0, pageSize: 50, total: 0, totalPages: 0 },
-      stats: { total: 0, offline: 0, loggedIn: 0, working: 0, finished: 0 },
       schedules: [],
       configs: {}
   });
-  const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(50);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -181,19 +177,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
   const fetchData = async (silent = false) => {
     if (!silent) setIsRefreshing(true);
     try {
-        // Apply role-based filters to the API call for better performance
-        const filters: any = {};
-        if (currentUserState.role === 'proktor' && currentUserState.id_sekolah) {
-            filters.id_sekolah = currentUserState.id_sekolah;
-        } else if (currentUserState.role === 'admin_kecamatan' && currentUserState.id_kecamatan) {
-            filters.id_kecamatan = currentUserState.id_kecamatan;
-        }
-
-        const data = await api.getDashboardData(page, pageSize, filters);
+        const data = await api.getDashboardData();
         if (data && typeof data === 'object' && Object.keys(data).length > 0) {
             setDashboardData(data);
             
-            // Sync current user data if found in dashboard data
+            // FIX: Sync current user data if found in dashboard data
             if (data.allUsers && Array.isArray(data.allUsers)) {
                 const freshUser = data.allUsers.find((u: any) => u.username === user.username);
                 if (freshUser) {
@@ -208,6 +196,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
     } catch (e: any) {
         console.error("Dashboard fetch error:", e);
         if (e.message === 'Failed to fetch' || e.message.includes('NetworkError')) {
+            // This usually means CORS error, adblocker, or offline
             console.warn("Network error detected. Please check your connection or disable adblockers.");
         }
     } finally {
@@ -218,7 +207,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
 
   useEffect(() => {
     fetchData();
-  }, [page, pageSize]);
+  }, []);
 
   // Poll for realtime updates on overview tab
   useEffect(() => {
