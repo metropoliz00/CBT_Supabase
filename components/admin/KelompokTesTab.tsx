@@ -238,7 +238,7 @@ const KelompokTesTab = ({ currentUser, students, refreshData }: { currentUser: U
                                 <td className="p-4 text-slate-600">{s.kecamatan || s.id_kecamatan || '-'}</td>
                                 <td className="p-4">
                                     <span className={`px-2 py-1 rounded text-xs font-bold ${s.active_exam ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-slate-100 text-slate-400'}`}>
-                                        {s.active_exam || 'Belum Ada'}
+                                        {exams.find(e => e.id === s.active_exam)?.nama_ujian || s.active_exam || 'Belum Ada'}
                                     </span>
                                 </td>
                                 <td className="p-4">

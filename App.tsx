@@ -126,7 +126,10 @@ function App() {
                         // Filter by active_exam
                         const activeExam = parsedUser.active_exam;
                         if (activeExam && activeExam !== '-' && activeExam !== '') {
-                            filteredExams = filteredExams.filter(e => e.nama_ujian.trim().toLowerCase() === activeExam.trim().toLowerCase());
+                            filteredExams = filteredExams.filter(e => 
+                                e.id === activeExam || 
+                                e.nama_ujian.trim().toLowerCase() === activeExam.trim().toLowerCase()
+                            );
                         } else {
                             filteredExams = [];
                         }
@@ -249,7 +252,10 @@ function App() {
             
             const activeExam = user.active_exam;
             if (activeExam && activeExam !== '-' && activeExam !== '') {
-                filteredExams = filteredExams.filter(e => e.nama_ujian.trim().toLowerCase() === activeExam.trim().toLowerCase());
+                filteredExams = filteredExams.filter(e => 
+                    e.id === activeExam || 
+                    e.nama_ujian.trim().toLowerCase() === activeExam.trim().toLowerCase()
+                );
             } else {
                 filteredExams = [];
             }

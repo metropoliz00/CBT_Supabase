@@ -455,7 +455,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                     </div>
                 )}
                 {activeTab === 'overview' && <OverviewTab dashboardData={dashboardData} currentUserState={currentUserState} />}
-                {activeTab === 'status_tes' && <StatusTesTab currentUser={currentUserState} students={dashboardData.allUsers || []} refreshData={() => fetchData()} />}
+                {activeTab === 'status_tes' && <StatusTesTab currentUser={currentUserState} students={dashboardData.allUsers || []} exams={dashboardData.activeExams || []} refreshData={() => fetchData()} />}
                 {activeTab === 'kelompok_tes' && <KelompokTesTab currentUser={currentUserState} students={dashboardData.allUsers || []} refreshData={() => fetchData()} />}
                 {activeTab === 'atur_sesi' && (
                     <AturSesiTab 
