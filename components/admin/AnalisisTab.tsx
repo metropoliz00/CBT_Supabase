@@ -55,9 +55,17 @@ const AnalisisTab = ({ students }: { students: any[] }) => {
     }, [selectedExam]);
 
     const uniqueSchools = useMemo(() => {
-        const schools = new Set(data.map(d => d.school || d.sekolah).filter(Boolean));
+        let filtered = data;
+        if (filterKecamatan !== 'all') {
+            filtered = data.filter(d => {
+                const user = userMap[d.username];
+                const userKecamatan = d.kecamatan || (user ? user.kecamatan : '-');
+                return userKecamatan && userKecamatan.toLowerCase() === filterKecamatan.toLowerCase();
+            });
+        }
+        const schools = new Set(filtered.map(d => d.school || d.sekolah).filter(Boolean));
         return Array.from(schools).sort();
-    }, [data]);
+    }, [data, filterKecamatan, userMap]);
 
     const uniqueKecamatans = useMemo(() => {
         const kecs = new Set(students.map(s => s.kecamatan).filter(Boolean).filter(k => k !== '-'));
@@ -199,7 +207,17 @@ const AnalisisTab = ({ students }: { students: any[] }) => {
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
-                    <select className="p-2 border border-slate-200 rounded-lg text-sm font-bold bg-slate-50 outline-none focus:ring-2 focus:ring-indigo-100" value={filterKecamatan} onChange={e => setFilterKecamatan(e.target.value)}><option value="all">Semua Kecamatan</option>{uniqueKecamatans.map((s:any) => <option key={s} value={s}>{s}</option>)}</select>
+                    <select 
+                        className="p-2 border border-slate-200 rounded-lg text-sm font-bold bg-slate-50 outline-none focus:ring-2 focus:ring-indigo-100" 
+                        value={filterKecamatan} 
+                        onChange={e => {
+                            setFilterKecamatan(e.target.value);
+                            setFilterSchool('all');
+                        }}
+                    >
+                        <option value="all">Semua Kecamatan</option>
+                        {uniqueKecamatans.map((s:any) => <option key={s} value={s}>{s}</option>)}
+                    </select>
                     <select 
                         className="p-2 border border-slate-200 rounded-lg text-sm font-bold bg-slate-50 outline-none focus:ring-2 focus:ring-indigo-100" 
                         value={filterSchool} 
@@ -207,10 +225,8 @@ const AnalisisTab = ({ students }: { students: any[] }) => {
                             const val = e.target.value;
                             setFilterSchool(val);
                             if (val !== 'all') {
-                                const found = students.find(s => s.school === val);
+                                const found = students.find(s => (s.school || s.kelas_id) === val);
                                 if (found && found.kecamatan) setFilterKecamatan(found.kecamatan);
-                            } else {
-                                setFilterKecamatan('all');
                             }
                         }}
                     >

@@ -137,9 +137,15 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
             const mySchoolName = (currentUser.kelas_id || '').toLowerCase();
             relevantPivotedData = pivotedData.filter(d => (d.sekolah || '').toLowerCase() === mySchoolName);
         }
+
+        // Filter by kecamatan if selected
+        if (filterKecamatan !== 'all') {
+            relevantPivotedData = relevantPivotedData.filter(d => d.kecamatan && d.kecamatan.toLowerCase() === filterKecamatan.toLowerCase());
+        }
+
         const schools = new Set(relevantPivotedData.map(d => d.sekolah).filter(Boolean));
         return Array.from(schools).sort();
-    }, [pivotedData, currentUser]);
+    }, [pivotedData, currentUser, filterKecamatan]);
     const uniqueKecamatans = useMemo(() => {
         let relevantStudents = students;
         if (currentUser.role === 'proktor' && currentUser.id_sekolah) {
@@ -367,7 +373,14 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
                     </select>
                     {currentUser.role === 'admin_pusat' && (
                         <>
-                            <select className="p-2 border border-slate-200 rounded-lg text-sm font-bold bg-slate-50 outline-none focus:ring-2 focus:ring-indigo-100" value={filterKecamatan} onChange={e => setFilterKecamatan(e.target.value)}>
+                            <select 
+                                className="p-2 border border-slate-200 rounded-lg text-sm font-bold bg-slate-50 outline-none focus:ring-2 focus:ring-indigo-100" 
+                                value={filterKecamatan} 
+                                onChange={e => {
+                                    setFilterKecamatan(e.target.value);
+                                    setFilterSchool('all');
+                                }}
+                            >
                                 <option value="all">Semua Kecamatan</option>
                                 {uniqueKecamatans.map((s:any) => <option key={s} value={s}>{s}</option>)}
                             </select>
@@ -378,10 +391,8 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
                                     const val = e.target.value;
                                     setFilterSchool(val);
                                     if (val !== 'all') {
-                                        const found = students.find(s => s.school === val);
+                                        const found = students.find(s => (s.school || s.kelas_id) === val);
                                         if (found && found.kecamatan) setFilterKecamatan(found.kecamatan);
-                                    } else {
-                                        setFilterKecamatan('all');
                                     }
                                 }}
                             >

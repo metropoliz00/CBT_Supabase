@@ -51,9 +51,13 @@ const KelompokTesTab = ({ currentUser, students, refreshData }: { currentUser: U
     const studentList = useMemo(() => students.filter(s => s.role === 'siswa'), [students]);
 
     const uniqueSchools = useMemo(() => {
-        const schools = new Set(studentList.map(s => s.kelas_id || s.school).filter(Boolean));
+        let filtered = studentList;
+        if (filterKecamatan !== 'all') {
+            filtered = filtered.filter(s => (String(s.kecamatan || '').toLowerCase() === filterKecamatan.toLowerCase() || String(s.id_kecamatan || '').toLowerCase() === filterKecamatan.toLowerCase()));
+        }
+        const schools = new Set(filtered.map(s => s.kelas_id || s.school).filter(Boolean));
         return Array.from(schools).sort() as string[];
-    }, [studentList]);
+    }, [studentList, filterKecamatan]);
 
     const uniqueKecamatans = useMemo(() => {
         const kecs = new Set(studentList.map(s => s.kecamatan || s.id_kecamatan).filter(Boolean).filter(k => k !== '-'));
@@ -152,7 +156,10 @@ const KelompokTesTab = ({ currentUser, students, refreshData }: { currentUser: U
                             <select 
                                 className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-indigo-100"
                                 value={filterKecamatan}
-                                onChange={e => setFilterKecamatan(e.target.value)}
+                                onChange={e => {
+                                    setFilterKecamatan(e.target.value);
+                                    setFilterSchool('all');
+                                }}
                             >
                                 <option value="all">Semua Kecamatan</option>
                                 {uniqueKecamatans.map((s:any) => <option key={s} value={s}>{s}</option>)}
@@ -167,10 +174,8 @@ const KelompokTesTab = ({ currentUser, students, refreshData }: { currentUser: U
                                     const val = e.target.value;
                                     setFilterSchool(val);
                                     if (val !== 'all') {
-                                        const found = students.find(s => s.school === val);
+                                        const found = students.find(s => (s.school || s.kelas_id) === val);
                                         if (found && found.kecamatan) setFilterKecamatan(found.kecamatan);
-                                    } else {
-                                        setFilterKecamatan('all');
                                     }
                                 }}
                             >

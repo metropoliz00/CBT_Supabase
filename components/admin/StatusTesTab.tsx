@@ -24,9 +24,15 @@ const StatusTesTab = ({ currentUser, students, exams, refreshData }: { currentUs
         } else if (currentUser.role === 'admin_kecamatan' && currentUser.id_kecamatan) {
             relevantStudents = students.filter(s => s.id_kecamatan === currentUser.id_kecamatan);
         }
+
+        // Filter by kecamatan if selected
+        if (filterKecamatan !== 'all') {
+            relevantStudents = relevantStudents.filter(s => (String(s.kecamatan || '').toLowerCase() === filterKecamatan.toLowerCase() || String(s.id_kecamatan || '').toLowerCase() === filterKecamatan.toLowerCase()));
+        }
+
         const schools = new Set(relevantStudents.map(s => s.kelas_id || s.school).filter(Boolean));
         return Array.from(schools).sort() as string[];
-    }, [students, currentUser]);
+    }, [students, currentUser, filterKecamatan]);
     const uniqueKecamatans = useMemo(() => {
         let relevantStudents = students;
         if (currentUser.role === 'proktor' && currentUser.id_sekolah) {
@@ -165,7 +171,17 @@ const StatusTesTab = ({ currentUser, students, exams, refreshData }: { currentUs
                     )}
                     {currentUser.role === 'admin_pusat' && (
                         <>
-                        <select className="p-2 border border-slate-200 rounded-lg text-sm font-bold text-slate-600 outline-none focus:ring-2 focus:ring-indigo-100 bg-white" value={filterKecamatan} onChange={e => setFilterKecamatan(e.target.value)}><option value="all">Semua Kecamatan</option>{uniqueKecamatans.map((s:any) => <option key={s} value={s}>{s}</option>)}</select>
+                        <select 
+                            className="p-2 border border-slate-200 rounded-lg text-sm font-bold text-slate-600 outline-none focus:ring-2 focus:ring-indigo-100 bg-white" 
+                            value={filterKecamatan} 
+                            onChange={e => {
+                                setFilterKecamatan(e.target.value);
+                                setFilterSchool('all');
+                            }}
+                        >
+                            <option value="all">Semua Kecamatan</option>
+                            {uniqueKecamatans.map((s:any) => <option key={s} value={s}>{s}</option>)}
+                        </select>
                         <select 
                             className="p-2 border border-slate-200 rounded-lg text-sm font-bold text-slate-600 outline-none focus:ring-2 focus:ring-indigo-100 bg-white" 
                             value={filterSchool} 
@@ -173,10 +189,8 @@ const StatusTesTab = ({ currentUser, students, exams, refreshData }: { currentUs
                                 const val = e.target.value;
                                 setFilterSchool(val);
                                 if (val !== 'all') {
-                                    const found = students.find(s => s.school === val);
+                                    const found = students.find(s => (s.school || s.kelas_id) === val);
                                     if (found && found.kecamatan) setFilterKecamatan(found.kecamatan);
-                                } else {
-                                    setFilterKecamatan('all');
                                 }
                             }}
                         >
