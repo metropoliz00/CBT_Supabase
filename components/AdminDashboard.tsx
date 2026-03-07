@@ -59,17 +59,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
       token: 'TOKEN',
       duration: 60,
       maxQuestions: 0, 
-      surveyDuration: 30,
+      surveyDuration: 30, // Initialize
       statusCounts: { OFFLINE: 0, LOGGED_IN: 0, WORKING: 0, FINISHED: 0 },
       activityFeed: [],
       allUsers: [], 
-      pagination: { page: 0, pageSize: 50, total: 0, totalPages: 0 },
-      stats: { total: 0, offline: 0, loggedIn: 0, working: 0, finished: 0 },
       schedules: [],
       configs: {}
   });
-  const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(50);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -181,19 +177,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
   const fetchData = async (silent = false) => {
     if (!silent) setIsRefreshing(true);
     try {
-        // Apply role-based filters to the API call for better performance
-        const filters: any = {};
-        if (currentUserState.role === 'proktor' && currentUserState.id_sekolah) {
-            filters.id_sekolah = currentUserState.id_sekolah;
-        } else if (currentUserState.role === 'admin_kecamatan' && currentUserState.id_kecamatan) {
-            filters.id_kecamatan = currentUserState.id_kecamatan;
-        }
-
-        const data = await api.getDashboardData(page, pageSize, filters);
+        const data = await api.getDashboardData();
         if (data && typeof data === 'object' && Object.keys(data).length > 0) {
             setDashboardData(data);
             
-            // Sync current user data if found in dashboard data
+            // FIX: Sync current user data if found in dashboard data
             if (data.allUsers && Array.isArray(data.allUsers)) {
                 const freshUser = data.allUsers.find((u: any) => u.username === user.username);
                 if (freshUser) {
@@ -208,6 +196,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
     } catch (e: any) {
         console.error("Dashboard fetch error:", e);
         if (e.message === 'Failed to fetch' || e.message.includes('NetworkError')) {
+            // This usually means CORS error, adblocker, or offline
             console.warn("Network error detected. Please check your connection or disable adblockers.");
         }
     } finally {
@@ -218,7 +207,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
 
   useEffect(() => {
     fetchData();
-  }, [page, pageSize]);
+  }, []);
 
   // Poll for realtime updates on overview tab
   useEffect(() => {
@@ -466,13 +455,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                     </div>
                 )}
                 {activeTab === 'overview' && <OverviewTab dashboardData={dashboardData} currentUserState={currentUserState} />}
-                {activeTab === 'status_tes' && <StatusTesTab currentUser={currentUserState} students={dashboardData.allUsers || []} refreshData={fetchData} />}
-                {activeTab === 'kelompok_tes' && <KelompokTesTab currentUser={currentUserState} students={dashboardData.allUsers || []} refreshData={fetchData} />}
+                {activeTab === 'status_tes' && <StatusTesTab currentUser={currentUserState} students={dashboardData.allUsers || []} refreshData={() => fetchData()} />}
+                {activeTab === 'kelompok_tes' && <KelompokTesTab currentUser={currentUserState} students={dashboardData.allUsers || []} refreshData={() => fetchData()} />}
                 {activeTab === 'atur_sesi' && (
                     <AturSesiTab 
                         currentUser={currentUserState} 
                         students={dashboardData.allUsers || []} 
-                        refreshData={fetchData} 
+                        refreshData={() => fetchData()} 
                         isLoading={isRefreshing} 
                         readOnly={currentUserState.role !== 'admin_pusat' && dashboardData.configs?.ALLOW_PROCTOR_SESSION_EDIT !== 'TRUE'}
                         configs={dashboardData.configs || {}}
@@ -481,9 +470,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                 )}
                 {activeTab === 'cetak_absensi' && <CetakAbsensiTab currentUser={currentUserState} students={dashboardData.allUsers || []} />}
                 {activeTab === 'cetak_kartu' && <CetakKartuTab currentUser={currentUserState} students={dashboardData.allUsers || []} schedules={dashboardData.schedules || []} />}
-                {activeTab === 'data_user' && (currentUserState.role === 'admin_pusat' || currentUserState.role === 'admin_sekolah' || currentUserState.role === 'proktor') && <DaftarPesertaTab currentUser={currentUserState} onDataChange={fetchData} />}
+                {activeTab === 'data_user' && (currentUserState.role === 'admin_pusat' || currentUserState.role === 'admin_sekolah' || currentUserState.role === 'proktor') && <DaftarPesertaTab currentUser={currentUserState} onDataChange={() => fetchData()} />}
                 {activeTab === 'atur_gelombang' && currentUserState.role === 'admin_pusat' && <AturGelombangTab students={dashboardData.allUsers || []} currentUser={currentUserState} refreshData={() => fetchData(true)} />}
-                {activeTab === 'rilis_token' && <RilisTokenTab currentUser={currentUserState} token={dashboardData.token} duration={dashboardData.duration} maxQuestions={dashboardData.maxQuestions} surveyDuration={dashboardData.surveyDuration} refreshData={fetchData} isRefreshing={isRefreshing} configs={dashboardData.configs || {}} activeSessions={dashboardData.activeSessions || []} schedules={dashboardData.schedules || []} />}
+                {activeTab === 'rilis_token' && <RilisTokenTab currentUser={currentUserState} token={dashboardData.token} duration={dashboardData.duration} maxQuestions={dashboardData.maxQuestions} surveyDuration={dashboardData.surveyDuration} refreshData={() => fetchData()} isRefreshing={isRefreshing} configs={dashboardData.configs || {}} activeSessions={dashboardData.activeSessions || []} schedules={dashboardData.schedules || []} />}
                 {activeTab === 'bank_soal' && currentUserState.role === 'admin_pusat' && <BankSoalTab />}
                 {activeTab === 'rekap' && (currentUserState.role === 'admin_pusat' || (currentUserState.role === 'admin_sekolah' && dashboardData.configs?.SHOW_REKAP_TO_PROCTOR === 'TRUE')) && <RekapTab students={dashboardData.allUsers} currentUser={currentUserState} />}
                 {activeTab === 'rekap_survey' && currentUserState.role === 'admin_pusat' && <RekapSurveyTab students={dashboardData.allUsers || []} currentUser={currentUserState} />}
@@ -492,7 +481,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                 {activeTab === 'system_config' && currentUserState.role === 'admin_pusat' && (
                     <SettingsTab 
                         currentUser={currentUserState} 
-                        onDataChange={fetchData} 
+                        onDataChange={() => fetchData()} 
                         configs={dashboardData.configs || {}} 
                         mode="config"
                     />
@@ -500,7 +489,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                 {activeTab === 'session_management' && currentUserState.role === 'admin_pusat' && (
                     <SettingsTab 
                         currentUser={currentUserState} 
-                        onDataChange={fetchData} 
+                        onDataChange={() => fetchData()} 
                         configs={dashboardData.configs || {}} 
                         mode="session"
                     />
@@ -508,7 +497,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                 {activeTab === 'admin_management' && currentUserState.role === 'admin_pusat' && (
                     <SettingsTab 
                         currentUser={currentUserState} 
-                        onDataChange={fetchData} 
+                        onDataChange={() => fetchData()} 
                         configs={dashboardData.configs || {}} 
                         mode="admin"
                     />
@@ -516,7 +505,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                 {activeTab === 'dev_settings' && currentUserState.role === 'admin_pusat' && (
                     <SettingsTab 
                         currentUser={currentUserState} 
-                        onDataChange={fetchData} 
+                        onDataChange={() => fetchData()} 
                         configs={dashboardData.configs || {}} 
                         mode="dev"
                     />
