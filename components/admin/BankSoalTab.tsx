@@ -354,7 +354,7 @@ const BankSoalTab = () => {
                                         {!isSurveyMode && <td className="p-4"><span className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-bold">{q.tipe_soal}</span></td>}
                                         {!isSurveyMode && (
                                             <td className="p-4">
-                                                <div className="font-bold text-emerald-600 break-words max-w-[200px]" title={(() => {
+                                                <div className="font-bold text-emerald-600 flex flex-wrap gap-2 items-center max-w-[250px]" title={(() => {
                                                     const keys = q.kunci_jawaban.toUpperCase().split(',').map(k => k.trim());
                                                     const descriptions = keys.map(key => {
                                                         if (q.tipe_soal === 'BS') {
@@ -369,22 +369,44 @@ const BankSoalTab = () => {
                                                         return key;
                                                     });
                                                     return descriptions.join(', ');
-                                                })()}>{(() => {
-                                                    const keys = q.kunci_jawaban.toUpperCase().split(',').map(k => k.trim());
-                                                    const descriptions = keys.map(key => {
+                                                })()}>
+                                                    {q.kunci_jawaban.toUpperCase().split(',').map((k, idx, arr) => {
+                                                        const key = k.trim();
+                                                        let text = key;
                                                         if (q.tipe_soal === 'BS') {
-                                                            if (key === 'B' || key === 'T' || key === '1') return 'Benar';
-                                                            if (key === 'S' || key === 'F' || key === '0') return 'Salah';
-                                                            return key;
+                                                            if (key === 'B' || key === 'T' || key === '1') text = 'Benar';
+                                                            else if (key === 'S' || key === 'F' || key === '0') text = 'Salah';
+                                                        } else {
+                                                            if (key === 'A') text = q.opsi_a;
+                                                            else if (key === 'B') text = q.opsi_b;
+                                                            else if (key === 'C') text = q.opsi_c;
+                                                            else if (key === 'D') text = q.opsi_d;
                                                         }
-                                                        if (key === 'A') return q.opsi_a;
-                                                        if (key === 'B') return q.opsi_b;
-                                                        if (key === 'C') return q.opsi_c;
-                                                        if (key === 'D') return q.opsi_d;
-                                                        return key;
-                                                    });
-                                                    return descriptions.join(', ');
-                                                })()}</div>
+
+                                                        const isImg = text.startsWith('http') || text.startsWith('https') || text.startsWith('data:image');
+                                                        
+                                                        return (
+                                                            <React.Fragment key={idx}>
+                                                                {isImg ? (
+                                                                    <div className="relative group">
+                                                                        <img 
+                                                                            src={formatImgUrl(text)} 
+                                                                            alt={`Jawaban ${key}`} 
+                                                                            className="h-10 w-auto min-w-[2.5rem] object-contain rounded border border-slate-200 bg-white shadow-sm hover:scale-[3] hover:z-50 origin-center transition-transform duration-200 cursor-pointer"
+                                                                            onError={(e) => {
+                                                                                e.currentTarget.style.display = 'none';
+                                                                                e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                                                                            }}
+                                                                        />
+                                                                        <div className="hidden text-[10px] text-red-400 bg-red-50 px-1 rounded border border-red-100">Link Rusak</div>
+                                                                    </div>
+                                                                ) : (
+                                                                    <span>{text}{idx < arr.length - 1 ? ',' : ''}</span>
+                                                                )}
+                                                            </React.Fragment>
+                                                        );
+                                                    })}
+                                                </div>
                                             </td>
                                         )}
                                         {isSurveyMode && (
