@@ -144,7 +144,28 @@ const ImageViewer = ({ src, onClose }: { src: string; onClose: () => void }) => 
 const StudentExam: React.FC<StudentExamProps> = ({ exam, questions, userFullName, username, userPhoto, idPaket, startTime, onFinish, onExit }) => {
   const { showAlert } = useAlert();
 
-  const [examQuestions, setExamQuestions] = useState<QuestionWithOptions[]>([]);
+  const examQuestions = React.useMemo(() => {
+    if (questions.length === 0) return [];
+    
+    // Shuffle options only for PG and PGK
+    const questionsWithShuffledOptions = questions.map(q => {
+        if (q.tipe_soal === 'PG' || q.tipe_soal === 'PGK') {
+            return { ...q, options: shuffleArray(q.options) };
+        }
+        return q; // Don't shuffle BS or LIKERT options
+    });
+    
+    // Shuffle questions
+    let fullyShuffled = shuffleArray(questionsWithShuffledOptions);
+    
+    // Limit questions if needed
+    if (exam.max_questions && exam.max_questions > 0) {
+        fullyShuffled = fullyShuffled.slice(0, exam.max_questions);
+    }
+    
+    return fullyShuffled;
+  }, [questions, exam.max_questions, exam.id]);
+
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<string, UserAnswerValue>>({});
   const [doubtful, setDoubtful] = useState<Record<string, boolean>>({});
@@ -169,13 +190,7 @@ const StudentExam: React.FC<StudentExamProps> = ({ exam, questions, userFullName
   const storageKey = `cbt_answers_${username}_${exam.id}`;
 
   useEffect(() => {
-    if (questions.length > 0) {
-        const questionsWithShuffledOptions = questions.map(q => ({ ...q, options: shuffleArray(q.options) }));
-        let fullyShuffled = shuffleArray(questionsWithShuffledOptions);
-        if (exam.max_questions && exam.max_questions > 0) {
-            fullyShuffled = fullyShuffled.slice(0, exam.max_questions);
-        }
-        setExamQuestions(fullyShuffled);
+    if (examQuestions.length > 0) {
         try {
             const saved = localStorage.getItem(storageKey);
             if (saved) {
@@ -184,18 +199,8 @@ const StudentExam: React.FC<StudentExamProps> = ({ exam, questions, userFullName
                 if (parsed.doubtful) setDoubtful(parsed.doubtful);
             }
         } catch(e) { console.error("Failed to load saved answers", e); }
-
-        // Backend progress loading removed to rely on localStorage and reduce load.
-        /*
-        api.getExamProgress(username, exam.id).then(progress => {
-            if (progress) {
-                setAnswers(progress.answers);
-                setCurrentIdx(progress.currentQuestionIndex);
-            }
-        }).catch(e => console.error("Failed to load exam progress from backend", e));
-        */
     }
-  }, [questions, storageKey, exam.max_questions]);
+  }, [examQuestions, storageKey]);
 
   useEffect(() => {
       if (Object.keys(answers).length > 0) {
@@ -354,8 +359,6 @@ const StudentExam: React.FC<StudentExamProps> = ({ exam, questions, userFullName
         if (currentArr.includes(val)) {
              return { ...prev, [qId]: currentArr.filter(id => id !== val) };
         } else {
-             // Enforce Limit of 2 Selections for PGK as per requirements
-             if (currentArr.length >= 2) return prev;
              return { ...prev, [qId]: [...currentArr, val] };
         }
       }

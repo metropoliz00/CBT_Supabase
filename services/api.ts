@@ -583,26 +583,53 @@ export const api = {
 
                   maxScore += weight;
 
-                  if (userAnswer) {
-                      if (q.tipe_soal === 'PG' || q.tipe_soal === 'BS') {
-                          // PG: Single Answer (A, B, C, D, E)
-                          // BS: Boolean (true/false) mapped to key
-                          if (String(userAnswer) === String(q.kunci_jawaban)) {
-                              totalScore += weight;
-                          }
-                      } else if (q.tipe_soal === 'PGK') {
-                          // PGK: Multiple Answers (Array)
-                          // Simple scoring: All correct must be selected (exact match) or partial?
-                          // Let's assume exact match for now or partial credit logic if needed.
-                          // For simplicity: If array matches exactly (sorted)
-                          const correctKeys = String(q.kunci_jawaban).split(',').map(k => k.trim());
-                          const userKeys = Array.isArray(userAnswer) ? userAnswer : [userAnswer];
-                          
-                          // Check if arrays have same elements
-                          const isCorrect = correctKeys.length === userKeys.length && correctKeys.every(k => userKeys.includes(k));
-                          if (isCorrect) totalScore += weight;
-                      }
-                  }
+                    if (userAnswer) {
+                        const normalizedKunci = String(q.kunci_jawaban || '').trim().toUpperCase();
+                        
+                        if (q.tipe_soal === 'PG') {
+                            // PG: Single Answer (A, B, C, D, E)
+                            if (String(userAnswer).trim().toUpperCase() === normalizedKunci) {
+                                totalScore += weight;
+                            }
+                        } else if (q.tipe_soal === 'BS') {
+                            // BS: Multiple True/False statements
+                            // userAnswer is Record<string, boolean> e.g. { 'A': true, 'B': false }
+                            // kunci_jawaban is comma separated e.g. "B,S,B" or "T,F,T" or "1,0,1"
+                            // We compare each statement.
+                            const correctValues = normalizedKunci.split(',').map(v => v.trim());
+                            const userObj = userAnswer as Record<string, boolean>;
+                            
+                            let allCorrect = true;
+                            const optionIds = ['A', 'B', 'C', 'D', 'E'];
+                            
+                            // We only check up to the number of correct values provided
+                            for (let i = 0; i < correctValues.length; i++) {
+                                const optId = optionIds[i];
+                                const isTrue = userObj[optId] === true;
+                                const isFalse = userObj[optId] === false;
+                                
+                                const correctVal = correctValues[i];
+                                const shouldBeTrue = ['B', 'T', '1', 'BENAR', 'TRUE'].includes(correctVal);
+                                const shouldBeFalse = ['S', 'F', '0', 'SALAH', 'FALSE'].includes(correctVal);
+                                
+                                if (shouldBeTrue && !isTrue) allCorrect = false;
+                                if (shouldBeFalse && !isFalse) allCorrect = false;
+                                if (!shouldBeTrue && !shouldBeFalse) allCorrect = false; // Invalid key
+                            }
+                            
+                            if (allCorrect && correctValues.length > 0) {
+                                totalScore += weight;
+                            }
+                        } else if (q.tipe_soal === 'PGK') {
+                            // PGK: Multiple Answers (Array)
+                            const correctKeys = normalizedKunci.split(',').map(k => k.trim());
+                            const userKeys = (Array.isArray(userAnswer) ? userAnswer : [userAnswer]).map(k => String(k).trim().toUpperCase());
+                            
+                            // Check if arrays have same elements
+                            const isCorrect = correctKeys.length === userKeys.length && correctKeys.every(k => userKeys.includes(k));
+                            if (isCorrect) totalScore += weight;
+                        }
+                    }
               });
               
               // Normalize score to 0-100 scale if needed, or keep raw score
