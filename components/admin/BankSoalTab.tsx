@@ -354,23 +354,36 @@ const BankSoalTab = () => {
                                         {!isSurveyMode && <td className="p-4"><span className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-bold">{q.tipe_soal}</span></td>}
                                         {!isSurveyMode && (
                                             <td className="p-4">
-                                                <div className="font-mono text-emerald-600 font-bold">{q.kunci_jawaban}</div>
-                                                <div className="text-xs text-slate-600 font-normal truncate max-w-[150px]" title={(() => {
-                                                    if (q.tipe_soal === 'BS') return q.kunci_jawaban;
-                                                    const key = q.kunci_jawaban.toUpperCase();
-                                                    if (key === 'A') return q.opsi_a;
-                                                    if (key === 'B') return q.opsi_b;
-                                                    if (key === 'C') return q.opsi_c;
-                                                    if (key === 'D') return q.opsi_d;
-                                                    return key;
+                                                <div className="font-bold text-emerald-600 break-words max-w-[200px]" title={(() => {
+                                                    const keys = q.kunci_jawaban.toUpperCase().split(',').map(k => k.trim());
+                                                    const descriptions = keys.map(key => {
+                                                        if (q.tipe_soal === 'BS') {
+                                                            if (key === 'B' || key === 'T' || key === '1') return 'Benar';
+                                                            if (key === 'S' || key === 'F' || key === '0') return 'Salah';
+                                                            return key;
+                                                        }
+                                                        if (key === 'A') return q.opsi_a;
+                                                        if (key === 'B') return q.opsi_b;
+                                                        if (key === 'C') return q.opsi_c;
+                                                        if (key === 'D') return q.opsi_d;
+                                                        return key;
+                                                    });
+                                                    return descriptions.join(', ');
                                                 })()}>{(() => {
-                                                    if (q.tipe_soal === 'BS') return q.kunci_jawaban;
-                                                    const key = q.kunci_jawaban.toUpperCase();
-                                                    if (key === 'A') return q.opsi_a;
-                                                    if (key === 'B') return q.opsi_b;
-                                                    if (key === 'C') return q.opsi_c;
-                                                    if (key === 'D') return q.opsi_d;
-                                                    return key;
+                                                    const keys = q.kunci_jawaban.toUpperCase().split(',').map(k => k.trim());
+                                                    const descriptions = keys.map(key => {
+                                                        if (q.tipe_soal === 'BS') {
+                                                            if (key === 'B' || key === 'T' || key === '1') return 'Benar';
+                                                            if (key === 'S' || key === 'F' || key === '0') return 'Salah';
+                                                            return key;
+                                                        }
+                                                        if (key === 'A') return q.opsi_a;
+                                                        if (key === 'B') return q.opsi_b;
+                                                        if (key === 'C') return q.opsi_c;
+                                                        if (key === 'D') return q.opsi_d;
+                                                        return key;
+                                                    });
+                                                    return descriptions.join(', ');
                                                 })()}</div>
                                             </td>
                                         )}
