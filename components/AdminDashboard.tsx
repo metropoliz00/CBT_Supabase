@@ -263,12 +263,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                 const status = configs[`SESSION_${sessionNum}_STATUS`] || 'OFF';
                 const isActive = status === 'ON' || status === 'AKTIF' || status === 'ACTIVE' || status === 'TRUE' || status === '1';
 
+                // Logic: Active if currentTime is between start and end
                 const shouldBeActive = currentTime >= start && currentTime <= end;
                 
                 if (shouldBeActive !== isActive) {
-                    console.log(`[AutoActive] Session ${sessionNum}: ${isActive ? 'ON -> OFF' : 'OFF -> ON'} (Time: ${currentTime}, Range: ${start}-${end})`);
+                    console.log(`[AutoActive] Session ${sessionNum}: ${isActive ? 'ON -> OFF' : 'OFF -> ON'} (Current: ${currentTime}, Range: ${start}-${end})`);
                     updates[`SESSION_${sessionNum}_STATUS`] = shouldBeActive ? 'ON' : 'OFF';
                     changed = true;
+                } else {
+                    // Log current state for debugging
+                    console.log(`[AutoActive] Session ${sessionNum} is correctly ${isActive ? 'ON' : 'OFF'} (Current: ${currentTime}, Range: ${start}-${end})`);
                 }
             }
 
