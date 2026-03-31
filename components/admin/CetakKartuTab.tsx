@@ -89,7 +89,7 @@ const CetakKartuTab = ({ currentUser, students, schedules }: { currentUser: User
                             <tr><td width="65">Nama</td><td>: <b>${s.nama_lengkap || s.fullname}</b></td></tr>
                             <tr><td>Sekolah</td><td>: ${s.kelas_id || s.school}</td></tr>
                             <tr><td>Gelombang</td><td>: ${getGelombang(s.kelas_id || s.school)}</td></tr>
-                            <tr><td>Sesi</td><td>: <b>${s.session || '-'}</b></td></tr>
+                            <tr><td>Sesi/Paket Soal</td><td>: <b>${s.session || '-'}, ${s.id_paket || '-'}</b></td></tr>
                             <tr><td>Username</td><td>: <b>${s.username}</b></td></tr>
                             <tr><td>Password</td><td>: <b>${s.password || '-'}</b></td></tr>
                         </table>
@@ -309,7 +309,7 @@ const CetakKartuTab = ({ currentUser, students, schedules }: { currentUser: User
                                             <tr><td className="w-16">Nama</td><td>: <b>{s.nama_lengkap || s.fullname}</b></td></tr>
                                             <tr><td>Sekolah</td><td>: {s.kelas_id || s.school}</td></tr>
                                             <tr><td>Gelombang</td><td>: {getGelombang(s.kelas_id || s.school)}</td></tr>
-                                            <tr><td>Sesi</td><td>: <b>{s.session || '-'}</b></td></tr>
+                                            <tr><td>Sesi/Paket Soal</td><td>: <b>{s.session || '-'}, {s.id_paket || '-'}</b></td></tr>
                                             <tr><td>Username</td><td>: <b>{s.username}</b></td></tr>
                                             <tr><td>Password</td><td>: <b>{s.password || '-'}</b></td></tr>
                                         </tbody>
