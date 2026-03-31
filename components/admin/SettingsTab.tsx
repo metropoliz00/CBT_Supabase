@@ -50,6 +50,7 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
                 hour: '2-digit', 
                 minute: '2-digit', 
                 second: '2-digit',
+                hour12: false,
                 timeZone: 'Asia/Jakarta' 
             }));
         };
@@ -139,9 +140,12 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
         setIsSaving(true);
         try {
             const { active, start, end } = sessionTimes[sessionNum];
+            const normalizedStart = to24h(start);
+            const normalizedEnd = to24h(end);
+            
             await api.saveConfig(`SESSION_${sessionNum}_STATUS`, active ? 'ON' : 'OFF');
-            await api.saveConfig(`SESSION_${sessionNum}_START`, start);
-            await api.saveConfig(`SESSION_${sessionNum}_END`, end);
+            await api.saveConfig(`SESSION_${sessionNum}_START`, normalizedStart);
+            await api.saveConfig(`SESSION_${sessionNum}_END`, normalizedEnd);
             await showAlert(`Pengaturan Sesi ${sessionNum} berhasil disimpan.`, { type: 'success' });
             onDataChange();
         } catch (e: any) {
@@ -152,15 +156,39 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
         }
     };
 
+    const to24h = (timeStr: string): string => {
+        if (!timeStr) return "";
+        timeStr = timeStr.trim().toUpperCase();
+        const match12 = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/);
+        if (match12) {
+            let h = parseInt(match12[1]);
+            const m = match12[2];
+            const ampm = match12[3];
+            if (ampm === 'PM' && h < 12) h += 12;
+            if (ampm === 'AM' && h === 12) h = 0;
+            return `${h.toString().padStart(2, '0')}:${m}`;
+        }
+        const match24 = timeStr.match(/^(\d{1,2}):(\d{2})$/);
+        if (match24) {
+            const h = parseInt(match24[1]);
+            const m = match24[2];
+            return `${h.toString().padStart(2, '0')}:${m}`;
+        }
+        return timeStr;
+    };
+
     const handleSaveAllSessions = async () => {
         setIsSaving(true);
         try {
             for (let i = 1; i <= 4; i++) {
                 const sessionNum = i.toString();
                 const { active, start, end } = sessionTimes[sessionNum];
+                const normalizedStart = to24h(start);
+                const normalizedEnd = to24h(end);
+                
                 await api.saveConfig(`SESSION_${sessionNum}_STATUS`, active ? 'ON' : 'OFF');
-                await api.saveConfig(`SESSION_${sessionNum}_START`, start);
-                await api.saveConfig(`SESSION_${sessionNum}_END`, end);
+                await api.saveConfig(`SESSION_${sessionNum}_START`, normalizedStart);
+                await api.saveConfig(`SESSION_${sessionNum}_END`, normalizedEnd);
             }
             await showAlert("Semua pengaturan sesi berhasil disimpan.", { type: 'success' });
             onDataChange();

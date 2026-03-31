@@ -249,16 +249,39 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
             let changed = false;
             const updates: Record<string, string> = {};
 
+            // Helper to normalize any time string to 24h HH:mm format
+            const to24h = (timeStr: string): string => {
+                if (!timeStr) return "";
+                timeStr = timeStr.trim().toUpperCase();
+                
+                // Handle AM/PM format: "07:30 PM", "7:30 PM", "7:30PM"
+                const match12 = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/);
+                if (match12) {
+                    let h = parseInt(match12[1]);
+                    const m = match12[2];
+                    const ampm = match12[3];
+                    if (ampm === 'PM' && h < 12) h += 12;
+                    if (ampm === 'AM' && h === 12) h = 0;
+                    return `${h.toString().padStart(2, '0')}:${m}`;
+                }
+                
+                // Handle 24h format: "14:30", "7:30"
+                const match24 = timeStr.match(/^(\d{1,2}):(\d{2})$/);
+                if (match24) {
+                    const h = parseInt(match24[1]);
+                    const m = match24[2];
+                    return `${h.toString().padStart(2, '0')}:${m}`;
+                }
+                
+                return timeStr;
+            };
+
             for (let i = 1; i <= 4; i++) {
                 const sessionNum = i.toString();
-                let start = configs[`SESSION_${sessionNum}_START`] || '';
-                let end = configs[`SESSION_${sessionNum}_END`] || '';
+                let start = to24h(configs[`SESSION_${sessionNum}_START`] || '');
+                let end = to24h(configs[`SESSION_${sessionNum}_END`] || '');
                 
                 if (!start || !end) continue;
-
-                // Normalize start/end to HH:mm (ensure leading zero)
-                if (start.length === 4 && start.includes(':')) start = '0' + start;
-                if (end.length === 4 && end.includes(':')) end = '0' + end;
                 
                 const status = configs[`SESSION_${sessionNum}_STATUS`] || 'OFF';
                 const isActive = status === 'ON' || status === 'AKTIF' || status === 'ACTIVE' || status === 'TRUE' || status === '1';
