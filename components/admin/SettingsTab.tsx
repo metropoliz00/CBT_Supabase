@@ -59,7 +59,7 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
     }, []);
 
     useEffect(() => {
-        if (configs && Object.keys(configs).length > 0) {
+        if (configs && Object.keys(configs).length > 0 && !isSaving) {
             setMaxQuestions(Number(configs.MAX_QUESTIONS) || 0);
             setSurveyDuration(Number(configs.SURVEY_DURATION) || 30);
             setExamDuration(Number(configs.DURATION) || 60);
@@ -85,7 +85,7 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
             }
             setSessionTimes(sessions);
         }
-    }, [configs]);
+    }, [configs, isSaving]);
 
     // Auto-activation logic
     useEffect(() => {
@@ -93,24 +93,27 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
 
         const checkSessions = async () => {
             const now = new Date();
-            // Format time as HH:MM using Asia/Jakarta time for consistency with serverTime display
-            const currentTime = now.toLocaleTimeString('id-ID', { 
-                hour: '2-digit', 
+            // Format time as HH:MM using Asia/Jakarta time
+            const currentTime = new Intl.DateTimeFormat('id-ID', {
+                hour: '2-digit',
                 minute: '2-digit',
                 hour12: false,
-                timeZone: 'Asia/Jakarta' 
-            }).replace('.', ':'); // id-ID uses dot as separator sometimes
+                timeZone: 'Asia/Jakarta'
+            }).format(now).replace('.', ':');
             
             let changed = false;
             const updates: Record<string, string> = {};
 
-            for (const sessionNum of Object.keys(sessionTimes)) {
-                const session = sessionTimes[sessionNum];
-                if (!session.start || !session.end) continue;
+            for (let i = 1; i <= 4; i++) {
+                const sessionNum = i.toString();
+                const start = configs[`SESSION_${sessionNum}_START`] || '07:30';
+                const end = configs[`SESSION_${sessionNum}_END`] || '10:30';
+                const status = configs[`SESSION_${sessionNum}_STATUS`] || 'OFF';
+                const isActive = status === 'ON' || status === 'AKTIF' || status === 'ACTIVE' || status === 'TRUE' || status === '1';
 
-                const shouldBeActive = currentTime >= session.start && currentTime <= session.end;
+                const shouldBeActive = currentTime >= start && currentTime <= end;
                 
-                if (shouldBeActive !== session.active) {
+                if (shouldBeActive !== isActive) {
                     updates[`SESSION_${sessionNum}_STATUS`] = shouldBeActive ? 'ON' : 'OFF';
                     changed = true;
                 }
@@ -134,7 +137,7 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
         
         const interval = setInterval(checkSessions, 30000); // Check every 30 seconds
         return () => clearInterval(interval);
-    }, [autoActivation, sessionTimes, isAdminPusat, onDataChange]);
+    }, [autoActivation, isAdminPusat, onDataChange, configs]);
 
     // Fetch current config on mount if configs prop is empty
     useEffect(() => {
@@ -193,6 +196,26 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
         } catch (e: any) {
             console.error(e);
             await showAlert("Gagal menyimpan pengaturan sesi.", { type: 'error' });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleSaveAllSessions = async () => {
+        setIsSaving(true);
+        try {
+            for (let i = 1; i <= 4; i++) {
+                const sessionNum = i.toString();
+                const { active, start, end } = sessionTimes[sessionNum];
+                await api.saveConfig(`SESSION_${sessionNum}_STATUS`, active ? 'ON' : 'OFF');
+                await api.saveConfig(`SESSION_${sessionNum}_START`, start);
+                await api.saveConfig(`SESSION_${sessionNum}_END`, end);
+            }
+            await showAlert("Semua pengaturan sesi berhasil disimpan.", { type: 'success' });
+            onDataChange();
+        } catch (e: any) {
+            console.error(e);
+            await showAlert("Gagal menyimpan semua pengaturan sesi.", { type: 'error' });
         } finally {
             setIsSaving(false);
         }
@@ -457,13 +480,34 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
+                            <button 
+                                onClick={handleSaveAllSessions}
+                                disabled={isSaving}
+                                className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition shadow-sm disabled:opacity-50"
+                            >
+                                <Save size={14} />
+                                Simpan Semua Sesi
+                            </button>
                             <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg border border-slate-200 shadow-sm">
                                 <span className="text-[10px] font-bold text-slate-500 uppercase">Mode Otomatis</span>
                                 <button 
-                                    onClick={() => {
+                                    onClick={async () => {
                                         const newValue = !autoActivation;
                                         setAutoActivation(newValue);
-                                        handleSaveConfig('AUTO_SESSION_ACTIVATION', newValue ? 'TRUE' : 'FALSE');
+                                        
+                                        // Save the toggle state
+                                        await api.saveConfig('AUTO_SESSION_ACTIVATION', newValue ? 'TRUE' : 'FALSE');
+                                        
+                                        // Also save all current session times to ensure they are persisted
+                                        for (let i = 1; i <= 4; i++) {
+                                            const sessionNum = i.toString();
+                                            const { start, end } = sessionTimes[sessionNum];
+                                            await api.saveConfig(`SESSION_${sessionNum}_START`, start);
+                                            await api.saveConfig(`SESSION_${sessionNum}_END`, end);
+                                        }
+                                        
+                                        await showAlert(`Mode Otomatis ${newValue ? 'Aktif' : 'Non-Aktif'}. Semua jadwal sesi telah diperbarui.`, { type: 'success' });
+                                        onDataChange();
                                     }}
                                     className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors focus:outline-none ${autoActivation ? 'bg-indigo-600' : 'bg-slate-300'}`}
                                 >
