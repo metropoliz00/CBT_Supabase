@@ -321,7 +321,7 @@ export const api = {
   getSurveyRecap: async (surveyType: string): Promise<any[]> => {
       const { data, error } = await supabase
         .from('survey_results')
-        .select(`*, users (nama_lengkap, kelas_id, kecamatan, id_sekolah, id_gugus, id_kecamatan)`)
+        .select(`*, users (nama_lengkap, kelas_id, kecamatan, id_sekolah, id_gugus, id_kecamatan, id_paket)`)
         .eq('survey_type', surveyType);
       
       if (error || !data) return [];
@@ -333,7 +333,8 @@ export const api = {
           kecamatan: r.users?.kecamatan || '',
           id_sekolah: r.users?.id_sekolah || '',
           id_gugus: r.users?.id_gugus || '',
-          id_kecamatan: r.users?.id_kecamatan || ''
+          id_kecamatan: r.users?.id_kecamatan || '',
+          id_paket: r.users?.id_paket || ''
       }));
   },
 
@@ -682,72 +683,85 @@ export const api = {
   },
 
   getDashboardData: async () => {
-      const { data: usersData } = await supabase.from('users').select('*');
-      const { data: exams } = await supabase.from('exams').select('*');
-      const { data: configData } = await supabase.from('config').select('*');
-      const { data: schedules } = await supabase.from('school_schedules').select('*');
-      
-      // Fetch Activity Logs - JOIN IN MEMORY (More robust if FK is missing)
-      const { data: activityFeed } = await supabase
-          .from('activity_logs')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(50);
+      try {
+          const { data: usersData, error: usersError } = await supabase.from('users').select('*');
+          if (usersError) throw usersError;
 
-      const feed = activityFeed?.map((log: any) => {
-          const logUsername = String(log.username || '').toLowerCase();
-          const user = (usersData || []).find((u: any) => String(u.username || '').toLowerCase() === logUsername);
+          const { data: exams, error: examsError } = await supabase.from('exams').select('*');
+          if (examsError) throw examsError;
+
+          const { data: configData, error: configError } = await supabase.from('config').select('*');
+          if (configError) throw configError;
+
+          const { data: schedules, error: schedulesError } = await supabase.from('school_schedules').select('*');
+          if (schedulesError) throw schedulesError;
           
-          return {
-              ...log,
-              nama_lengkap: user?.nama_lengkap || log.username,
-              school: user?.kelas_id || user?.id_sekolah || '-',
-              kelas_id: user?.kelas_id || '-',
-              kecamatan: user?.kecamatan || user?.id_kecamatan || '-',
-              id_sekolah: user?.id_sekolah || '-',
-              id_kecamatan: user?.id_kecamatan || '-'
-          };
-      }) || [];
-      
-      const users = (usersData || []).map((u: any) => ({
-          ...u,
-          username: String(u.username || ''),
-          nama_lengkap: String(u.nama_lengkap || ''),
-          role: String(u.role || 'siswa'), // Default to siswa
-          status: String(u.status || 'OFFLINE'), // Default to OFFLINE
-          kelas_id: String(u.kelas_id || ''),
-          kecamatan: String(u.kecamatan || ''),
-          id_sekolah: String(u.id_sekolah || ''),
-          id_gugus: String(u.id_gugus || ''),
-          id_kecamatan: String(u.id_kecamatan || ''),
-          active_exam: String(u.active_exam || ''),
-          session: String(u.session || ''),
-          id_paket: String(u.id_paket || ''),
-          photo_url: formatGoogleDriveUrl(u.photo_url)
-      }));
+          // Fetch Activity Logs - JOIN IN MEMORY (More robust if FK is missing)
+          const { data: activityFeed, error: feedError } = await supabase
+              .from('activity_logs')
+              .select('*')
+              .order('created_at', { ascending: false })
+              .limit(50);
+          if (feedError) throw feedError;
 
-      const configs = configData?.reduce((acc, curr) => ({ ...acc, [curr.key]: curr.value }), {}) || {};
-      
-      const activeSessions = [];
-      for (let i = 1; i <= 4; i++) {
-          const status = configs[`SESSION_${i}_STATUS`] || 'OFF';
-          if (status === 'ON' || status === 'AKTIF' || status === 'ACTIVE' || status === 'TRUE' || status === '1') {
-              activeSessions.push(i.toString());
+          const feed = activityFeed?.map((log: any) => {
+              const logUsername = String(log.username || '').toLowerCase();
+              const user = (usersData || []).find((u: any) => String(u.username || '').toLowerCase() === logUsername);
+              
+              return {
+                  ...log,
+                  nama_lengkap: user?.nama_lengkap || log.username,
+                  school: user?.kelas_id || user?.id_sekolah || '-',
+                  kelas_id: user?.kelas_id || '-',
+                  kecamatan: user?.kecamatan || user?.id_kecamatan || '-',
+                  id_sekolah: user?.id_sekolah || '-',
+                  id_kecamatan: user?.id_kecamatan || '-'
+              };
+          }) || [];
+          
+          const users = (usersData || []).map((u: any) => ({
+              ...u,
+              username: String(u.username || ''),
+              nama_lengkap: String(u.nama_lengkap || ''),
+              role: String(u.role || 'siswa'), // Default to siswa
+              status: String(u.status || 'OFFLINE'), // Default to OFFLINE
+              kelas_id: String(u.kelas_id || ''),
+              kecamatan: String(u.kecamatan || ''),
+              id_sekolah: String(u.id_sekolah || ''),
+              id_gugus: String(u.id_gugus || ''),
+              id_kecamatan: String(u.id_kecamatan || ''),
+              active_exam: String(u.active_exam || ''),
+              session: String(u.session || ''),
+              id_paket: String(u.id_paket || ''),
+              photo_url: formatGoogleDriveUrl(u.photo_url)
+          }));
+
+          const configs = configData?.reduce((acc, curr) => ({ ...acc, [curr.key]: curr.value }), {}) || {};
+          
+          const activeSessions = [];
+          for (let i = 1; i <= 4; i++) {
+              const status = configs[`SESSION_${i}_STATUS`] || 'OFF';
+              if (status === 'ON' || status === 'AKTIF' || status === 'ACTIVE' || status === 'TRUE' || status === '1') {
+                  activeSessions.push(i.toString());
+              }
           }
-      }
 
-      return {
-          allUsers: users || [],
-          activeExams: exams || [],
-          token: configs['TOKEN'] || 'TOKEN',
-          duration: parseInt(configs['DURATION'] || '60'),
-          maxQuestions: parseInt(configs['MAX_QUESTIONS'] || '0'),
-          surveyDuration: parseInt(configs['SURVEY_DURATION'] || '30'),
-          configs: configs,
-          activeSessions: activeSessions,
-          schedules: schedules || [],
-          activityFeed: feed
-      };
+          return {
+              allUsers: users || [],
+              activeExams: exams || [],
+              token: configs['TOKEN'] || 'TOKEN',
+              duration: parseInt(configs['DURATION'] || '60'),
+              maxQuestions: parseInt(configs['MAX_QUESTIONS'] || '0'),
+              surveyDuration: parseInt(configs['SURVEY_DURATION'] || '30'),
+              configs: configs,
+              activeSessions: activeSessions,
+              schedules: schedules || [],
+              activityFeed: feed
+          };
+      } catch (e: any) {
+          console.error("Dashboard data fetch error:", e);
+          throw new Error(`Database error: ${e.message || 'Unknown error'}`);
+      }
   },
 
   saveExamProgress: async (userId: string, examId: string, progress: { answers: Record<string, any>, currentQuestionIndex: number }): Promise<{success: boolean}> => {

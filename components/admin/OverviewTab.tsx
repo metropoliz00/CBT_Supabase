@@ -9,6 +9,63 @@ interface OverviewTabProps {
 }
 
 const OverviewTab: React.FC<OverviewTabProps> = ({ dashboardData, currentUserState }) => {
+    const sessionStats = useMemo(() => {
+        let allUsers = dashboardData.allUsers || [];
+        
+        if (currentUserState.role === 'proktor' && currentUserState.id_sekolah) {
+            const mySchoolId = String(currentUserState.id_sekolah).trim();
+            allUsers = allUsers.filter((u: any) => String(u.id_sekolah || '').trim() === mySchoolId);
+        } else if (currentUserState.role === 'admin_kecamatan' && currentUserState.id_kecamatan) {
+            const myKecamatanId = String(currentUserState.id_kecamatan).trim();
+            allUsers = allUsers.filter((u: any) => String(u.id_kecamatan || '').trim() === myKecamatanId);
+        } else if (currentUserState.role === 'admin_sekolah') {
+            const mySchoolName = (currentUserState.kelas_id || '').trim().toLowerCase();
+            allUsers = allUsers.filter((u: any) => (u.kelas_id || u.school || '').trim().toLowerCase() === mySchoolName);
+        }
+
+        const students = allUsers.filter((u: any) => String(u.role || '').trim().toLowerCase() === 'siswa');
+
+        return [1, 2, 3, 4].map(num => {
+            const sessionName = `Sesi ${num}`;
+            const sessionStudents = students.filter((u: any) => {
+                const s = String(u.session || '').trim().toLowerCase();
+                // Match "Sesi 1", "Sesi 01", "1", "01"
+                const nPadded = num < 10 ? `0${num}` : `${num}`;
+                return s === sessionName.toLowerCase() || 
+                       s === `sesi ${nPadded}` || 
+                       s === String(num) || 
+                       s === nPadded;
+            });
+            
+            let offline = 0, loggedIn = 0, working = 0, finished = 0;
+            sessionStudents.forEach((u: any) => {
+                const rawStatus = String(u.status || 'OFFLINE').toUpperCase().trim();
+                if (rawStatus.includes('ONLINE') || rawStatus.includes('LOGGED') || rawStatus.includes('LOGIN')) {
+                    loggedIn++;
+                } else if (rawStatus.includes('EXAM') || rawStatus.includes('WORKING') || rawStatus.includes('MENGERJAKAN') || rawStatus.includes('ONGOING') || rawStatus.includes('START')) {
+                    working++;
+                } else if (rawStatus.includes('FINISHED') || rawStatus.includes('SELESAI') || rawStatus.includes('COMPLETED') || rawStatus.includes('DONE')) {
+                    finished++;
+                } else {
+                    offline++;
+                }
+            });
+
+            return {
+                num,
+                name: sessionName,
+                counts: { OFFLINE: offline, LOGGED_IN: loggedIn, WORKING: working, FINISHED: finished },
+                total: sessionStudents.length,
+                data: [
+                    { value: offline, color: '#e2e8f0', label: 'Belum Login' },
+                    { value: loggedIn, color: '#facc15', label: 'Sudah Login' },
+                    { value: working, color: '#3b82f6', label: 'Mengerjakan' },
+                    { value: finished, color: '#10b981', label: 'Selesai' },
+                ]
+            };
+        });
+    }, [dashboardData.allUsers, currentUserState]);
+
     const stats = useMemo(() => {
         // If the API provided pre-calculated stats, use them
         if (dashboardData.stats) {
@@ -299,8 +356,51 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ dashboardData, currentUserSta
             </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="space-y-6 md:col-span-1">
+        {/* Session Status Charts Section */}
+        <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+                <div className="w-1 h-6 bg-indigo-500 rounded-full"></div>
+                <h2 className="text-lg font-bold text-slate-800">Status Peserta Per Sesi</h2>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {sessionStats.map((session) => (
+                    <div key={session.num} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center hover:shadow-md transition-shadow duration-300">
+                        <div className="flex justify-between w-full mb-4 items-center border-b border-slate-50 pb-2">
+                            <div className="flex items-center gap-2">
+                                <div className={`w-2 h-2 rounded-full ${
+                                    session.num === 1 ? 'bg-blue-400' : 
+                                    session.num === 2 ? 'bg-emerald-400' : 
+                                    session.num === 3 ? 'bg-amber-400' : 'bg-purple-400'
+                                }`}></div>
+                                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Sesi {session.num}</span>
+                            </div>
+                            <span className="text-[10px] font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100">
+                                {session.total} Peserta
+                            </span>
+                        </div>
+                        
+                        <div className="py-2">
+                            <SimpleDonutChart data={session.data} size={140} />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-x-3 gap-y-2 mt-5 w-full pt-4 border-t border-slate-50">
+                            {session.data.map((d, i) => (
+                                <div key={i} className="flex items-center gap-2 group cursor-default">
+                                    <div className="w-2 h-2 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: d.color }}></div>
+                                    <div className="flex flex-col min-w-0">
+                                        <span className="text-[10px] text-slate-400 font-medium leading-none mb-0.5">{d.label}</span>
+                                        <span className="text-xs font-bold text-slate-700 leading-none">{d.value}</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="space-y-6 lg:col-span-1">
                 {/* Session Status Card (Read Only) */}
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
                     <div className="px-5 py-3 border-b border-slate-50 bg-slate-50/50 flex items-center gap-2">
@@ -325,35 +425,9 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ dashboardData, currentUserSta
                         </p>
                     </div>
                 </div>
-
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center">
-                    <h3 className="text-slate-700 font-bold mb-6 text-sm uppercase tracking-wide w-full border-b pb-2 flex justify-between">
-                        <span>Status Peserta (%)</span>
-                        <span className="text-xs text-slate-400 normal-case">Total: {totalStatus} Siswa</span>
-                    </h3>
-                    <SimpleDonutChart data={statusData} />
-                    <div className="grid grid-cols-2 gap-4 mt-6 w-full text-xs font-bold text-slate-500">
-                        <div className="flex items-center gap-2" title="Belum Login">
-                            <div className="w-3 h-3 bg-slate-200 rounded"></div> 
-                            <span>Belum Login ({OFFLINE}) - {totalStatus > 0 ? ((OFFLINE/totalStatus)*100).toFixed(1) : 0}%</span>
-                        </div>
-                        <div className="flex items-center gap-2" title="Login">
-                            <div className="w-3 h-3 bg-yellow-400 rounded"></div> 
-                            <span>Login ({LOGGED_IN}) - {totalStatus > 0 ? ((LOGGED_IN/totalStatus)*100).toFixed(1) : 0}%</span>
-                        </div>
-                        <div className="flex items-center gap-2" title="Mengerjakan">
-                            <div className="w-3 h-3 bg-blue-500 rounded"></div> 
-                            <span>Mengerjakan ({WORKING}) - {totalStatus > 0 ? ((WORKING/totalStatus)*100).toFixed(1) : 0}%</span>
-                        </div>
-                        <div className="flex items-center gap-2" title="Selesai">
-                            <div className="w-3 h-3 bg-emerald-500 rounded"></div> 
-                            <span>Selesai ({FINISHED}) - {totalStatus > 0 ? ((FINISHED/totalStatus)*100).toFixed(1) : 0}%</span>
-                        </div>
-                    </div>
-                </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 col-span-2">
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 lg:col-span-2">
                 <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2"><Activity size={18} className="text-indigo-500"/> Aktivitas Terbaru</h3>
                 <div className="space-y-0 h-[600px] overflow-y-auto custom-scrollbar pr-2">
                     {filteredFeed && filteredFeed.length > 0 ? (

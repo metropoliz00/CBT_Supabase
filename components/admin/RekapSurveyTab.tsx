@@ -14,6 +14,7 @@ const RekapSurveyTab = ({ students, currentUser }: { students: any[], currentUse
     // Filters
     const [filterSchool, setFilterSchool] = useState('all');
     const [filterKecamatan, setFilterKecamatan] = useState('all');
+    const [filterPaket, setFilterPaket] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -75,9 +76,19 @@ const RekapSurveyTab = ({ students, currentUser }: { students: any[], currentUse
         return Array.from(kecs).sort();
     }, [students, data, currentUser]);
 
+    const uniquePakets = useMemo(() => {
+        const pakets = new Set(data.map(d => d.id_paket).filter(Boolean));
+        return Array.from(pakets).sort();
+    }, [data]);
+
     // FIX: Case-insensitive and trimmed filtering
     const filteredData = useMemo(() => {
         let filtered = data;
+
+        // Apply Paket Filter
+        if (filterPaket !== 'all') {
+            filtered = filtered.filter(d => d.id_paket === filterPaket);
+        }
 
         // Apply role-based filtering first
         if (currentUser.role === 'proktor' && currentUser.id_sekolah) {
@@ -211,6 +222,12 @@ const RekapSurveyTab = ({ students, currentUser }: { students: any[], currentUse
                                 <option key={s.id} value={s.id}>{s.name}</option>
                             ))}
                         </select>
+                        <select className="p-2 border border-slate-200 rounded-lg bg-slate-50 font-bold text-sm w-full lg:w-auto outline-none focus:ring-2 focus:ring-indigo-100" value={filterPaket} onChange={e => setFilterPaket(e.target.value)}>
+                            <option value="all">Semua Paket</option>
+                            {uniquePakets.map(p => (
+                                <option key={p} value={p}>{p}</option>
+                            ))}
+                        </select>
                         <button onClick={handleExport} disabled={filteredData.length === 0} className="bg-emerald-50 text-emerald-600 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-emerald-100 border border-emerald-100 transition shadow-sm disabled:opacity-50">
                             <FileText size={14}/> Export
                         </button>
@@ -254,6 +271,7 @@ const RekapSurveyTab = ({ students, currentUser }: { students: any[], currentUse
                              <th className="p-4 sticky left-0 bg-slate-50 border-r border-slate-200 z-30 min-w-[150px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Nama</th>
                              <th className="p-4 min-w-[120px] bg-slate-50">Sekolah</th>
                              <th className="p-4 min-w-[120px] bg-slate-50">Kecamatan</th>
+                             <th className="p-4 text-center bg-slate-50">Paket</th>
                              <th className="p-4 text-center bg-slate-50">Total</th>
                              <th className="p-4 text-center border-r border-slate-200 bg-slate-50">Rata-rata</th>
                              <th className="p-4 text-center border-r border-slate-200 bg-slate-50">Predikat</th>
@@ -279,6 +297,9 @@ const RekapSurveyTab = ({ students, currentUser }: { students: any[], currentUse
                                  <td className="p-4 font-bold text-slate-700 sticky left-0 bg-white border-r border-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">{d.nama}</td>
                                  <td className="p-4 text-slate-600 text-xs">{d.sekolah}</td>
                                  <td className="p-4 text-slate-600 text-xs">{d.kecamatan}</td>
+                                 <td className="p-4 text-center">
+                                     <span className="px-2 py-1 bg-slate-100 rounded text-[10px] font-bold text-slate-500">{d.id_paket || '-'}</span>
+                                 </td>
                                  <td className="p-4 text-center font-bold text-indigo-600">{d.total}</td>
                                  <td className="p-4 text-center font-bold bg-indigo-50 text-indigo-700 border-r border-slate-100">{d.rata}</td>
                                  <td className="p-4 text-center border-r border-slate-100">

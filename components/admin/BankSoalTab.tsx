@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { FileQuestion, Download, Upload, Loader2, Plus, Edit, Trash2, X, Save, Image as ImageIcon, Search } from 'lucide-react';
 import { api } from '../../services/api';
 import { QuestionRow } from '../../types';
@@ -20,6 +20,7 @@ const BankSoalTab = () => {
     const [newSubjectId, setNewSubjectId] = useState('');
     const [newSubjectName, setNewSubjectName] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedPaket, setSelectedPaket] = useState('all');
 
     useEffect(() => {
         const loadSubjects = async () => {
@@ -215,11 +216,23 @@ const BankSoalTab = () => {
 
     const isSurveyMode = selectedSubject.startsWith('Survey_');
 
-    const filteredQuestions = questions.filter(q => 
-        searchTerm === '' || 
-        q.text_soal.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        q.id.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const uniquePakets = useMemo(() => {
+        const pakets = new Set<string>();
+        questions.forEach(q => {
+            if (q.id_paket) pakets.add(q.id_paket);
+        });
+        return Array.from(pakets).sort();
+    }, [questions]);
+
+    const filteredQuestions = questions.filter(q => {
+        const matchesSearch = searchTerm === '' || 
+            q.text_soal.toLowerCase().includes(searchTerm.toLowerCase()) || 
+            q.id.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        const matchesPaket = selectedPaket === 'all' || q.id_paket === selectedPaket;
+        
+        return matchesSearch && matchesPaket;
+    });
 
     const formatImgUrl = (url: string) => {
         if (!url) return '';
@@ -255,9 +268,21 @@ const BankSoalTab = () => {
                     <select 
                         className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 outline-none font-bold min-w-[200px]"
                         value={selectedSubject}
-                        onChange={e => setSelectedSubject(e.target.value)}
+                        onChange={e => {
+                            setSelectedSubject(e.target.value);
+                            setSelectedPaket('all');
+                        }}
                     >
                         {subjects.length === 0 ? <option value="">-- Belum ada Mapel --</option> : subjects.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+
+                    <select 
+                        className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 outline-none font-bold min-w-[150px]"
+                        value={selectedPaket}
+                        onChange={e => setSelectedPaket(e.target.value)}
+                    >
+                        <option value="all">Semua Paket</option>
+                        {uniquePakets.map((p: string) => <option key={p} value={p}>{p}</option>)}
                     </select>
 
                     <button onClick={() => {
