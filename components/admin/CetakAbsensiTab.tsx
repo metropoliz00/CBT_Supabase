@@ -73,7 +73,7 @@ const CetakAbsensiTab = ({ currentUser, students }: { currentUser: User, student
                 <td>${s.nama_lengkap || s.fullname}</td>
                 <td>${s.kelas_id || s.school}</td>
                 <td>${s.kecamatan || s.id_kecamatan || '-'}</td>
-                <td style="text-align: center;">${s.session || '-'}/${s.id_paket || '-'}</td>
+                <td style="text-align: center;">${s.session || '-'}</td>
                 <td></td>
             </tr>
         `).join('');
@@ -130,7 +130,7 @@ const CetakAbsensiTab = ({ currentUser, students }: { currentUser: User, student
                             <th>Nama Peserta</th>
                             <th>Sekolah</th>
                             <th>Kecamatan</th>
-                            <th width="100">Sesi/Paket Soal</th>
+                            <th width="80">Sesi</th>
                             <th width="100">Tanda Tangan</th>
                         </tr>
                     </thead>
@@ -231,7 +231,7 @@ const CetakAbsensiTab = ({ currentUser, students }: { currentUser: User, student
                             <th className="p-4">Nama Peserta</th>
                             <th className="p-4">Sekolah</th>
                             <th className="p-4">Kecamatan</th>
-                            <th className="p-4">Sesi/Paket Soal</th>
+                            <th className="p-4">Sesi</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -245,7 +245,7 @@ const CetakAbsensiTab = ({ currentUser, students }: { currentUser: User, student
                                     <td className="p-4 font-bold text-slate-700">{s.nama_lengkap || s.fullname}</td>
                                     <td className="p-4 text-slate-600">{s.kelas_id || s.school}</td>
                                     <td className="p-4 text-slate-500 text-xs">{s.kecamatan || s.id_kecamatan || '-'}</td>
-                                    <td className="p-4"><span className="bg-indigo-50 text-indigo-600 px-2 py-1 rounded text-xs font-bold">{s.session || '-'}/{s.id_paket || '-'}</span></td>
+                                    <td className="p-4"><span className="bg-indigo-50 text-indigo-600 px-2 py-1 rounded text-xs font-bold">{s.session || '-'}</span></td>
                                 </tr>
                             ))
                         )}
