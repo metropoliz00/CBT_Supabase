@@ -211,113 +211,124 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
 
   const [serverTime, setServerTime] = useState<string>('');
 
-  // Auto-activation logic for sessions (Global)
-  useEffect(() => {
-    const isAdmin = currentUserState.role === 'admin_pusat' || currentUserState.role === 'admin_sekolah';
-    if (!isAdmin) return;
-
-    console.log("Auto-activation effect initialized for role:", currentUserState.role);
-
-    const checkSessions = async () => {
-        try {
-            // Fetch latest configs directly to avoid stale state
-            const configs = await api.getAllConfig();
-            const autoActivation = configs['AUTO_SESSION_ACTIVATION'] === 'TRUE';
-            
-            // Get current time in Asia/Jakarta (WIB)
-            const now = new Date();
-            const formatter = new Intl.DateTimeFormat('en-GB', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false,
-                timeZone: 'Asia/Jakarta'
-            });
-            const currentTime = formatter.format(now);
-            
-            // For the clock display
-            const clockFormatter = new Intl.DateTimeFormat('en-GB', {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: false,
-                timeZone: 'Asia/Jakarta'
-            });
-            setServerTime(clockFormatter.format(now));
-
-            if (!autoActivation) return;
-
-            let changed = false;
-            const updates: Record<string, string> = {};
-
-            // Helper to normalize any time string to 24h HH:mm format
-            const to24h = (timeStr: string): string => {
-                if (!timeStr) return "";
-                timeStr = timeStr.trim().toUpperCase();
-                
-                // Handle AM/PM format: "07:30 PM", "7:30 PM", "7:30PM"
-                const match12 = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/);
-                if (match12) {
-                    let h = parseInt(match12[1]);
-                    const m = match12[2];
-                    const ampm = match12[3];
-                    if (ampm === 'PM' && h < 12) h += 12;
-                    if (ampm === 'AM' && h === 12) h = 0;
-                    return `${h.toString().padStart(2, '0')}:${m}`;
-                }
-                
-                // Handle 24h format: "14:30", "7:30"
-                const match24 = timeStr.match(/^(\d{1,2}):(\d{2})$/);
-                if (match24) {
-                    const h = parseInt(match24[1]);
-                    const m = match24[2];
-                    return `${h.toString().padStart(2, '0')}:${m}`;
-                }
-                
-                return timeStr;
-            };
-
-            for (let i = 1; i <= 4; i++) {
-                const sessionNum = i.toString();
-                let start = to24h(configs[`SESSION_${sessionNum}_START`] || '');
-                let end = to24h(configs[`SESSION_${sessionNum}_END`] || '');
-                
-                if (!start || !end) continue;
-                
-                const status = configs[`SESSION_${sessionNum}_STATUS`] || 'OFF';
-                const isActive = status === 'ON' || status === 'AKTIF' || status === 'ACTIVE' || status === 'TRUE' || status === '1';
-
-                // Logic: Active if currentTime is between start and end
-                const shouldBeActive = currentTime >= start && currentTime <= end;
-                
-                if (shouldBeActive !== isActive) {
-                    console.log(`[AutoActive] Session ${sessionNum}: ${isActive ? 'ON -> OFF' : 'OFF -> ON'} (Current: ${currentTime}, Range: ${start}-${end})`);
-                    updates[`SESSION_${sessionNum}_STATUS`] = shouldBeActive ? 'ON' : 'OFF';
-                    changed = true;
-                } else {
-                    // Log current state for debugging
-                    console.log(`[AutoActive] Session ${sessionNum} is correctly ${isActive ? 'ON' : 'OFF'} (Current: ${currentTime}, Range: ${start}-${end})`);
-                }
-            }
-
-            if (changed) {
-                console.log(`[AutoActive] Detected changes at ${currentTime}. Updating...`, updates);
-                for (const [key, val] of Object.entries(updates)) {
-                    await api.saveConfig(key, val);
-                }
-                // Refresh dashboard data to reflect changes in UI
-                fetchData(true);
-            }
-        } catch (e) {
-            console.error("[AutoActive] Error in checkSessions:", e);
-        }
-    };
-
-    // Initial check
-    checkSessions();
-    
-    const interval = setInterval(checkSessions, 15000); // Check every 15 seconds for better responsiveness
-    return () => clearInterval(interval);
-  }, [currentUserState.role]);
+    // Auto-activation logic for sessions (Global)
+    useEffect(() => {
+      const isStaff = currentUserState.role === 'admin_pusat' || currentUserState.role === 'admin_sekolah' || currentUserState.role === 'proktor';
+      if (!isStaff) return;
+  
+      console.log("[AutoActive] Effect initialized for role:", currentUserState.role);
+  
+      const checkSessions = async () => {
+          try {
+              // Fetch latest configs directly to avoid stale state
+              const configs = await api.getAllConfig();
+              const autoActivation = configs['AUTO_SESSION_ACTIVATION'] === 'TRUE';
+              
+              // Get current time in Asia/Jakarta (WIB)
+              const now = new Date();
+              const formatter = new Intl.DateTimeFormat('en-GB', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: false,
+                  timeZone: 'Asia/Jakarta'
+              });
+              const currentTime = formatter.format(now);
+              
+              // For the clock display
+              const clockFormatter = new Intl.DateTimeFormat('en-GB', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit',
+                  hour12: false,
+                  timeZone: 'Asia/Jakarta'
+              });
+              setServerTime(clockFormatter.format(now));
+  
+              if (!autoActivation) {
+                  // If auto-activation is OFF, just log it once in a while
+                  if (now.getSeconds() % 60 === 0) {
+                      console.log("[AutoActive] Mode Otomatis is currently OFF.");
+                  }
+                  return;
+              }
+  
+              let changed = false;
+              const updates: Record<string, string> = {};
+  
+              // Helper to normalize any time string to 24h HH:mm format
+              const to24h = (timeStr: string): string => {
+                  if (!timeStr) return "";
+                  timeStr = timeStr.trim().toUpperCase();
+                  
+                  // Handle AM/PM format: "07:30 PM", "7:30 PM", "7:30PM"
+                  const match12 = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/);
+                  if (match12) {
+                      let h = parseInt(match12[1]);
+                      const m = match12[2];
+                      const ampm = match12[3];
+                      if (ampm === 'PM' && h < 12) h += 12;
+                      if (ampm === 'AM' && h === 12) h = 0;
+                      return `${h.toString().padStart(2, '0')}:${m}`;
+                  }
+                  
+                  // Handle 24h format: "14:30", "7:30"
+                  const match24 = timeStr.match(/^(\d{1,2}):(\d{2})$/);
+                  if (match24) {
+                      const h = parseInt(match24[1]);
+                      const m = match24[2];
+                      return `${h.toString().padStart(2, '0')}:${m}`;
+                  }
+                  
+                  return timeStr;
+              };
+  
+              for (let i = 1; i <= 4; i++) {
+                  const sessionNum = i.toString();
+                  let start = to24h(configs[`SESSION_${sessionNum}_START`] || '');
+                  let end = to24h(configs[`SESSION_${sessionNum}_END`] || '');
+                  
+                  if (!start || !end) {
+                      console.warn(`[AutoActive] Session ${sessionNum} has missing start/end time.`);
+                      continue;
+                  }
+                  
+                  const status = configs[`SESSION_${sessionNum}_STATUS`] || 'OFF';
+                  const isActive = status === 'ON' || status === 'AKTIF' || status === 'ACTIVE' || status === 'TRUE' || status === '1';
+  
+                  // Logic: Active if currentTime is between start and end
+                  const shouldBeActive = currentTime >= start && currentTime <= end;
+                  
+                  if (shouldBeActive !== isActive) {
+                      console.log(`[AutoActive] Session ${sessionNum} CHANGE: ${isActive ? 'ON -> OFF' : 'OFF -> ON'} (Current: ${currentTime}, Range: ${start}-${end})`);
+                      updates[`SESSION_${sessionNum}_STATUS`] = shouldBeActive ? 'ON' : 'OFF';
+                      changed = true;
+                  } else {
+                      // Log current state for debugging every 30 seconds
+                      if (now.getSeconds() % 30 === 0) {
+                        console.log(`[AutoActive] Session ${sessionNum} STATUS: ${isActive ? 'ON' : 'OFF'} (Current: ${currentTime}, Range: ${start}-${end})`);
+                      }
+                  }
+              }
+  
+              if (changed) {
+                  console.log(`[AutoActive] Detected changes at ${currentTime}. Updating database...`, updates);
+                  for (const [key, val] of Object.entries(updates)) {
+                      await api.saveConfig(key, val);
+                  }
+                  // Refresh dashboard data to reflect changes in UI
+                  fetchData(true);
+              }
+          } catch (e) {
+              console.error("[AutoActive] Error in checkSessions:", e);
+          }
+      };
+  
+      // Initial check
+      checkSessions();
+      
+      const interval = setInterval(checkSessions, 15000); // Check every 15 seconds for better responsiveness
+      return () => clearInterval(interval);
+    }, [currentUserState.role]);
 
   // Separate effect for server time clock (updates every second for UI)
   useEffect(() => {

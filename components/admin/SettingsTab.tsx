@@ -482,12 +482,12 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
                                         // Save the toggle state
                                         await api.saveConfig('AUTO_SESSION_ACTIVATION', newValue ? 'TRUE' : 'FALSE');
                                         
-                                        // Also save all current session times to ensure they are persisted
+                                        // Also save all current session times to ensure they are persisted and normalized
                                         for (let i = 1; i <= 4; i++) {
                                             const sessionNum = i.toString();
                                             const { start, end } = sessionTimes[sessionNum];
-                                            await api.saveConfig(`SESSION_${sessionNum}_START`, start);
-                                            await api.saveConfig(`SESSION_${sessionNum}_END`, end);
+                                            await api.saveConfig(`SESSION_${sessionNum}_START`, to24h(start));
+                                            await api.saveConfig(`SESSION_${sessionNum}_END`, to24h(end));
                                         }
                                         
                                         await showAlert(`Mode Otomatis ${newValue ? 'Aktif' : 'Non-Aktif'}. Semua jadwal sesi telah diperbarui.`, { type: 'success' });
