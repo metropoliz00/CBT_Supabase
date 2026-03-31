@@ -118,7 +118,7 @@ const CetakAbsensiTab = ({ currentUser, students }: { currentUser: User, student
 
                 <table class="info-table">
                     <tr><td width="150">Mata Pelajaran</td><td>: ${examName}</td></tr>
-                    <tr><td width="150">Sesi/Paket Soal</td><td>: ${sesiName}${filteredStudents.length > 0 && selectedSession ? ', ' + (filteredStudents[0].id_paket || '-') : ''}</td></tr>
+                    <tr><td width="150">Sesi/Paket</td><td>: ${sesiName}${filteredStudents.length > 0 && selectedSession ? ', ' + (filteredStudents[0].id_paket || '-') : ''}</td></tr>
                     <tr><td>Hari, Tanggal</td><td>: ${dateNow}</td></tr>
                 </table>
 
