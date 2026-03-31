@@ -209,6 +209,99 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
     fetchData();
   }, []);
 
+  const [serverTime, setServerTime] = useState<string>('');
+
+  // Auto-activation logic for sessions (Global)
+  useEffect(() => {
+    const isAdmin = currentUserState.role === 'admin_pusat' || currentUserState.role === 'admin_sekolah';
+    if (!isAdmin) return;
+
+    console.log("Auto-activation effect initialized for role:", currentUserState.role);
+
+    const checkSessions = async () => {
+        try {
+            // Fetch latest configs directly to avoid stale state
+            const configs = await api.getAllConfig();
+            const autoActivation = configs['AUTO_SESSION_ACTIVATION'] === 'TRUE';
+            
+            // Get current time in Asia/Jakarta (WIB)
+            const now = new Date();
+            const formatter = new Intl.DateTimeFormat('en-GB', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false,
+                timeZone: 'Asia/Jakarta'
+            });
+            const currentTime = formatter.format(now);
+            
+            // For the clock display
+            const clockFormatter = new Intl.DateTimeFormat('en-GB', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false,
+                timeZone: 'Asia/Jakarta'
+            });
+            setServerTime(clockFormatter.format(now));
+
+            if (!autoActivation) return;
+
+            let changed = false;
+            const updates: Record<string, string> = {};
+
+            for (let i = 1; i <= 4; i++) {
+                const sessionNum = i.toString();
+                let start = configs[`SESSION_${sessionNum}_START`] || '';
+                let end = configs[`SESSION_${sessionNum}_END`] || '';
+                
+                if (!start || !end) continue;
+
+                // Normalize start/end to HH:mm (ensure leading zero)
+                if (start.length === 4 && start.includes(':')) start = '0' + start;
+                if (end.length === 4 && end.includes(':')) end = '0' + end;
+                
+                const status = configs[`SESSION_${sessionNum}_STATUS`] || 'OFF';
+                const isActive = status === 'ON' || status === 'AKTIF' || status === 'ACTIVE' || status === 'TRUE' || status === '1';
+
+                const shouldBeActive = currentTime >= start && currentTime <= end;
+                
+                if (shouldBeActive !== isActive) {
+                    console.log(`[AutoActive] Session ${sessionNum}: ${isActive ? 'ON -> OFF' : 'OFF -> ON'} (Time: ${currentTime}, Range: ${start}-${end})`);
+                    updates[`SESSION_${sessionNum}_STATUS`] = shouldBeActive ? 'ON' : 'OFF';
+                    changed = true;
+                }
+            }
+
+            if (changed) {
+                console.log(`[AutoActive] Detected changes at ${currentTime}. Updating...`, updates);
+                for (const [key, val] of Object.entries(updates)) {
+                    await api.saveConfig(key, val);
+                }
+                // Refresh dashboard data to reflect changes in UI
+                fetchData(true);
+            }
+        } catch (e) {
+            console.error("[AutoActive] Error in checkSessions:", e);
+        }
+    };
+
+    // Initial check
+    checkSessions();
+    
+    const interval = setInterval(checkSessions, 15000); // Check every 15 seconds for better responsiveness
+    return () => clearInterval(interval);
+  }, [currentUserState.role]);
+
+  // Separate effect for server time clock (updates every second for UI)
+  useEffect(() => {
+    const timer = setInterval(() => {
+        const now = new Date();
+        const options = { timeZone: 'Asia/Jakarta', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' } as const;
+        setServerTime(new Intl.DateTimeFormat('en-GB', options).format(now));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   // Poll for realtime updates on overview tab
   useEffect(() => {
     if (activeTab === 'overview') {
@@ -433,6 +526,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                 <p className="text-sm text-slate-500 mt-1">Kelola data dan pantau aktivitas ujian secara realtime.</p>
             </div>
             <div className="flex items-center gap-3">
+              <div className="hidden md:flex flex-col items-end mr-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Server Time (WIB)</span>
+                  <span className="text-sm font-mono font-bold text-indigo-600 flex items-center gap-1">
+                      <Clock size={14} /> {serverTime || '--:--:--'}
+                  </span>
+              </div>
               <button 
                 onClick={() => fetchData(false)} 
                 disabled={isRefreshing || loading} 

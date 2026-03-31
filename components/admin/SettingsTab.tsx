@@ -87,57 +87,8 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
         }
     }, [configs, isSaving]);
 
-    // Auto-activation logic
-    useEffect(() => {
-        if (!autoActivation || !isAdminPusat) return;
-
-        const checkSessions = async () => {
-            const now = new Date();
-            // Format time as HH:MM using Asia/Jakarta time
-            const currentTime = new Intl.DateTimeFormat('id-ID', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false,
-                timeZone: 'Asia/Jakarta'
-            }).format(now).replace('.', ':');
-            
-            let changed = false;
-            const updates: Record<string, string> = {};
-
-            for (let i = 1; i <= 4; i++) {
-                const sessionNum = i.toString();
-                const start = configs[`SESSION_${sessionNum}_START`] || '07:30';
-                const end = configs[`SESSION_${sessionNum}_END`] || '10:30';
-                const status = configs[`SESSION_${sessionNum}_STATUS`] || 'OFF';
-                const isActive = status === 'ON' || status === 'AKTIF' || status === 'ACTIVE' || status === 'TRUE' || status === '1';
-
-                const shouldBeActive = currentTime >= start && currentTime <= end;
-                
-                if (shouldBeActive !== isActive) {
-                    updates[`SESSION_${sessionNum}_STATUS`] = shouldBeActive ? 'ON' : 'OFF';
-                    changed = true;
-                }
-            }
-
-            if (changed) {
-                try {
-                    for (const [key, val] of Object.entries(updates)) {
-                        await api.saveConfig(key, val);
-                    }
-                    onDataChange();
-                    showAlert("Status sesi diperbarui otomatis berdasarkan jadwal.", { type: 'info' });
-                } catch (e) {
-                    console.error("Auto-activation failed", e);
-                }
-            }
-        };
-
-        // Initial check
-        checkSessions();
-        
-        const interval = setInterval(checkSessions, 30000); // Check every 30 seconds
-        return () => clearInterval(interval);
-    }, [autoActivation, isAdminPusat, onDataChange, configs]);
+    // Auto-activation logic moved to AdminDashboard.tsx to ensure it runs regardless of active tab.
+    // This component now only displays the status.
 
     // Fetch current config on mount if configs prop is empty
     useEffect(() => {
@@ -476,6 +427,11 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
                                 <p className="text-[10px] text-slate-400 font-mono mt-0.5 flex items-center gap-1">
                                     <Clock size={10} />
                                     Server Time: {serverTime} WIB
+                                    {autoActivation && (
+                                        <span className="ml-2 px-1.5 py-0.5 bg-amber-100 text-amber-600 rounded border border-amber-200 animate-pulse">
+                                            AUTO ACTIVE
+                                        </span>
+                                    )}
                                 </p>
                             </div>
                         </div>
@@ -548,9 +504,9 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
                                             </button>
                                             <button 
                                                 onClick={() => handleSaveSessionStatus(sessionNum)}
-                                                disabled={isSaving}
-                                                className={`p-2 rounded-xl transition disabled:opacity-50 border shadow-sm ${session.active ? 'bg-white text-indigo-600 hover:bg-indigo-50 border-indigo-100' : 'bg-white text-slate-400 hover:bg-slate-50 border-slate-200'}`}
-                                                title="Simpan Pengaturan Sesi"
+                                                disabled={isSaving || autoActivation}
+                                                className={`p-2 rounded-xl transition disabled:opacity-50 border shadow-sm ${session.active ? 'bg-white text-indigo-600 hover:bg-indigo-50 border-indigo-100' : 'bg-white text-slate-400 hover:bg-slate-50 border-slate-200'} ${autoActivation ? 'cursor-not-allowed' : ''}`}
+                                                title={autoActivation ? "Status dikontrol otomatis oleh sistem" : "Simpan Pengaturan Sesi"}
                                             >
                                                 <Save size={16} />
                                             </button>
@@ -561,7 +517,7 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
                                             <label className="text-[9px] font-bold text-slate-400 uppercase">Mulai</label>
                                             <input 
                                                 type="time" 
-                                                className="p-1.5 text-xs border border-slate-200 rounded-lg bg-white outline-none focus:ring-2 focus:ring-indigo-100 font-bold text-slate-700"
+                                                className={`p-1.5 text-xs border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-100 font-bold ${autoActivation ? 'bg-indigo-50 text-indigo-700 border-indigo-100' : 'bg-white text-slate-700'}`}
                                                 value={session.start}
                                                 onChange={(e) => setSessionTimes({
                                                     ...sessionTimes,
@@ -573,7 +529,7 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
                                             <label className="text-[9px] font-bold text-slate-400 uppercase">Selesai</label>
                                             <input 
                                                 type="time" 
-                                                className="p-1.5 text-xs border border-slate-200 rounded-lg bg-white outline-none focus:ring-2 focus:ring-indigo-100 font-bold text-slate-700"
+                                                className={`p-1.5 text-xs border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-100 font-bold ${autoActivation ? 'bg-indigo-50 text-indigo-700 border-indigo-100' : 'bg-white text-slate-700'}`}
                                                 value={session.end}
                                                 onChange={(e) => setSessionTimes({
                                                     ...sessionTimes,

@@ -77,6 +77,31 @@ export const api = {
         if (blockedStatuses.includes(status)) {
              throw new Error(`Status peserta sedang ${data.status}. Hubungi proktor untuk reset login.`);
         }
+
+        // --- SESSION STATUS CHECK ---
+        // Fetch configs to check if the user's session is active
+        const { data: configData } = await supabase.from('config').select('*');
+        const configs: Record<string, string> = configData?.reduce((acc, curr) => ({ ...acc, [curr.key]: curr.value }), {}) || {};
+        
+        const userSessionRaw = String(data.session || '1').replace(/[^0-9]/g, "");
+        const userSession = userSessionRaw || '1';
+        
+        const sessionStatus = configs[`SESSION_${userSession}_STATUS`] || 'OFF';
+        const isSessionActive = sessionStatus === 'ON' || sessionStatus === 'AKTIF' || sessionStatus === 'ACTIVE' || sessionStatus === 'TRUE' || sessionStatus === '1';
+
+        if (!isSessionActive) {
+            const startTime = configs[`SESSION_${userSession}_START`];
+            const endTime = configs[`SESSION_${userSession}_END`];
+            const isAuto = configs.AUTO_SESSION_ACTIVATION === 'TRUE';
+            
+            let message = `Sesi ujian anda (Sesi ${userSession}) saat ini sedang NON-AKTIF.`;
+            if (isAuto && startTime && endTime) {
+                message += ` Sesi ini akan aktif otomatis antara pukul ${startTime} s/d ${endTime} WIB.`;
+            } else {
+                message += ` Silakan hubungi proktor untuk mengaktifkan sesi ini.`;
+            }
+            throw new Error(message);
+        }
     }
 
     // Update status to LOGGED_IN (more explicit than ONLINE)
