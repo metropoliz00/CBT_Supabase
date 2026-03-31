@@ -25,7 +25,7 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
     const [devQuote, setDevQuote] = useState<string>(configs.DEV_QUOTE || '');
     const [sessionTimes, setSessionTimes] = useState<Record<string, { active: boolean, start: string, end: string }>>(() => {
         const sessions: Record<string, { active: boolean, start: string, end: string }> = {};
-        for (let i = 1; i <= 5; i++) {
+        for (let i = 1; i <= 4; i++) {
             const status = configs[`SESSION_${i}_STATUS`] || 'OFF';
             sessions[i.toString()] = {
                 active: status === 'ON' || status === 'AKTIF' || status === 'ACTIVE' || status === 'TRUE' || status === '1',
@@ -75,7 +75,7 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
             setSsHasilId(configs.SS_HASIL_ID || '');
             
             const sessions: Record<string, { active: boolean, start: string, end: string }> = {};
-            for (let i = 1; i <= 5; i++) {
+            for (let i = 1; i <= 4; i++) {
                 const status = configs[`SESSION_${i}_STATUS`] || 'OFF';
                 sessions[i.toString()] = {
                     active: status === 'ON' || status === 'AKTIF' || status === 'ACTIVE' || status === 'TRUE' || status === '1',
@@ -148,7 +148,7 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
                     // ... (other configs) ...
                     
                     const sessions: Record<string, { active: boolean, start: string, end: string }> = {};
-                    for (let i = 1; i <= 5; i++) {
+                    for (let i = 1; i <= 4; i++) {
                         const status = allConfigs[`SESSION_${i}_STATUS`] || 'OFF';
                         sessions[i.toString()] = {
                             active: status === 'ON' || status === 'AKTIF' || status === 'ACTIVE' || status === 'TRUE' || status === '1',

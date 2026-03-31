@@ -159,7 +159,7 @@ const AturSesiTab = ({
                     Object.keys(configs).forEach(key => {
                         if (key.includes('SESSION_') || key.includes('SESI_')) {
                             const num = parseInt(key.replace(/[^0-9]/g, ""), 10);
-                            if (!isNaN(num)) sessionNums.add(num);
+                            if (!isNaN(num) && num <= 4) sessionNums.add(num);
                         }
                     });
                     
@@ -201,7 +201,7 @@ const AturSesiTab = ({
                                 Object.keys(configs).forEach(key => {
                                     if (key.includes('SESSION_') || key.includes('SESI_')) {
                                         const num = parseInt(key.replace(/[^0-9]/g, ""), 10);
-                                        if (!isNaN(num)) sessionNums.add(num);
+                                        if (!isNaN(num) && num <= 4) sessionNums.add(num);
                                     }
                                 });
                                 [1, 2, 3, 4].forEach(n => sessionNums.add(n));
