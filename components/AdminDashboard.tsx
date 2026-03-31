@@ -222,7 +222,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
           try {
               // Fetch latest configs directly to avoid stale state
               const configs = await api.getAllConfig();
-              const autoActivation = configs['AUTO_SESSION_ACTIVATION'] === 'TRUE';
+              const autoActivation = String(configs['AUTO_SESSION_ACTIVATION'] || 'FALSE').toUpperCase() === 'TRUE';
               
               // Get current time in Asia/Jakarta (WIB)
               const now = new Date();
@@ -235,7 +235,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
               const parts = formatter.formatToParts(now);
               const h = parts.find(p => p.type === 'hour')?.value || '00';
               const m = parts.find(p => p.type === 'minute')?.value || '00';
-              const currentTime = `${h}:${m}`;
+              const currentTime = `${h.padStart(2, '0')}:${m.padStart(2, '0')}`;
               
               // For the clock display
               const clockFormatter = new Intl.DateTimeFormat('en-GB', {
@@ -248,7 +248,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
               setServerTime(clockFormatter.format(now));
   
               if (!autoActivation) {
-                  // If auto-activation is OFF, just log it once in a while
                   if (now.getSeconds() % 60 === 0) {
                       console.log("[AutoActive] Mode Otomatis is currently OFF.");
                   }
@@ -285,17 +284,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                   return timeStr;
               };
   
+              // Default times if not set in DB
+              const defaultTimes: Record<string, {s: string, e: string}> = {
+                  '1': { s: '07:30', e: '10:30' },
+                  '2': { s: '10:30', e: '13:30' },
+                  '3': { s: '13:30', e: '16:30' },
+                  '4': { s: '16:30', e: '19:30' }
+              };
+  
               for (let i = 1; i <= 4; i++) {
                   const sessionNum = i.toString();
-                  let start = to24h(configs[`SESSION_${sessionNum}_START`] || configs[`SESI_${sessionNum}_START`] || '');
-                  let end = to24h(configs[`SESSION_${sessionNum}_END`] || configs[`SESI_${sessionNum}_END`] || '');
+                  const rawStart = configs[`SESSION_${sessionNum}_START`] || configs[`SESI_${sessionNum}_START`] || defaultTimes[sessionNum].s;
+                  const rawEnd = configs[`SESSION_${sessionNum}_END`] || configs[`SESI_${sessionNum}_END`] || defaultTimes[sessionNum].e;
                   
-                  if (!start || !end) {
-                      if (now.getSeconds() % 60 === 0) {
-                        console.warn(`[AutoActive] Session ${sessionNum} has missing start/end time.`);
-                      }
-                      continue;
-                  }
+                  let start = to24h(rawStart);
+                  let end = to24h(rawEnd);
+                  
+                  if (!start || !end) continue;
                   
                   // Check both key formats
                   const statusSession = configs[`SESSION_${sessionNum}_STATUS`] || 'OFF';
@@ -315,7 +320,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                       updates[`SESI_${sessionNum}_STATUS`] = shouldBeActive ? 'ON' : 'OFF';
                       changed = true;
                   } else {
-                      // Log current state for debugging every 30 seconds
                       if (now.getSeconds() % 30 === 0) {
                         console.log(`[AutoActive] Session ${sessionNum} STATUS: ${isActive ? 'ON' : 'OFF'} (Current: ${currentTime}, Range: ${start}-${end})`);
                       }
@@ -324,9 +328,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
   
               if (changed) {
                   console.log(`[AutoActive] Detected changes at ${currentTime}. Updating database...`, updates);
-                  for (const [key, val] of Object.entries(updates)) {
-                      await api.saveConfig(key, val);
-                  }
+                  // Use Promise.all for faster updates
+                  await Promise.all(Object.entries(updates).map(([key, val]) => api.saveConfig(key, val)));
+                  
                   // Refresh dashboard data to reflect changes in UI
                   fetchData(true);
               }
@@ -338,7 +342,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
       // Initial check
       checkSessions();
       
-      const interval = setInterval(checkSessions, 15000); // Check every 15 seconds for better responsiveness
+      const interval = setInterval(checkSessions, 15000); // Check every 15 seconds
       return () => clearInterval(interval);
     }, [currentUserState.role]);
 
@@ -577,7 +581,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
             </div>
             <div className="flex items-center gap-3">
               <div className="hidden md:flex flex-col items-end mr-2">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Server Time (WIB)</span>
+                  <div className="flex items-center gap-2">
+                    {dashboardData.configs?.AUTO_SESSION_ACTIVATION === 'TRUE' && (
+                        <span className="flex items-center gap-1 px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-[8px] font-bold rounded-md border border-emerald-200 animate-pulse">
+                            <Zap size={8} /> AUTO
+                        </span>
+                    )}
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Server Time (WIB)</span>
+                  </div>
                   <span className="text-sm font-mono font-bold text-indigo-600 flex items-center gap-1">
                       <Clock size={14} /> {serverTime || '--:--:--'}
                   </span>
