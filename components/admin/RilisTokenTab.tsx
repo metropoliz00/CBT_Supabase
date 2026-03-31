@@ -65,10 +65,28 @@ const RilisTokenTab = ({ currentUser, token, duration, maxQuestions, surveyDurat
                     <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">Manajemen Token</h2>
                     <p className="text-slate-500 text-sm">Kelola akses masuk ujian dan konfigurasi sistem.</p>
                 </div>
-                <button onClick={refreshData} disabled={isRefreshing} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-sm font-bold hover:bg-slate-50 hover:text-indigo-600 transition shadow-sm w-fit">
-                    <RefreshCw size={16} className={isRefreshing ? "animate-spin" : ""} />
-                    {isRefreshing ? "Menyinkronkan..." : "Refresh Data"}
-                </button>
+                <div className="flex items-center gap-2">
+                    {isAdminPusat && (
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-lg shadow-sm">
+                            <span className="text-[10px] font-bold text-slate-500 uppercase">Auto</span>
+                            <button 
+                                onClick={async () => {
+                                    const newValue = configs.AUTO_SESSION_ACTIVATION !== 'TRUE';
+                                    await api.saveConfig('AUTO_SESSION_ACTIVATION', newValue ? 'TRUE' : 'FALSE');
+                                    refreshData();
+                                    showAlert(`Mode Otomatis ${newValue ? 'Diaktifkan' : 'Dimatikan'}`, { type: 'info' });
+                                }}
+                                className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors focus:outline-none ${configs.AUTO_SESSION_ACTIVATION === 'TRUE' ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                            >
+                                <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${configs.AUTO_SESSION_ACTIVATION === 'TRUE' ? 'translate-x-6' : 'translate-x-1'}`} />
+                            </button>
+                        </div>
+                    )}
+                    <button onClick={refreshData} disabled={isRefreshing} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-sm font-bold hover:bg-slate-50 hover:text-indigo-600 transition shadow-sm w-fit">
+                        <RefreshCw size={16} className={isRefreshing ? "animate-spin" : ""} />
+                        {isRefreshing ? "Menyinkronkan..." : "Refresh Data"}
+                    </button>
+                </div>
             </div>
 
             {/* Main Token Card - Modern Gradient */}
@@ -124,6 +142,12 @@ const RilisTokenTab = ({ currentUser, token, duration, maxQuestions, surveyDurat
                                     <div className="text-center">
                                         <h3 className="text-2xl font-bold text-white">Token Tersembunyi</h3>
                                         <p className="text-indigo-100 text-sm opacity-80 max-w-xs">Token hanya akan muncul saat jadwal sesi ujian berlangsung.</p>
+                                        {configs.AUTO_SESSION_ACTIVATION === 'TRUE' && (
+                                            <div className="mt-4 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-white/10 rounded-full border border-white/10 backdrop-blur-sm">
+                                                <Zap size={12} className="text-amber-400 animate-pulse" />
+                                                <span className="text-[10px] font-bold text-indigo-50 uppercase tracking-wider">Mode Otomatis Aktif</span>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             )}

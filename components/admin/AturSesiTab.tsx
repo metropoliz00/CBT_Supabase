@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { Clock, Search, Save, Loader2, ShieldAlert, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Clock, Search, Save, Loader2, ShieldAlert, RefreshCw, CheckCircle2, AlertCircle, Zap } from 'lucide-react';
 import { api } from '../../services/api';
 import { User } from '../../types';
 import { useAlert } from '../../context/AlertContext';
@@ -104,7 +104,15 @@ const AturSesiTab = ({
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 fade-in p-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <div>
-                    <h3 className="font-bold text-lg flex items-center gap-2 text-slate-700"><Clock size={20}/> Atur Sesi Ujian</h3>
+                    <div className="flex items-center gap-3">
+                        <h3 className="font-bold text-lg flex items-center gap-2 text-slate-700"><Clock size={20}/> Atur Sesi Ujian</h3>
+                        {configs.AUTO_SESSION_ACTIVATION === 'TRUE' && (
+                            <span className="px-2 py-0.5 bg-indigo-100 text-indigo-600 text-[10px] font-bold rounded-full border border-indigo-200 flex items-center gap-1 shadow-sm">
+                                <Zap size={10} className="animate-pulse text-amber-500" />
+                                MODE OTOMATIS AKTIF
+                            </span>
+                        )}
+                    </div>
                     <p className="text-xs text-slate-500">Tentukan sesi pengerjaan untuk setiap peserta.</p>
                 </div>
                 <div className="flex items-center gap-2">

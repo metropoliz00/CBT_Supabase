@@ -16,18 +16,21 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
     const [surveyDuration, setSurveyDuration] = useState<number>(Number(configs.SURVEY_DURATION) || 30);
     const [examDuration, setExamDuration] = useState<number>(Number(configs.DURATION) || 60);
     const [showSurvey, setShowSurvey] = useState<boolean>(configs.SHOW_SURVEY === 'TRUE');
+    const [autoActivation, setAutoActivation] = useState<boolean>(configs.AUTO_SESSION_ACTIVATION === 'TRUE');
     const [allowProctorSessionEdit, setAllowProctorSessionEdit] = useState<boolean>(configs.ALLOW_PROCTOR_SESSION_EDIT === 'TRUE');
     const [showRekapToProctor, setShowRekapToProctor] = useState<boolean>(configs.SHOW_REKAP_TO_PROCTOR === 'TRUE');
     const [devShow, setDevShow] = useState<boolean>(configs.DEV_SHOW !== 'FALSE');
     const [devName, setDevName] = useState<string>(configs.DEV_NAME || '');
     const [devPhoto, setDevPhoto] = useState<string>(configs.DEV_PHOTO_URL || '');
     const [devQuote, setDevQuote] = useState<string>(configs.DEV_QUOTE || '');
-    const [sessionTimes, setSessionTimes] = useState<Record<string, { active: boolean }>>(() => {
-        const sessions: Record<string, { active: boolean }> = {};
-        for (let i = 1; i <= 4; i++) {
+    const [sessionTimes, setSessionTimes] = useState<Record<string, { active: boolean, start: string, end: string }>>(() => {
+        const sessions: Record<string, { active: boolean, start: string, end: string }> = {};
+        for (let i = 1; i <= 5; i++) {
             const status = configs[`SESSION_${i}_STATUS`] || 'OFF';
             sessions[i.toString()] = {
-                active: status === 'ON' || status === 'AKTIF' || status === 'ACTIVE' || status === 'TRUE' || status === '1'
+                active: status === 'ON' || status === 'AKTIF' || status === 'ACTIVE' || status === 'TRUE' || status === '1',
+                start: configs[`SESSION_${i}_START`] || '07:30',
+                end: configs[`SESSION_${i}_END`] || '10:30'
             };
         }
         return sessions;
@@ -37,6 +40,8 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
     const [ssHasilId, setSsHasilId] = useState(configs.SS_HASIL_ID || '');
     const [loadingConfig, setLoadingConfig] = useState(false);
     const [serverTime, setServerTime] = useState('');
+
+    const isAdminPusat = currentUser.role === 'admin_pusat';
 
     useEffect(() => {
         const updateTime = () => {
@@ -53,13 +58,13 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
         return () => clearInterval(interval);
     }, []);
 
-    // Sync with props if they change
     useEffect(() => {
         if (configs && Object.keys(configs).length > 0) {
             setMaxQuestions(Number(configs.MAX_QUESTIONS) || 0);
             setSurveyDuration(Number(configs.SURVEY_DURATION) || 30);
             setExamDuration(Number(configs.DURATION) || 60);
             setShowSurvey(configs.SHOW_SURVEY === 'TRUE');
+            setAutoActivation(configs.AUTO_SESSION_ACTIVATION === 'TRUE');
             setAllowProctorSessionEdit(configs.ALLOW_PROCTOR_SESSION_EDIT === 'TRUE');
             setShowRekapToProctor(configs.SHOW_REKAP_TO_PROCTOR === 'TRUE');
             setDevShow(configs.DEV_SHOW !== 'FALSE');
@@ -69,16 +74,67 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
             setSsSoalId(configs.SS_SOAL_ID || '');
             setSsHasilId(configs.SS_HASIL_ID || '');
             
-            const sessions: Record<string, { active: boolean }> = {};
-            for (let i = 1; i <= 4; i++) {
+            const sessions: Record<string, { active: boolean, start: string, end: string }> = {};
+            for (let i = 1; i <= 5; i++) {
                 const status = configs[`SESSION_${i}_STATUS`] || 'OFF';
                 sessions[i.toString()] = {
-                    active: status === 'ON' || status === 'AKTIF' || status === 'ACTIVE' || status === 'TRUE' || status === '1'
+                    active: status === 'ON' || status === 'AKTIF' || status === 'ACTIVE' || status === 'TRUE' || status === '1',
+                    start: configs[`SESSION_${i}_START`] || '07:30',
+                    end: configs[`SESSION_${i}_END`] || '10:30'
                 };
             }
             setSessionTimes(sessions);
         }
     }, [configs]);
+
+    // Auto-activation logic
+    useEffect(() => {
+        if (!autoActivation || !isAdminPusat) return;
+
+        const checkSessions = async () => {
+            const now = new Date();
+            // Format time as HH:MM using Asia/Jakarta time for consistency with serverTime display
+            const currentTime = now.toLocaleTimeString('id-ID', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: false,
+                timeZone: 'Asia/Jakarta' 
+            }).replace('.', ':'); // id-ID uses dot as separator sometimes
+            
+            let changed = false;
+            const updates: Record<string, string> = {};
+
+            for (const sessionNum of Object.keys(sessionTimes)) {
+                const session = sessionTimes[sessionNum];
+                if (!session.start || !session.end) continue;
+
+                const shouldBeActive = currentTime >= session.start && currentTime <= session.end;
+                
+                if (shouldBeActive !== session.active) {
+                    updates[`SESSION_${sessionNum}_STATUS`] = shouldBeActive ? 'ON' : 'OFF';
+                    changed = true;
+                }
+            }
+
+            if (changed) {
+                try {
+                    for (const [key, val] of Object.entries(updates)) {
+                        await api.saveConfig(key, val);
+                    }
+                    onDataChange();
+                    showAlert("Status sesi diperbarui otomatis berdasarkan jadwal.", { type: 'info' });
+                } catch (e) {
+                    console.error("Auto-activation failed", e);
+                }
+            }
+        };
+
+        // Initial check
+        checkSessions();
+        
+        const interval = setInterval(checkSessions, 30000); // Check every 30 seconds
+        return () => clearInterval(interval);
+    }, [autoActivation, sessionTimes, isAdminPusat, onDataChange]);
 
     // Fetch current config on mount if configs prop is empty
     useEffect(() => {
@@ -91,11 +147,13 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
                 if (allConfigs && Object.keys(allConfigs).length > 0) {
                     // ... (other configs) ...
                     
-                    const sessions: Record<string, { active: boolean }> = {};
-                    for (let i = 1; i <= 4; i++) {
+                    const sessions: Record<string, { active: boolean, start: string, end: string }> = {};
+                    for (let i = 1; i <= 5; i++) {
                         const status = allConfigs[`SESSION_${i}_STATUS`] || 'OFF';
                         sessions[i.toString()] = {
-                            active: status === 'ON' || status === 'AKTIF' || status === 'ACTIVE' || status === 'TRUE' || status === '1'
+                            active: status === 'ON' || status === 'AKTIF' || status === 'ACTIVE' || status === 'TRUE' || status === '1',
+                            start: allConfigs[`SESSION_${i}_START`] || '07:30',
+                            end: allConfigs[`SESSION_${i}_END`] || '10:30'
                         };
                     }
                     setSessionTimes(sessions);
@@ -126,13 +184,15 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
     const handleSaveSessionStatus = async (sessionNum: string) => {
         setIsSaving(true);
         try {
-            const { active } = sessionTimes[sessionNum];
+            const { active, start, end } = sessionTimes[sessionNum];
             await api.saveConfig(`SESSION_${sessionNum}_STATUS`, active ? 'ON' : 'OFF');
-            await showAlert(`Status Sesi ${sessionNum} berhasil disimpan (${active ? 'AKTIF' : 'NON-AKTIF'}).`, { type: 'success' });
+            await api.saveConfig(`SESSION_${sessionNum}_START`, start);
+            await api.saveConfig(`SESSION_${sessionNum}_END`, end);
+            await showAlert(`Pengaturan Sesi ${sessionNum} berhasil disimpan.`, { type: 'success' });
             onDataChange();
         } catch (e: any) {
             console.error(e);
-            await showAlert("Gagal menyimpan status sesi.", { type: 'error' });
+            await showAlert("Gagal menyimpan pengaturan sesi.", { type: 'error' });
         } finally {
             setIsSaving(false);
         }
@@ -396,6 +456,21 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
                                 </p>
                             </div>
                         </div>
+                        <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg border border-slate-200 shadow-sm">
+                                <span className="text-[10px] font-bold text-slate-500 uppercase">Mode Otomatis</span>
+                                <button 
+                                    onClick={() => {
+                                        const newValue = !autoActivation;
+                                        setAutoActivation(newValue);
+                                        handleSaveConfig('AUTO_SESSION_ACTIVATION', newValue ? 'TRUE' : 'FALSE');
+                                    }}
+                                    className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors focus:outline-none ${autoActivation ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                                >
+                                    <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${autoActivation ? 'translate-x-6' : 'translate-x-1'}`} />
+                                </button>
+                            </div>
+                        </div>
                     </div>
                     <div className="p-6">
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -421,8 +496,9 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
                                                     ...sessionTimes,
                                                     [sessionNum]: { ...session, active: !session.active }
                                                 })}
-                                                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${session.active ? 'bg-emerald-500' : 'bg-slate-300'}`}
-                                                title={session.active ? "Non-aktifkan Sesi" : "Aktifkan Sesi"}
+                                                disabled={autoActivation}
+                                                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${session.active ? 'bg-emerald-500' : 'bg-slate-300'} ${autoActivation ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                title={autoActivation ? "Matikan Mode Otomatis untuk mengubah manual" : (session.active ? "Non-aktifkan Sesi" : "Aktifkan Sesi")}
                                             >
                                                 <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${session.active ? 'translate-x-5' : 'translate-x-1'}`} />
                                             </button>
@@ -430,16 +506,44 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
                                                 onClick={() => handleSaveSessionStatus(sessionNum)}
                                                 disabled={isSaving}
                                                 className={`p-2 rounded-xl transition disabled:opacity-50 border shadow-sm ${session.active ? 'bg-white text-indigo-600 hover:bg-indigo-50 border-indigo-100' : 'bg-white text-slate-400 hover:bg-slate-50 border-slate-200'}`}
-                                                title="Simpan Status Sesi"
+                                                title="Simpan Pengaturan Sesi"
                                             >
                                                 <Save size={16} />
                                             </button>
                                         </div>
                                     </div>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-[9px] font-bold text-slate-400 uppercase">Mulai</label>
+                                            <input 
+                                                type="time" 
+                                                className="p-1.5 text-xs border border-slate-200 rounded-lg bg-white outline-none focus:ring-2 focus:ring-indigo-100 font-bold text-slate-700"
+                                                value={session.start}
+                                                onChange={(e) => setSessionTimes({
+                                                    ...sessionTimes,
+                                                    [sessionNum]: { ...session, start: e.target.value }
+                                                })}
+                                            />
+                                        </div>
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-[9px] font-bold text-slate-400 uppercase">Selesai</label>
+                                            <input 
+                                                type="time" 
+                                                className="p-1.5 text-xs border border-slate-200 rounded-lg bg-white outline-none focus:ring-2 focus:ring-indigo-100 font-bold text-slate-700"
+                                                value={session.end}
+                                                onChange={(e) => setSessionTimes({
+                                                    ...sessionTimes,
+                                                    [sessionNum]: { ...session, end: e.target.value }
+                                                })}
+                                            />
+                                        </div>
+                                    </div>
                                     <div className="text-xs text-slate-500 leading-relaxed">
-                                        {session.active 
-                                            ? "Siswa pada sesi ini diizinkan untuk login dan mengerjakan ujian." 
-                                            : "Siswa pada sesi ini dilarang login. Muncul peringatan saat mencoba masuk."}
+                                        {autoActivation 
+                                            ? `Sesi ini akan aktif otomatis antara pukul ${session.start} s/d ${session.end}.`
+                                            : (session.active 
+                                                ? "Siswa pada sesi ini diizinkan untuk login dan mengerjakan ujian." 
+                                                : "Siswa pada sesi ini dilarang login. Muncul peringatan saat mencoba masuk.")}
                                     </div>
                                 </div>
                             );
