@@ -564,7 +564,38 @@ function App() {
                                 </div>
                             </div>
                         <div className="p-8 space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6"><div className="space-y-1"><label className="text-xs font-bold text-slate-400 uppercase">Username</label><div className="font-mono text-lg font-bold text-slate-700 bg-slate-50 p-2 rounded border border-slate-200">{currentUser?.username}</div></div><div className="space-y-1"><label className="text-xs font-bold text-slate-400 uppercase">Mata Ujian</label>{examList.length > 0 ? (<select className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-blue-700 font-bold outline-none focus:ring-2 focus:ring-blue-100 disabled:bg-slate-100 disabled:text-slate-500" value={selectedExamId} onChange={e=>setSelectedExamId(e.target.value)} disabled={examList.length === 1}>{examList.map(s=><option key={s.id} value={s.id}>{s.nama_ujian}</option>)}</select>) : (<div className="p-2.5 bg-red-50 border border-red-200 text-red-500 rounded-lg text-sm font-bold flex items-center gap-2"><AlertCircle size={16}/>{currentUser?.active_exam && currentUser.active_exam !== '-' ? `Ujian "${currentUser.active_exam}" belum aktif/tersedia.` : "Belum ada ujian yang diaktifkan untuk User ini."}</div>)}</div></div>
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                 <div className="space-y-1">
+                                     <label className="text-xs font-bold text-slate-400 uppercase">Username</label>
+                                     <div className="font-mono text-lg font-bold text-slate-700 bg-slate-50 p-2 rounded border border-slate-200">
+                                         {currentUser?.username}
+                                     </div>
+                                 </div>
+                                 <div className="space-y-1">
+                                     <label className="text-xs font-bold text-slate-400 uppercase">Mata Ujian</label>
+                                     {examList.length > 0 ? (
+                                         <select className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-blue-700 font-bold outline-none focus:ring-2 focus:ring-blue-100 disabled:bg-slate-100 disabled:text-slate-500" value={selectedExamId} onChange={e=>setSelectedExamId(e.target.value)} disabled={examList.length === 1}>
+                                             {examList.map(s=><option key={s.id} value={s.id}>{s.nama_ujian}</option>)}
+                                         </select>
+                                     ) : (
+                                         <div className="p-2.5 bg-red-50 border border-red-200 text-red-500 rounded-lg text-sm font-bold flex items-center gap-2">
+                                             <AlertCircle size={16}/>
+                                             {currentUser?.active_exam && currentUser.active_exam !== '-' ? `Ujian "${currentUser.active_exam}" belum aktif/tersedia.` : "Belum ada ujian yang diaktifkan untuk User ini."}
+                                         </div>
+                                     )}
+                                 </div>
+                             </div>
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                 <div className="space-y-1">
+                                     <label className="text-xs font-bold text-slate-400 uppercase">Paket Soal Aktif</label>
+                                     <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-lg font-bold text-indigo-700">
+                                         {currentUser?.id_paket && currentUser.id_paket !== '-' ? currentUser.id_paket : 'Default (Semua)'}
+                                     </div>
+                                 </div>
+                                 <div className="space-y-1">
+                                     {/* Empty space or another field if needed */}
+                                 </div>
+                             </div>
                             <div className="h-px bg-slate-100"></div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6"><div className="space-y-1"><label className="text-xs font-bold text-slate-400 uppercase">Nama Lengkap</label><div className="p-3 bg-slate-50 border border-slate-200 rounded-lg font-bold text-slate-700">{currentUser?.nama_lengkap}</div></div><div className="space-y-1"><label className="text-xs font-bold text-slate-400 uppercase">Asal Sekolah / Kelas</label><div className="p-3 bg-slate-50 border border-slate-200 rounded-lg font-bold text-slate-700">{currentUser?.kelas_id}</div></div></div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6"><div className="space-y-1"><label className="text-xs font-bold text-slate-400 uppercase">Jenis Kelamin</label><div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-medium">{currentUser?.jenis_kelamin || '-'}</div></div><div className="space-y-1"><label className="text-xs font-bold text-slate-400 uppercase">Sesi Ujian</label><div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-medium">{currentUser?.session || '-'}</div></div></div>
@@ -636,6 +667,7 @@ function App() {
         userFullName={currentUser.nama_lengkap}
         username={currentUser.username}
         userPhoto={currentUser.photo_url}
+        idPaket={currentUser.id_paket}
         startTime={startTime}
         onFinish={handleFinishExam}
         onExit={handleLogout}

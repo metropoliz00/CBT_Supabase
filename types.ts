@@ -44,6 +44,7 @@ export interface Question {
   keterangan_gambar?: string; // New Field: Image Caption
   tipe_soal: QuestionType;
   bobot_nilai: number;
+  id_paket?: string; // New Field: Package ID
 }
 
 // Interface for Admin CRUD (Flat structure matching spreadsheet columns)

@@ -257,6 +257,7 @@ export const api = {
             text_soal: String(q.text_soal || "Pertanyaan tanpa teks"),
             tipe_soal: (q.tipe_soal || 'PG') as any,
             bobot_nilai: Number(q.bobot_nilai || 10),
+            id_paket: q.id_paket ? String(q.id_paket) : undefined,
             gambar: q.gambar ? String(q.gambar) : undefined,
             keterangan_gambar: q.keterangan_gambar ? String(q.keterangan_gambar) : undefined,
             options: options

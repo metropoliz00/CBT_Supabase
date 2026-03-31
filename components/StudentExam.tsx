@@ -147,8 +147,14 @@ const StudentExam: React.FC<StudentExamProps> = ({ exam, questions, userFullName
   const examQuestions = React.useMemo(() => {
     if (questions.length === 0) return [];
     
+    // Filter by idPaket if provided and not '-'
+    let filteredQuestions = questions;
+    if (idPaket && idPaket !== '-') {
+        filteredQuestions = questions.filter(q => q.id_paket === idPaket);
+    }
+
     // Shuffle options only for PG and PGK
-    const questionsWithShuffledOptions = questions.map(q => {
+    const questionsWithShuffledOptions = filteredQuestions.map(q => {
         if (q.tipe_soal === 'PG' || q.tipe_soal === 'PGK') {
             return { ...q, options: shuffleArray(q.options) };
         }
@@ -164,7 +170,7 @@ const StudentExam: React.FC<StudentExamProps> = ({ exam, questions, userFullName
     }
     
     return fullyShuffled;
-  }, [questions, exam.max_questions, exam.id]);
+  }, [questions, exam.max_questions, exam.id, idPaket]);
 
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<string, UserAnswerValue>>({});
@@ -407,7 +413,13 @@ const StudentExam: React.FC<StudentExamProps> = ({ exam, questions, userFullName
               <div>
                   <div className="text-sm font-bold text-slate-800">{userFullName}</div>
                   <div className="text-xs text-slate-500">{exam.nama_ujian}</div>
-                  {idPaket && idPaket !== '-' && <div className="text-[10px] text-indigo-500 font-bold uppercase">Paket: {idPaket}</div>}
+                  {idPaket && idPaket !== '-' && (
+                      <div className="flex items-center gap-1 mt-0.5">
+                          <div className="px-1.5 py-0.5 bg-indigo-100 text-indigo-700 text-[10px] font-extrabold rounded uppercase border border-indigo-200">
+                              Paket: {idPaket}
+                          </div>
+                      </div>
+                  )}
               </div>
               {userPhoto ? (
                   <img src={userPhoto} className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm bg-white" alt="Profile" />
