@@ -741,7 +741,8 @@ export const api = {
                   kelas_id: user?.kelas_id || '-',
                   kecamatan: user?.kecamatan || user?.id_kecamatan || '-',
                   id_sekolah: user?.id_sekolah || '-',
-                  id_kecamatan: user?.id_kecamatan || '-'
+                  id_kecamatan: user?.id_kecamatan || '-',
+                  id_paket: user?.id_paket || '-'
               };
           }) || [];
           

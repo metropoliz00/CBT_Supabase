@@ -504,6 +504,11 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ dashboardData, currentUserSta
                                                     {displaySubject}
                                                 </span>
                                             )}
+                                            {log.id_paket && log.id_paket !== '-' && (
+                                                <span className="text-[10px] px-2 py-0.5 rounded font-bold uppercase bg-indigo-50 text-indigo-600 border border-indigo-100">
+                                                    Paket: {log.id_paket}
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
