@@ -565,7 +565,7 @@ export const api = {
           id_sekolah: String(r.users?.id_sekolah || ''),
           id_gugus: String(r.users?.id_gugus || ''),
           id_kecamatan: String(r.users?.id_kecamatan || ''),
-          id_paket: String(r.users?.id_paket || '')
+          id_paket: String(r.paket_id || r.users?.id_paket || '')
       }));
   },
 
@@ -680,6 +680,7 @@ export const api = {
       const resultPayload = {
           username: payload.user.username,
           exam_id: payload.subject,
+          paket_id: payload.user.id_paket || null,
           answers: payload.answers,
           score: score,
           start_time: payload.startTime,

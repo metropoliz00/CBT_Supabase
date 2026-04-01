@@ -194,6 +194,7 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
                     promises.push(api.createExamResult({
                         username: editingStudent.username,
                         exam_id: subject,
+                        paket_id: editingStudent.id_paket || null,
                         score: Number(nilai),
                         start_time: new Date().getTime(),
                         end_time: new Date().getTime() + (120 * 60000), // Dummy duration 120 mins
