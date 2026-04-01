@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Home, LogOut, Menu, Monitor, Group, Clock, Printer, List, Calendar, Key, FileQuestion, LayoutDashboard, ClipboardList, BarChart3, Award, RefreshCw, X, CreditCard, ChevronDown, ChevronRight, Settings, AlertCircle, ShieldCheck, Globe, Zap } from 'lucide-react';
+import { Home, LogOut, Menu, Monitor, Group, Clock, Printer, List, Calendar, Key, FileQuestion, LayoutDashboard, ClipboardList, BarChart3, Award, RefreshCw, X, CreditCard, ChevronDown, ChevronRight, Settings, AlertCircle, ShieldCheck, Globe } from 'lucide-react';
 import { api } from '../services/api';
 import { supabase } from '../services/supabase';
 import { User } from '../types';
@@ -222,7 +222,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
           try {
               // Fetch latest configs directly to avoid stale state
               const configs = await api.getAllConfig();
-              const autoActivation = String(configs['AUTO_SESSION_ACTIVATION'] || 'FALSE').toUpperCase() === 'TRUE';
+              const autoActivation = configs['AUTO_SESSION_ACTIVATION'] === 'TRUE';
               
               // Get current time in Asia/Jakarta (WIB)
               const now = new Date();
@@ -232,10 +232,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                   hour12: false,
                   timeZone: 'Asia/Jakarta'
               });
-              const parts = formatter.formatToParts(now);
-              const h = parts.find(p => p.type === 'hour')?.value || '00';
-              const m = parts.find(p => p.type === 'minute')?.value || '00';
-              const currentTime = `${h.padStart(2, '0')}:${m.padStart(2, '0')}`;
+              const currentTime = formatter.format(now);
               
               // For the clock display
               const clockFormatter = new Intl.DateTimeFormat('en-GB', {
@@ -248,6 +245,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
               setServerTime(clockFormatter.format(now));
   
               if (!autoActivation) {
+                  // If auto-activation is OFF, just log it once in a while
                   if (now.getSeconds() % 60 === 0) {
                       console.log("[AutoActive] Mode Otomatis is currently OFF.");
                   }
@@ -262,8 +260,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                   if (!timeStr) return "";
                   timeStr = timeStr.trim().toUpperCase();
                   
-                  // Handle AM/PM format: "07:30 PM", "7:30 PM", "7:30PM", "07.30 PM"
-                  const match12 = timeStr.match(/^(\d{1,2})[:.](\d{2})\s*(AM|PM)$/);
+                  // Handle AM/PM format: "07:30 PM", "7:30 PM", "7:30PM"
+                  const match12 = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/);
                   if (match12) {
                       let h = parseInt(match12[1]);
                       const m = match12[2];
@@ -273,8 +271,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                       return `${h.toString().padStart(2, '0')}:${m}`;
                   }
                   
-                  // Handle 24h format: "14:30", "7:30", "14.30"
-                  const match24 = timeStr.match(/^(\d{1,2})[:.](\d{2})$/);
+                  // Handle 24h format: "14:30", "7:30"
+                  const match24 = timeStr.match(/^(\d{1,2}):(\d{2})$/);
                   if (match24) {
                       const h = parseInt(match24[1]);
                       const m = match24[2];
@@ -284,32 +282,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                   return timeStr;
               };
   
-              // Default times if not set in DB
-              const defaultTimes: Record<string, {s: string, e: string}> = {
-                  '1': { s: '07:30', e: '10:30' },
-                  '2': { s: '10:30', e: '13:30' },
-                  '3': { s: '13:30', e: '16:30' },
-                  '4': { s: '16:30', e: '19:30' }
-              };
-  
               for (let i = 1; i <= 4; i++) {
                   const sessionNum = i.toString();
-                  const rawStart = configs[`SESSION_${sessionNum}_START`] || configs[`SESI_${sessionNum}_START`] || defaultTimes[sessionNum].s;
-                  const rawEnd = configs[`SESSION_${sessionNum}_END`] || configs[`SESI_${sessionNum}_END`] || defaultTimes[sessionNum].e;
+                  let start = to24h(configs[`SESSION_${sessionNum}_START`] || '');
+                  let end = to24h(configs[`SESSION_${sessionNum}_END`] || '');
                   
-                  let start = to24h(rawStart);
-                  let end = to24h(rawEnd);
+                  if (!start || !end) {
+                      console.warn(`[AutoActive] Session ${sessionNum} has missing start/end time.`);
+                      continue;
+                  }
                   
-                  if (!start || !end) continue;
-                  
-                  // Check both key formats
-                  const statusSession = configs[`SESSION_${sessionNum}_STATUS`] || 'OFF';
-                  const statusSesi = configs[`SESI_${sessionNum}_STATUS`] || 'OFF';
-                  
-                  const isActiveSession = statusSession === 'ON' || statusSession === 'AKTIF' || statusSession === 'ACTIVE' || statusSession === 'TRUE' || statusSession === '1';
-                  const isActiveSesi = statusSesi === 'ON' || statusSesi === 'AKTIF' || statusSesi === 'ACTIVE' || statusSesi === 'TRUE' || statusSesi === '1';
-                  
-                  const isActive = isActiveSession || isActiveSesi;
+                  const status = configs[`SESSION_${sessionNum}_STATUS`] || 'OFF';
+                  const isActive = status === 'ON' || status === 'AKTIF' || status === 'ACTIVE' || status === 'TRUE' || status === '1';
   
                   // Logic: Active if currentTime is between start and end
                   const shouldBeActive = currentTime >= start && currentTime <= end;
@@ -317,9 +301,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                   if (shouldBeActive !== isActive) {
                       console.log(`[AutoActive] Session ${sessionNum} CHANGE: ${isActive ? 'ON -> OFF' : 'OFF -> ON'} (Current: ${currentTime}, Range: ${start}-${end})`);
                       updates[`SESSION_${sessionNum}_STATUS`] = shouldBeActive ? 'ON' : 'OFF';
-                      updates[`SESI_${sessionNum}_STATUS`] = shouldBeActive ? 'ON' : 'OFF';
                       changed = true;
                   } else {
+                      // Log current state for debugging every 30 seconds
                       if (now.getSeconds() % 30 === 0) {
                         console.log(`[AutoActive] Session ${sessionNum} STATUS: ${isActive ? 'ON' : 'OFF'} (Current: ${currentTime}, Range: ${start}-${end})`);
                       }
@@ -328,9 +312,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
   
               if (changed) {
                   console.log(`[AutoActive] Detected changes at ${currentTime}. Updating database...`, updates);
-                  // Use Promise.all for faster updates
-                  await Promise.all(Object.entries(updates).map(([key, val]) => api.saveConfig(key, val)));
-                  
+                  for (const [key, val] of Object.entries(updates)) {
+                      await api.saveConfig(key, val);
+                  }
                   // Refresh dashboard data to reflect changes in UI
                   fetchData(true);
               }
@@ -342,7 +326,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
       // Initial check
       checkSessions();
       
-      const interval = setInterval(checkSessions, 15000); // Check every 15 seconds
+      const interval = setInterval(checkSessions, 15000); // Check every 15 seconds for better responsiveness
       return () => clearInterval(interval);
     }, [currentUserState.role]);
 
@@ -581,14 +565,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
             </div>
             <div className="flex items-center gap-3">
               <div className="hidden md:flex flex-col items-end mr-2">
-                  <div className="flex items-center gap-2">
-                    {dashboardData.configs?.AUTO_SESSION_ACTIVATION === 'TRUE' && (
-                        <span className="flex items-center gap-1 px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-[8px] font-bold rounded-md border border-emerald-200 animate-pulse">
-                            <Zap size={8} /> AUTO
-                        </span>
-                    )}
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Server Time (WIB)</span>
-                  </div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Server Time (WIB)</span>
                   <span className="text-sm font-mono font-bold text-indigo-600 flex items-center gap-1">
                       <Clock size={14} /> {serverTime || '--:--:--'}
                   </span>

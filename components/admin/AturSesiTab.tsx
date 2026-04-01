@@ -33,8 +33,20 @@ const AturSesiTab = ({
         const n = String(num).replace(/[^0-9]/g, "");
         if (!n) return false;
         
-        // Standardized check: SESSION_X_STATUS is the primary key used by AdminDashboard
-        const status = String(configs[`SESSION_${n}_STATUS`] || configs[`SESI_${n}_STATUS`] || 'OFF').toUpperCase().trim();
+        // Standardized check: SESI_X_STATUS primary
+        const possibleKeys = [
+            `SESI_${n}_STATUS`,
+            `SESSION_${n}_STATUS`,
+            `STATUS_SESI_${n}`
+        ];
+        
+        let status = '';
+        for (const key of possibleKeys) {
+            if (configs[key]) {
+                status = String(configs[key]).toUpperCase().trim();
+                break;
+            }
+        }
         
         return status === 'ON' || status === 'AKTIF' || status === 'ACTIVE' || status === 'TRUE' || status === '1';
     };

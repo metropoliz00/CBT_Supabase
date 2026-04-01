@@ -159,9 +159,7 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
     const to24h = (timeStr: string): string => {
         if (!timeStr) return "";
         timeStr = timeStr.trim().toUpperCase();
-        
-        // Handle AM/PM format: "07:30 PM", "7:30 PM", "7:30PM", "07.30 PM"
-        const match12 = timeStr.match(/^(\d{1,2})[:.](\d{2})\s*(AM|PM)$/);
+        const match12 = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/);
         if (match12) {
             let h = parseInt(match12[1]);
             const m = match12[2];
@@ -170,15 +168,12 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
             if (ampm === 'AM' && h === 12) h = 0;
             return `${h.toString().padStart(2, '0')}:${m}`;
         }
-        
-        // Handle 24h format: "14:30", "7:30", "14.30"
-        const match24 = timeStr.match(/^(\d{1,2})[:.](\d{2})$/);
+        const match24 = timeStr.match(/^(\d{1,2}):(\d{2})$/);
         if (match24) {
             const h = parseInt(match24[1]);
             const m = match24[2];
             return `${h.toString().padStart(2, '0')}:${m}`;
         }
-        
         return timeStr;
     };
 
