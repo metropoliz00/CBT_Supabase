@@ -61,6 +61,29 @@ const RankingTab = ({ students, currentUser }: { students: any[], currentUser: U
         return Array.from(schools).sort();
     }, [data, currentUser, filterKecamatan, userMap]);
 
+    const uniqueSubjects = useMemo(() => {
+        const subjects = new Set<string>();
+        data.forEach(d => {
+            if (filterPaket !== 'all' && d.id_paket !== filterPaket) return;
+            const subject = d.mapel || d.subject || d.exam_id;
+            if (subject) subjects.add(subject);
+        });
+        return Array.from(subjects).sort();
+    }, [data, filterPaket]);
+
+    const subjectsPerPaket = useMemo(() => {
+        const map = new Map<string, Set<string>>();
+        data.forEach(d => {
+            const paket = d.id_paket || 'none';
+            const subject = d.mapel || d.subject || d.exam_id;
+            if (subject) {
+                if (!map.has(paket)) map.set(paket, new Set());
+                map.get(paket)!.add(subject);
+            }
+        });
+        return map;
+    }, [data]);
+
     const uniquePakets = useMemo(() => {
         const pakets = new Set(data.map(d => d.id_paket).filter(Boolean));
         return Array.from(pakets).sort();
@@ -78,37 +101,46 @@ const RankingTab = ({ students, currentUser }: { students: any[], currentUser: U
             
             const key = `${d.username}_${d.id_paket || 'none'}`;
             if (!map.has(key)) {
-                map.set(key, {
+                const baseEntry: any = {
                     username: d.username,
                     nama: d.fullname || d.nama || '-',
                     sekolah: d.school || d.sekolah || '-',
                     kecamatan: d.kecamatan || userMap[d.username]?.kecamatan || '-',
                     id_sekolah: d.id_sekolah || userMap[d.username]?.id_sekolah || '',
                     id_kecamatan: d.id_kecamatan || userMap[d.username]?.id_kecamatan || '',
-                    id_paket: d.id_paket || '-',
-                    score_bi: null,
-                    score_mtk: null
+                    id_paket: d.id_paket || '-'
+                };
+                uniqueSubjects.forEach(sub => {
+                    baseEntry[`score_${sub}`] = null;
                 });
+                map.set(key, baseEntry);
             }
             const entry = map.get(key);
-            const subject = (d.subject || d.mapel || '').toLowerCase();
+            const subject = d.mapel || d.subject || d.exam_id || '';
             const rawVal = d.score ?? d.nilai;
             const val = parseFloat(rawVal);
             const safeVal = isNaN(val) ? 0 : val;
-            if (subject.includes('bahasa') || subject.includes('indo') || subject.includes('literasi')) {
-                entry.score_bi = safeVal;
-            } else if (subject.includes('matematika') || subject.includes('mtk') || subject.includes('numerasi')) {
-                entry.score_mtk = safeVal;
+            
+            if (subject) {
+                entry[`score_${subject}`] = safeVal;
             }
         });
         const result = Array.from(map.values()).map(item => {
-            const bi = item.score_bi !== null ? item.score_bi : 0;
-            const mtk = item.score_mtk !== null ? item.score_mtk : 0;
-            const avg = (bi + mtk) / 2;
+            let total = 0;
+            let count = 0;
+            uniqueSubjects.forEach(sub => {
+                if (item[`score_${sub}`] !== null) {
+                    total += item[`score_${sub}`];
+                    count++;
+                }
+            });
+            const paket = item.id_paket || 'none';
+            const paketSubjects = subjectsPerPaket.get(paket)?.size || 0;
+            const avg = paketSubjects > 0 ? total / paketSubjects : 0;
             return { ...item, avg };
         });
         return result.sort((a, b) => b.avg - a.avg);
-    }, [data, userMap, filterPaket]);
+    }, [data, userMap, filterPaket, uniqueSubjects, subjectsPerPaket]);
     
     const filteredData = useMemo(() => {
         let filtered = pivotedData;
@@ -178,8 +210,7 @@ const RankingTab = ({ students, currentUser }: { students: any[], currentUser: U
                 <td>${d.sekolah}</td>
                 <td>${d.kecamatan}</td>
                 <td style="text-align: center;">${d.id_paket}</td>
-                <td style="text-align: center;">${d.score_bi !== null ? d.score_bi : '-'}</td>
-                <td style="text-align: center;">${d.score_mtk !== null ? d.score_mtk : '-'}</td>
+                ${uniqueSubjects.map(sub => `<td style="text-align: center;">${d[`score_${sub}`] !== null ? d[`score_${sub}`] : '-'}</td>`).join('')}
                 <td style="text-align: center; font-weight: bold;">${d.avg.toFixed(2)}</td>
                 <td style="text-align: center;">${getPredicateText(d.avg)}</td>
             </tr>
@@ -238,8 +269,7 @@ const RankingTab = ({ students, currentUser }: { students: any[], currentUser: U
                             <th>Sekolah</th>
                             <th>Kecamatan</th>
                             <th width="60">Paket</th>
-                            <th width="60">B. Indo</th>
-                            <th width="60">Mat</th>
+                            ${uniqueSubjects.map(sub => `<th width="60">${sub}</th>`).join('')}
                             <th width="60">Rata2</th>
                             <th width="80">Predikat</th>
                         </tr>
@@ -331,17 +361,18 @@ const RankingTab = ({ students, currentUser }: { students: any[], currentUser: U
                             <th className="p-4">Sekolah</th>
                             <th className="p-4">Kecamatan</th>
                             <th className="p-4 text-center">Paket</th>
-                            <th className="p-4 text-center bg-blue-50/50 border-l border-slate-200">B. Indo</th>
-                            <th className="p-4 text-center bg-orange-50/50 border-l border-slate-200">Mat</th>
+                            {uniqueSubjects.map(sub => (
+                                <th key={sub} className="p-4 text-center border-l border-slate-200">{sub}</th>
+                            ))}
                             <th className="p-4 text-center border-l border-slate-200">Akhir</th>
                             <th className="p-4 text-center border-l border-slate-200">Predikat</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                         {loading ? (
-                            <tr><td colSpan={9} className="p-8 text-center text-slate-400"><Loader2 className="animate-spin inline mr-2"/> Memuat data...</td></tr>
+                            <tr><td colSpan={8 + uniqueSubjects.length} className="p-8 text-center text-slate-400"><Loader2 className="animate-spin inline mr-2"/> Memuat data...</td></tr>
                         ) : paginatedData.length === 0 ? (
-                            <tr><td colSpan={9} className="p-8 text-center text-slate-400 italic">Data tidak ditemukan.</td></tr>
+                            <tr><td colSpan={8 + uniqueSubjects.length} className="p-8 text-center text-slate-400 italic">Data tidak ditemukan.</td></tr>
                         ) : (
                             paginatedData.map((d, i) => {
                                 const globalRank = (currentPage - 1) * rowsPerPage + i + 1;
@@ -355,8 +386,11 @@ const RankingTab = ({ students, currentUser }: { students: any[], currentUser: U
                                     <td className="p-4 text-center">
                                         <span className="px-2 py-1 bg-slate-100 rounded text-[10px] font-bold text-slate-500">{d.id_paket}</span>
                                     </td>
-                                    <td className="p-4 text-center font-bold text-blue-600 bg-blue-50/10 border-l border-slate-100">{d.score_bi !== null ? d.score_bi : '-'}</td>
-                                    <td className="p-4 text-center font-bold text-orange-500 bg-orange-50/10 border-l border-slate-100">{d.score_mtk !== null ? d.score_mtk : '-'}</td>
+                                    {uniqueSubjects.map(sub => (
+                                        <td key={sub} className="p-4 text-center font-bold text-slate-700 border-l border-slate-100">
+                                            {d[`score_${sub}`] !== null ? d[`score_${sub}`] : '-'}
+                                        </td>
+                                    ))}
                                     <td className="p-4 text-center font-extrabold text-indigo-600 text-lg border-l border-slate-100">{d.avg.toFixed(2)}</td>
                                     <td className="p-4 text-center border-l border-slate-100">{getPredicateBadge(d.avg)}</td>
                                 </tr>

@@ -106,7 +106,7 @@ function App() {
             setCurrentUser(parsedUser);
             
             // Determine View based on Role
-            if (parsedUser.role === 'admin_pusat' || parsedUser.role === 'admin_sekolah') {
+            if (parsedUser.role === 'admin_pusat' || parsedUser.role === 'admin_sekolah' || parsedUser.role === 'proktor') {
                 setView('admin');
             } else {
                 // Check if session is still valid (time-wise)
@@ -242,7 +242,7 @@ function App() {
         // SAVE SESSION
         localStorage.setItem('cbt_user', JSON.stringify(user));
 
-        if (user.role === 'admin_pusat' || user.role === 'admin_sekolah') {
+        if (user.role === 'admin_pusat' || user.role === 'admin_sekolah' || user.role === 'proktor') {
             setView('admin');
         } else {
             setLoadingMessage('Memeriksa Data Ujian...');

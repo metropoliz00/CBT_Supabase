@@ -20,10 +20,7 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
 
     // Edit State
     const [editingStudent, setEditingStudent] = useState<any | null>(null);
-    const [editForm, setEditForm] = useState<{
-        id_bi: string, nilai_bi: string, 
-        id_mtk: string, nilai_mtk: string
-    }>({ id_bi: '', nilai_bi: '', id_mtk: '', nilai_mtk: '' });
+    const [editForm, setEditForm] = useState<Record<string, string>>({});
     const [saving, setSaving] = useState(false);
 
     const userMap = useMemo(() => {
@@ -41,6 +38,16 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
         loadData();
     }, []);
 
+    const uniqueSubjects = useMemo(() => {
+        const subjects = new Set<string>();
+        data.forEach(d => {
+            if (filterPaket !== 'all' && d.id_paket !== filterPaket) return;
+            const subject = d.mapel || d.subject || d.exam_id;
+            if (subject) subjects.add(subject);
+        });
+        return Array.from(subjects).sort();
+    }, [data, filterPaket]);
+
     const pivotedData = useMemo(() => {
         const map = new Map();
         data.forEach(d => {
@@ -48,41 +55,37 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
 
             const key = `${d.username}_${d.id_paket || 'none'}`;
             if (!map.has(key)) {
-                map.set(key, {
+                const baseEntry: any = {
                     username: d.username,
                     nama: d.fullname || d.nama || '-',
                     sekolah: d.school || d.sekolah || '-',
                     kecamatan: d.kecamatan || userMap[d.username]?.kecamatan || '-',
                     id_sekolah: d.id_sekolah || userMap[d.username]?.id_sekolah || '',
                     id_kecamatan: d.id_kecamatan || userMap[d.username]?.id_kecamatan || '',
-                    id_paket: d.id_paket || '-',
-                    nilai_bi: '-',
-                    nilai_mtk: '-',
-                    durasi_bi: '-',
-                    durasi_mtk: '-',
-                    id_bi: '',
-                    id_mtk: ''
+                    id_paket: d.id_paket || '-'
+                };
+                uniqueSubjects.forEach(sub => {
+                    baseEntry[`nilai_${sub}`] = '-';
+                    baseEntry[`durasi_${sub}`] = '-';
+                    baseEntry[`id_${sub}`] = '';
                 });
+                map.set(key, baseEntry);
             }
             const entry = map.get(key);
-            const subject = (d.subject || d.mapel || '').toLowerCase();
+            const subject = d.mapel || d.subject || d.exam_id || '';
             const val = d.score ?? d.nilai;
             const displayVal = (val !== undefined && val !== null && val !== '') ? val : '-';
             const durationVal = d.duration || d.durasi || '-';
             const idVal = d.id;
 
-            if (subject.includes('bahasa') || subject.includes('indo') || subject.includes('literasi')) {
-                entry.nilai_bi = displayVal;
-                entry.durasi_bi = durationVal;
-                entry.id_bi = idVal;
-            } else if (subject.includes('matematika') || subject.includes('mtk') || subject.includes('numerasi')) {
-                entry.nilai_mtk = displayVal;
-                entry.durasi_mtk = durationVal;
-                entry.id_mtk = idVal;
+            if (subject) {
+                entry[`nilai_${subject}`] = displayVal;
+                entry[`durasi_${subject}`] = durationVal;
+                entry[`id_${subject}`] = idVal;
             }
         });
         return Array.from(map.values());
-    }, [data, userMap, filterPaket]);
+    }, [data, userMap, filterPaket, uniqueSubjects]);
 
     const filteredData = useMemo(() => {
         let filtered = pivotedData;
@@ -168,46 +171,36 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
     // CRUD Handlers
     const handleEdit = (student: any) => {
         setEditingStudent(student);
-        setEditForm({
-            id_bi: student.id_bi,
-            nilai_bi: student.nilai_bi === '-' ? '' : student.nilai_bi,
-            id_mtk: student.id_mtk,
-            nilai_mtk: student.nilai_mtk === '-' ? '' : student.nilai_mtk
+        const newEditForm: Record<string, string> = {};
+        uniqueSubjects.forEach(subject => {
+            newEditForm[`id_${subject}`] = student[`id_${subject}`] || '';
+            newEditForm[`nilai_${subject}`] = student[`nilai_${subject}`] === '-' ? '' : student[`nilai_${subject}`];
         });
+        setEditForm(newEditForm);
     };
 
     const handleSaveEdit = async () => {
         setSaving(true);
         try {
-            const promises = [];
+            const promises: Promise<any>[] = [];
             
-            // Handle Bahasa Indonesia
-            if (editForm.id_bi) {
-                promises.push(api.updateExamResult(editForm.id_bi, { score: Number(editForm.nilai_bi) }));
-            } else if (editForm.nilai_bi !== '') {
-                promises.push(api.createExamResult({
-                    username: editingStudent.username,
-                    exam_id: 'Bahasa Indonesia',
-                    score: Number(editForm.nilai_bi),
-                    start_time: new Date().getTime(),
-                    end_time: new Date().getTime() + (120 * 60000), // Dummy duration 120 mins
-                    answers: {}
-                }));
-            }
-
-            // Handle Matematika
-            if (editForm.id_mtk) {
-                promises.push(api.updateExamResult(editForm.id_mtk, { score: Number(editForm.nilai_mtk) }));
-            } else if (editForm.nilai_mtk !== '') {
-                promises.push(api.createExamResult({
-                    username: editingStudent.username,
-                    exam_id: 'Matematika',
-                    score: Number(editForm.nilai_mtk),
-                    start_time: new Date().getTime(),
-                    end_time: new Date().getTime() + (120 * 60000), // Dummy duration 120 mins
-                    answers: {}
-                }));
-            }
+            uniqueSubjects.forEach(subject => {
+                const id = editForm[`id_${subject}`];
+                const nilai = editForm[`nilai_${subject}`];
+                
+                if (id) {
+                    promises.push(api.updateExamResult(id, { score: Number(nilai) }));
+                } else if (nilai !== '') {
+                    promises.push(api.createExamResult({
+                        username: editingStudent.username,
+                        exam_id: subject,
+                        score: Number(nilai),
+                        start_time: new Date().getTime(),
+                        end_time: new Date().getTime() + (120 * 60000), // Dummy duration 120 mins
+                        answers: {}
+                    }));
+                }
+            });
 
             await Promise.all(promises);
             await showAlert("Nilai berhasil disimpan", { type: 'success' });
@@ -221,17 +214,15 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
         }
     };
 
-    const handleDeleteResult = async (id: string, type: 'BI' | 'MTK') => {
-        if (!confirm(`Yakin ingin menghapus nilai ${type === 'BI' ? 'Bahasa Indonesia' : 'Matematika'} ini?`)) return;
+    const handleDeleteResult = async (id: string, subject: string) => {
+        if (!confirm(`Yakin ingin menghapus nilai ${subject} ini?`)) return;
         
         setSaving(true);
         try {
             await api.deleteExamResult(id);
             await showAlert("Nilai berhasil dihapus", { type: 'success' });
             
-            // Update local state immediately for better UX
-            if (type === 'BI') setEditForm(prev => ({ ...prev, id_bi: '', nilai_bi: '' }));
-            else setEditForm(prev => ({ ...prev, id_mtk: '', nilai_mtk: '' }));
+            setEditForm(prev => ({ ...prev, [`id_${subject}`]: '', [`nilai_${subject}`]: '' }));
             
             loadData();
         } catch (e) {
@@ -264,8 +255,7 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
                 <td>${d.sekolah}</td>
                 <td>${d.kecamatan}</td>
                 <td style="text-align: center;">${d.id_paket}</td>
-                <td style="text-align: center;">${d.nilai_bi}</td>
-                <td style="text-align: center;">${d.nilai_mtk}</td>
+                ${uniqueSubjects.map(sub => `<td style="text-align: center;">${d[`nilai_${sub}`]}</td>`).join('')}
             </tr>
         `).join('');
 
@@ -322,8 +312,7 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
                             <th>Sekolah</th>
                             <th>Kecamatan</th>
                             <th width="80">ID Paket</th>
-                            <th width="80">B. Indo</th>
-                            <th width="80">Matematika</th>
+                            ${uniqueSubjects.map(sub => `<th width="80">${sub}</th>`).join('')}
                         </tr>
                     </thead>
                     <tbody>
@@ -420,16 +409,17 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
                             <th className="p-4">Sekolah</th>
                             <th className="p-4">Kecamatan</th>
                             <th className="p-4 text-center">ID Paket</th>
-                            <th className="p-4 text-center border-l border-slate-200 bg-blue-50/50">B. Indo</th>
-                            <th className="p-4 text-center border-l border-slate-200 bg-orange-50/50">Matematika</th>
+                            {uniqueSubjects.map((subject, idx) => (
+                                <th key={subject} className={`p-4 text-center border-l border-slate-200 ${idx % 2 === 0 ? 'bg-blue-50/50' : 'bg-orange-50/50'}`}>{subject}</th>
+                            ))}
                             {currentUser.role === 'admin_pusat' && <th className="p-4 text-center">Aksi</th>}
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                         {loading ? (
-                            <tr><td colSpan={currentUser.role === 'admin_pusat' ? 8 : 7} className="p-8 text-center text-slate-400"><Loader2 className="animate-spin inline mr-2"/> Memuat data nilai...</td></tr>
+                            <tr><td colSpan={currentUser.role === 'admin_pusat' ? 7 + uniqueSubjects.length : 6 + uniqueSubjects.length} className="p-8 text-center text-slate-400"><Loader2 className="animate-spin inline mr-2"/> Memuat data nilai...</td></tr>
                         ) : paginatedData.length === 0 ? (
-                            <tr><td colSpan={currentUser.role === 'admin_pusat' ? 8 : 7} className="p-8 text-center text-slate-400 italic">Data tidak ditemukan untuk filter ini.</td></tr>
+                            <tr><td colSpan={currentUser.role === 'admin_pusat' ? 7 + uniqueSubjects.length : 6 + uniqueSubjects.length} className="p-8 text-center text-slate-400 italic">Data tidak ditemukan untuk filter ini.</td></tr>
                         ) : (
                             paginatedData.map((d, i) => (
                                 <tr key={i} className="hover:bg-slate-50 transition">
@@ -441,12 +431,16 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
                                     <td className="p-4 text-center">
                                         <span className="px-2 py-1 bg-slate-100 rounded text-[10px] font-bold text-slate-500">{d.id_paket}</span>
                                     </td>
-                                    <td className="p-4 text-center border-l border-slate-100 bg-blue-50/10">
-                                        {d.nilai_bi !== '-' ? (<div className="flex flex-col items-center"><span className="text-lg font-bold text-blue-600">{d.nilai_bi}</span><span className="text-[10px] text-slate-400 font-mono">{formatDurationToText(d.durasi_bi)}</span></div>) : <span className="text-slate-300">-</span>}
-                                    </td>
-                                    <td className="p-4 text-center border-l border-slate-100 bg-orange-50/10">
-                                        {d.nilai_mtk !== '-' ? (<div className="flex flex-col items-center"><span className="text-lg font-bold text-orange-600">{d.nilai_mtk}</span><span className="text-[10px] text-slate-400 font-mono">{formatDurationToText(d.durasi_mtk)}</span></div>) : <span className="text-slate-300">-</span>}
-                                    </td>
+                                    {uniqueSubjects.map((subject, idx) => (
+                                        <td key={subject} className={`p-4 text-center border-l border-slate-100 ${idx % 2 === 0 ? 'bg-blue-50/10' : 'bg-orange-50/10'}`}>
+                                            {d[`nilai_${subject}`] !== '-' ? (
+                                                <div className="flex flex-col items-center">
+                                                    <span className={`text-lg font-bold ${idx % 2 === 0 ? 'text-blue-600' : 'text-orange-600'}`}>{d[`nilai_${subject}`]}</span>
+                                                    <span className="text-[10px] text-slate-400 font-mono">{formatDurationToText(d[`durasi_${subject}`])}</span>
+                                                </div>
+                                            ) : <span className="text-slate-300">-</span>}
+                                        </td>
+                                    ))}
                                     {currentUser.role === 'admin_pusat' && (
                                         <td className="p-4 text-center">
                                             <button onClick={() => handleEdit(d)} className="p-2 bg-slate-100 hover:bg-indigo-100 text-slate-500 hover:text-indigo-600 rounded-lg transition">
@@ -484,49 +478,28 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
                                 <p className="text-xs text-slate-500 font-mono">{editingStudent.username}</p>
                             </div>
 
-                            {/* Bahasa Indonesia */}
-                            <div className="space-y-2">
-                                <label className="text-sm font-bold text-slate-600 flex justify-between">
-                                    <span>Bahasa Indonesia</span>
-                                    {editForm.id_bi && (
-                                        <button onClick={() => handleDeleteResult(editForm.id_bi, 'BI')} className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1">
-                                            <Trash2 size={12}/> Hapus Nilai
-                                        </button>
-                                    )}
-                                </label>
-                                <div className="flex gap-2">
-                                    <input 
-                                        type="number" 
-                                        className="w-full p-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-indigo-500"
-                                        placeholder="Nilai (0-100)"
-                                        value={editForm.nilai_bi}
-                                        onChange={e => setEditForm({...editForm, nilai_bi: e.target.value})}
-                                    />
+                            {uniqueSubjects.map(subject => (
+                                <div key={subject} className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-600 flex justify-between">
+                                        <span>{subject}</span>
+                                        {editForm[`id_${subject}`] && (
+                                            <button onClick={() => handleDeleteResult(editForm[`id_${subject}`], subject)} className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1">
+                                                <Trash2 size={12}/> Hapus Nilai
+                                            </button>
+                                        )}
+                                    </label>
+                                    <div className="flex gap-2">
+                                        <input 
+                                            type="number" 
+                                            className="w-full p-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-indigo-500"
+                                            placeholder="Nilai (0-100)"
+                                            value={editForm[`nilai_${subject}`] || ''}
+                                            onChange={e => setEditForm({...editForm, [`nilai_${subject}`]: e.target.value})}
+                                        />
+                                    </div>
+                                    {!editForm[`id_${subject}`] && <p className="text-xs text-slate-400 italic">Belum ada nilai. Masukkan nilai untuk menambahkan.</p>}
                                 </div>
-                                {!editForm.id_bi && <p className="text-xs text-slate-400 italic">Belum ada nilai. Masukkan nilai untuk menambahkan.</p>}
-                            </div>
-
-                            {/* Matematika */}
-                            <div className="space-y-2">
-                                <label className="text-sm font-bold text-slate-600 flex justify-between">
-                                    <span>Matematika</span>
-                                    {editForm.id_mtk && (
-                                        <button onClick={() => handleDeleteResult(editForm.id_mtk, 'MTK')} className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1">
-                                            <Trash2 size={12}/> Hapus Nilai
-                                        </button>
-                                    )}
-                                </label>
-                                <div className="flex gap-2">
-                                    <input 
-                                        type="number" 
-                                        className="w-full p-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-indigo-500"
-                                        placeholder="Nilai (0-100)"
-                                        value={editForm.nilai_mtk}
-                                        onChange={e => setEditForm({...editForm, nilai_mtk: e.target.value})}
-                                    />
-                                </div>
-                                {!editForm.id_mtk && <p className="text-xs text-slate-400 italic">Belum ada nilai. Masukkan nilai untuk menambahkan.</p>}
-                            </div>
+                            ))}
                         </div>
                         <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-2">
                             <button onClick={() => setEditingStudent(null)} className="px-4 py-2 text-slate-500 hover:bg-slate-200 rounded-lg text-sm font-bold transition">Batal</button>

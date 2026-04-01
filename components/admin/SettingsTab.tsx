@@ -143,7 +143,9 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
             const normalizedStart = to24h(start);
             const normalizedEnd = to24h(end);
             
-            await api.saveConfig(`SESSION_${sessionNum}_STATUS`, active ? 'ON' : 'OFF');
+            const statusValue = active ? 'ON' : 'OFF';
+            await api.saveConfig(`SESSION_${sessionNum}_STATUS`, statusValue);
+            await api.saveConfig(`SESI_${sessionNum}_STATUS`, statusValue);
             await api.saveConfig(`SESSION_${sessionNum}_START`, normalizedStart);
             await api.saveConfig(`SESSION_${sessionNum}_END`, normalizedEnd);
             await showAlert(`Pengaturan Sesi ${sessionNum} berhasil disimpan.`, { type: 'success' });
@@ -186,7 +188,9 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
                 const normalizedStart = to24h(start);
                 const normalizedEnd = to24h(end);
                 
-                await api.saveConfig(`SESSION_${sessionNum}_STATUS`, active ? 'ON' : 'OFF');
+                const statusValue = active ? 'ON' : 'OFF';
+                await api.saveConfig(`SESSION_${sessionNum}_STATUS`, statusValue);
+                await api.saveConfig(`SESI_${sessionNum}_STATUS`, statusValue);
                 await api.saveConfig(`SESSION_${sessionNum}_START`, normalizedStart);
                 await api.saveConfig(`SESSION_${sessionNum}_END`, normalizedEnd);
             }

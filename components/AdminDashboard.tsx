@@ -284,27 +284,44 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
   
               for (let i = 1; i <= 4; i++) {
                   const sessionNum = i.toString();
-                  let start = to24h(configs[`SESSION_${sessionNum}_START`] || '');
-                  let end = to24h(configs[`SESSION_${sessionNum}_END`] || '');
+                  // Check both SESSION_ and SESI_ prefixes for start/end times
+                  let start = to24h(configs[`SESSION_${sessionNum}_START`] || configs[`SESI_${sessionNum}_START`] || '');
+                  let end = to24h(configs[`SESSION_${sessionNum}_END`] || configs[`SESI_${sessionNum}_END`] || '');
                   
                   if (!start || !end) {
-                      console.warn(`[AutoActive] Session ${sessionNum} has missing start/end time.`);
+                      if (now.getSeconds() % 60 === 0) {
+                        console.warn(`[AutoActive] Session ${sessionNum} has missing start/end time.`);
+                      }
                       continue;
                   }
                   
-                  const status = configs[`SESSION_${sessionNum}_STATUS`] || 'OFF';
-                  const isActive = status === 'ON' || status === 'AKTIF' || status === 'ACTIVE' || status === 'TRUE' || status === '1';
+                  // Check multiple possible keys for status to be consistent with other tabs (Overview, AturSesi, App)
+                  const statusKeys = [`SESI_${sessionNum}_STATUS`, `SESSION_${sessionNum}_STATUS`, `STATUS_SESI_${sessionNum}`];
+                  let currentStatus = 'OFF';
+                  for (const k of statusKeys) {
+                      if (configs[k]) {
+                          currentStatus = String(configs[k]).toUpperCase().trim();
+                          break;
+                      }
+                  }
+                  
+                  const isActive = currentStatus === 'ON' || currentStatus === 'AKTIF' || currentStatus === 'ACTIVE' || currentStatus === 'TRUE' || currentStatus === '1';
   
                   // Logic: Active if currentTime is between start and end
-                  const shouldBeActive = currentTime >= start && currentTime <= end;
+                  // Use < end so it becomes inactive exactly at the end minute (e.g. if end is 10:30, it's OFF at 10:30)
+                  const shouldBeActive = currentTime >= start && currentTime < end;
                   
                   if (shouldBeActive !== isActive) {
                       console.log(`[AutoActive] Session ${sessionNum} CHANGE: ${isActive ? 'ON -> OFF' : 'OFF -> ON'} (Current: ${currentTime}, Range: ${start}-${end})`);
-                      updates[`SESSION_${sessionNum}_STATUS`] = shouldBeActive ? 'ON' : 'OFF';
+                      // Update all known keys to ensure consistency across all tabs
+                      const statusVal = shouldBeActive ? 'ON' : 'OFF';
+                      updates[`SESSION_${sessionNum}_STATUS`] = statusVal;
+                      updates[`SESI_${sessionNum}_STATUS`] = statusVal;
+                      updates[`STATUS_SESI_${sessionNum}`] = statusVal;
                       changed = true;
                   } else {
-                      // Log current state for debugging every 30 seconds
-                      if (now.getSeconds() % 30 === 0) {
+                      // Log current state for debugging every 60 seconds
+                      if (now.getSeconds() % 60 === 0) {
                         console.log(`[AutoActive] Session ${sessionNum} STATUS: ${isActive ? 'ON' : 'OFF'} (Current: ${currentTime}, Range: ${start}-${end})`);
                       }
                   }

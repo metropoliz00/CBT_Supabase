@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { BarChart3, FileText, Loader2, Search } from 'lucide-react';
 import { api } from '../../services/api';
 import { exportToExcel } from '../../utils/adminHelpers';
@@ -89,10 +89,11 @@ const AnalisisTab = ({ students }: { students: any[] }) => {
         const parsed = filteredByPaket.map(d => {
             let ans = {};
             try {
-                if (typeof d.analisis === 'string') {
-                    ans = JSON.parse(d.analisis);
+                const rawAnswers = d.answers || d.analisis;
+                if (typeof rawAnswers === 'string') {
+                    ans = JSON.parse(rawAnswers);
                 } else {
-                    ans = d.analisis || {};
+                    ans = rawAnswers || {};
                 }
             } catch (e) {
                 console.error("Failed to parse analysis JSON", e);
@@ -105,30 +106,23 @@ const AnalisisTab = ({ students }: { students: any[] }) => {
         if (selectedPaket !== 'all') {
             sortedKeys = questions
                 .filter(q => q.id_paket === selectedPaket)
-                .map(q => q.id)
-                .sort((a, b) => {
-                    const numA = parseInt(a.replace(/\D/g, '')) || 0;
-                    const numB = parseInt(b.replace(/\D/g, '')) || 0;
-                    return numA - numB;
-                });
+                .map(q => q.id);
         } else {
             const allKeys = new Set<string>();
             parsed.forEach(p => { Object.keys(p.ansMap).forEach(k => allKeys.add(k)); });
             
+            const questionOrder = new Map(questions.map((q, i) => [q.id, i]));
             sortedKeys = Array.from(allKeys).sort((a, b) => {
-                const numA = parseInt(a.replace(/\D/g, '')) || 0;
-                const numB = parseInt(b.replace(/\D/g, '')) || 0;
-                return numA - numB;
+                const orderA = questionOrder.has(a) ? questionOrder.get(a)! : Infinity;
+                const orderB = questionOrder.has(b) ? questionOrder.get(b)! : Infinity;
+                if (orderA !== orderB) return orderA - orderB;
+                return a.localeCompare(b);
             });
         }
 
         // Filter keys based on max_questions setting
-        if (limitQuestions > 0) {
-            sortedKeys = sortedKeys.filter(key => {
-                const num = parseInt(key.replace(/\D/g, '')) || 0;
-                // Only include if number exists and is within limit
-                return num > 0 && num <= limitQuestions;
-            });
+        if (limitQuestions > 0 && sortedKeys.length > limitQuestions) {
+            sortedKeys = sortedKeys.slice(0, limitQuestions);
         }
 
         return { parsedData: parsed, questionIds: sortedKeys };
@@ -155,6 +149,45 @@ const AnalisisTab = ({ students }: { students: any[] }) => {
         });
     }, [parsedData, filterSchool, filterKecamatan, userMap, searchTerm]);
 
+    // Helper to check if an answer is correct
+    const checkAnswer = useCallback((qId: string, userAnswer: any) => {
+        const q = questions.find(q => q.id === qId);
+        if (!q) return false;
+        if (userAnswer === undefined || userAnswer === null || userAnswer === '') return false;
+
+        // Legacy support: if answer is literally 1 or 0
+        if (userAnswer === 1 || userAnswer === '1') return true;
+        if (userAnswer === 0 || userAnswer === '0') return false;
+
+        const normalizedKunci = String(q.kunci_jawaban || '').trim().toUpperCase();
+        
+        if (q.tipe_soal === 'PG') {
+            return String(userAnswer).trim().toUpperCase() === normalizedKunci;
+        } else if (q.tipe_soal === 'BS') {
+            const correctValues = normalizedKunci.split(',').map(v => v.trim());
+            const userObj = userAnswer as Record<string, boolean>;
+            let allCorrect = true;
+            const optionIds = ['A', 'B', 'C', 'D', 'E'];
+            for (let i = 0; i < correctValues.length; i++) {
+                const optId = optionIds[i];
+                const isTrue = userObj[optId] === true;
+                const isFalse = userObj[optId] === false;
+                const correctVal = correctValues[i];
+                const shouldBeTrue = ['B', 'T', '1', 'BENAR', 'TRUE'].includes(correctVal);
+                const shouldBeFalse = ['S', 'F', '0', 'SALAH', 'FALSE'].includes(correctVal);
+                if (shouldBeTrue && !isTrue) allCorrect = false;
+                if (shouldBeFalse && !isFalse) allCorrect = false;
+                if (!shouldBeTrue && !shouldBeFalse) allCorrect = false;
+            }
+            return allCorrect && correctValues.length > 0;
+        } else if (q.tipe_soal === 'PGK') {
+            const correctKeys = normalizedKunci.split(',').map(k => k.trim());
+            const userKeys = (Array.isArray(userAnswer) ? userAnswer : [userAnswer]).map(k => String(k).trim().toUpperCase());
+            return correctKeys.length === userKeys.length && correctKeys.every(k => userKeys.includes(k));
+        }
+        return false;
+    }, [questions]);
+
     // Calculate Statistics per Question
     const questionStats = useMemo(() => {
         const stats: Record<string, { correct: number, wrong: number, percent: number }> = {};
@@ -168,7 +201,7 @@ const AnalisisTab = ({ students }: { students: any[] }) => {
                 // Only count if the question exists in the answer map
                 if (val !== undefined && val !== "") {
                     totalCount++;
-                    if (Number(val) === 1) correctCount++;
+                    if (checkAnswer(qId, val)) correctCount++;
                 }
             });
 
@@ -180,7 +213,7 @@ const AnalisisTab = ({ students }: { students: any[] }) => {
         });
         
         return stats;
-    }, [filteredParsedData, questionIds]);
+    }, [filteredParsedData, questionIds, checkAnswer]);
 
     return (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 fade-in p-6">
@@ -246,7 +279,10 @@ const AnalisisTab = ({ students }: { students: any[] }) => {
                     {filteredParsedData.length > 0 && (<button onClick={() => {
                             const exportData = filteredParsedData.map(d => {
                                 const row: any = { Nama: d.fullname || d.nama, Sekolah: d.school || d.sekolah, Kecamatan: d.kecamatan || userMap[d.username]?.kecamatan || '-', Nilai: d.score || d.nilai };
-                                questionIds.forEach(q => row[q] = d.ansMap[q]);
+                                questionIds.forEach(q => {
+                                    const val = d.ansMap[q];
+                                    row[q] = val === undefined || val === '' ? '-' : checkAnswer(q, val) ? 1 : 0;
+                                });
                                 return row;
                             });
                             exportToExcel(exportData, `Analisis_${selectedExam}`);
@@ -280,10 +316,10 @@ const AnalisisTab = ({ students }: { students: any[] }) => {
                             <td className="p-3 font-bold text-indigo-600 border-r border-slate-100">{d.score || d.nilai}</td>
                             {questionIds.map(q => { 
                                 const val = d.ansMap[q]; 
-                                const isCorrect = Number(val) === 1; 
+                                const isCorrect = checkAnswer(q, val); 
                                 return (
-                                    <td key={q} className={`p-2 text-center font-bold border-l border-slate-50 ${val === undefined ? 'text-slate-300' : isCorrect ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}`}>
-                                        {val === undefined ? '-' : isCorrect ? '✓' : '✗'}
+                                    <td key={q} className={`p-2 text-center font-bold border-l border-slate-50 ${val === undefined || val === '' ? 'text-slate-300' : isCorrect ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}`}>
+                                        {val === undefined || val === '' ? '-' : isCorrect ? '✓' : '✗'}
                                     </td>
                                 ); 
                             })}
