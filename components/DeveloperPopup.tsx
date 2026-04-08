@@ -70,7 +70,11 @@ const DeveloperPopup: React.FC<DeveloperPopupProps> = ({ configs }) => {
                                 </div>
                                 
                                 <h3 className="text-[10px] sm:text-xs font-bold text-indigo-600 uppercase tracking-wider mb-1">Pengembang Aplikasi</h3>
-                                <h2 className="text-lg sm:text-xl font-extrabold text-slate-800 mb-4 break-words px-2">{devName}</h2>
+                                <h2 className={`font-extrabold text-slate-800 mb-4 break-words px-2 text-center ${
+                                    devName.length > 30 ? 'text-sm sm:text-base' : 
+                                    devName.length > 20 ? 'text-base sm:text-lg' : 
+                                    'text-lg sm:text-xl'
+                                }`}>{devName}</h2>
                                 
                                 <div className="relative w-full">
                                     <span className="absolute -top-4 -left-2 text-4xl text-slate-200 font-serif">"</span>
