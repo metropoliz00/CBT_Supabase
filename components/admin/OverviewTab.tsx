@@ -202,6 +202,26 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ dashboardData, currentUserSta
         return schools.size;
     }, [dashboardData.allUsers, currentUserState]);
 
+    const uniqueKecamatanCount = useMemo(() => {
+        if (!dashboardData.allUsers) return 0;
+
+        let filteredUsers = dashboardData.allUsers;
+
+        if (currentUserState.role === 'proktor' && currentUserState.id_sekolah) {
+            filteredUsers = filteredUsers.filter((u: any) => u.id_sekolah === currentUserState.id_sekolah);
+        } else if (currentUserState.role === 'admin_kecamatan' && currentUserState.id_kecamatan) {
+            filteredUsers = filteredUsers.filter((u: any) => u.id_kecamatan === currentUserState.id_kecamatan);
+        }
+
+        const kecamatans = new Set(
+            filteredUsers
+                .filter((u: any) => String(u.role || '').toLowerCase() === 'siswa')
+                .map((u: any) => u.kecamatan || u.id_kecamatan)
+                .filter((s: any) => s && s !== '-' && s.trim() !== '')
+        );
+        return kecamatans.size;
+    }, [dashboardData.allUsers, currentUserState]);
+
     const sessionsStatus = useMemo(() => {
         const configs = dashboardData.configs || {};
         const sessions = [];
@@ -324,15 +344,24 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ dashboardData, currentUserSta
             </div>
         )}
 
-        <div className={`grid grid-cols-1 md:grid-cols-2 ${currentUserState.role === 'admin_pusat' ? 'xl:grid-cols-5' : 'xl:grid-cols-4'} gap-6`}>
+        <div className={`grid grid-cols-1 md:grid-cols-2 ${currentUserState.role === 'admin_pusat' ? 'xl:grid-cols-6' : 'xl:grid-cols-4'} gap-6`}>
             {currentUserState.role === 'admin_pusat' && (
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
-                    <div>
-                        <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Total Sekolah</p>
-                        <h3 className="text-3xl font-extrabold text-slate-700 mt-1">{uniqueSchoolsCount}</h3>
+                <>
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                        <div>
+                            <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Total Kecamatan</p>
+                            <h3 className="text-3xl font-extrabold text-slate-700 mt-1">{uniqueKecamatanCount}</h3>
+                        </div>
+                        <div className="bg-emerald-50 p-3 rounded-xl text-emerald-500"><MapPin size={24}/></div>
                     </div>
-                    <div className="bg-orange-50 p-3 rounded-xl text-orange-500"><School size={24}/></div>
-                </div>
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                        <div>
+                            <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Total Sekolah</p>
+                            <h3 className="text-3xl font-extrabold text-slate-700 mt-1">{uniqueSchoolsCount}</h3>
+                        </div>
+                        <div className="bg-orange-50 p-3 rounded-xl text-orange-500"><School size={24}/></div>
+                    </div>
+                </>
             )}
 
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
