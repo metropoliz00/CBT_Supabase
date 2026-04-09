@@ -14,6 +14,7 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
     const [filterSchool, setFilterSchool] = useState('all');
     const [filterKecamatan, setFilterKecamatan] = useState('all');
     const [filterPaket, setFilterPaket] = useState('all');
+    const [filterSubject, setFilterSubject] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -47,6 +48,11 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
         });
         return Array.from(subjects).sort();
     }, [data, filterPaket]);
+
+    const displayedSubjects = useMemo(() => {
+        if (filterSubject === 'all') return uniqueSubjects;
+        return uniqueSubjects.filter(s => s === filterSubject);
+    }, [uniqueSubjects, filterSubject]);
 
     const pivotedData = useMemo(() => {
         const map = new Map();
@@ -256,7 +262,7 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
                 <td>${d.sekolah}</td>
                 <td>${d.kecamatan}</td>
                 <td style="text-align: center;">${d.id_paket}</td>
-                ${uniqueSubjects.map(sub => `<td style="text-align: center;">${d[`nilai_${sub}`]}</td>`).join('')}
+                ${displayedSubjects.map(sub => `<td style="text-align: center;">${d[`nilai_${sub}`]}</td>`).join('')}
             </tr>
         `).join('');
 
@@ -313,7 +319,7 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
                             <th>Sekolah</th>
                             <th>Kecamatan</th>
                             <th width="80">ID Paket</th>
-                            ${uniqueSubjects.map(sub => `<th width="80">${sub}</th>`).join('')}
+                            ${displayedSubjects.map(sub => `<th width="80">${sub}</th>`).join('')}
                         </tr>
                     </thead>
                     <tbody>
@@ -360,6 +366,10 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
                     <select className="p-2 border border-slate-200 rounded-lg text-sm font-bold bg-slate-50 outline-none focus:ring-2 focus:ring-indigo-100" value={filterPaket} onChange={e => setFilterPaket(e.target.value)}>
                         <option value="all">Semua Paket</option>
                         {uniquePakets.map(p => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                    <select className="p-2 border border-slate-200 rounded-lg text-sm font-bold bg-slate-50 outline-none focus:ring-2 focus:ring-indigo-100" value={filterSubject} onChange={e => setFilterSubject(e.target.value)}>
+                        <option value="all">Semua Mapel</option>
+                        {uniqueSubjects.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
                     {currentUser.role === 'admin_pusat' && (
                         <>
@@ -410,7 +420,7 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
                             <th className="p-4">Sekolah</th>
                             <th className="p-4">Kecamatan</th>
                             <th className="p-4 text-center">ID Paket</th>
-                            {uniqueSubjects.map((subject, idx) => (
+                            {displayedSubjects.map((subject, idx) => (
                                 <th key={subject} className={`p-4 text-center border-l border-slate-200 ${idx % 2 === 0 ? 'bg-blue-50/50' : 'bg-orange-50/50'}`}>{subject}</th>
                             ))}
                             {currentUser.role === 'admin_pusat' && <th className="p-4 text-center">Aksi</th>}
@@ -418,9 +428,9 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                         {loading ? (
-                            <tr><td colSpan={currentUser.role === 'admin_pusat' ? 7 + uniqueSubjects.length : 6 + uniqueSubjects.length} className="p-8 text-center text-slate-400"><Loader2 className="animate-spin inline mr-2"/> Memuat data nilai...</td></tr>
+                            <tr><td colSpan={currentUser.role === 'admin_pusat' ? 7 + displayedSubjects.length : 6 + displayedSubjects.length} className="p-8 text-center text-slate-400"><Loader2 className="animate-spin inline mr-2"/> Memuat data nilai...</td></tr>
                         ) : paginatedData.length === 0 ? (
-                            <tr><td colSpan={currentUser.role === 'admin_pusat' ? 7 + uniqueSubjects.length : 6 + uniqueSubjects.length} className="p-8 text-center text-slate-400 italic">Data tidak ditemukan untuk filter ini.</td></tr>
+                            <tr><td colSpan={currentUser.role === 'admin_pusat' ? 7 + displayedSubjects.length : 6 + displayedSubjects.length} className="p-8 text-center text-slate-400 italic">Data tidak ditemukan untuk filter ini.</td></tr>
                         ) : (
                             paginatedData.map((d, i) => (
                                 <tr key={i} className="hover:bg-slate-50 transition">
@@ -432,7 +442,7 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
                                     <td className="p-4 text-center">
                                         <span className="px-2 py-1 bg-slate-100 rounded text-[10px] font-bold text-slate-500">{d.id_paket}</span>
                                     </td>
-                                    {uniqueSubjects.map((subject, idx) => (
+                                    {displayedSubjects.map((subject, idx) => (
                                         <td key={subject} className={`p-4 text-center border-l border-slate-100 ${idx % 2 === 0 ? 'bg-blue-50/10' : 'bg-orange-50/10'}`}>
                                             {d[`nilai_${subject}`] !== '-' ? (
                                                 <div className="flex flex-col items-center">

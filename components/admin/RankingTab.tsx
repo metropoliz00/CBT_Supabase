@@ -14,6 +14,7 @@ const RankingTab = ({ students, currentUser }: { students: any[], currentUser: U
     const [filterKecamatan, setFilterKecamatan] = useState('all');
     const [filterSchool, setFilterSchool] = useState('all');
     const [filterPaket, setFilterPaket] = useState('all');
+    const [filterSubject, setFilterSubject] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -70,6 +71,11 @@ const RankingTab = ({ students, currentUser }: { students: any[], currentUser: U
         });
         return Array.from(subjects).sort();
     }, [data, filterPaket]);
+
+    const displayedSubjects = useMemo(() => {
+        if (filterSubject === 'all') return uniqueSubjects;
+        return uniqueSubjects.filter(s => s === filterSubject);
+    }, [uniqueSubjects, filterSubject]);
 
     const subjectsPerPaket = useMemo(() => {
         const map = new Map<string, Set<string>>();
@@ -210,7 +216,7 @@ const RankingTab = ({ students, currentUser }: { students: any[], currentUser: U
                 <td>${d.sekolah}</td>
                 <td>${d.kecamatan}</td>
                 <td style="text-align: center;">${d.id_paket}</td>
-                ${uniqueSubjects.map(sub => `<td style="text-align: center;">${d[`score_${sub}`] !== null ? d[`score_${sub}`] : '-'}</td>`).join('')}
+                ${displayedSubjects.map(sub => `<td style="text-align: center;">${d[`score_${sub}`] !== null ? d[`score_${sub}`] : '-'}</td>`).join('')}
                 <td style="text-align: center; font-weight: bold;">${d.avg.toFixed(2)}</td>
                 <td style="text-align: center;">${getPredicateText(d.avg)}</td>
             </tr>
@@ -269,7 +275,7 @@ const RankingTab = ({ students, currentUser }: { students: any[], currentUser: U
                             <th>Sekolah</th>
                             <th>Kecamatan</th>
                             <th width="60">Paket</th>
-                            ${uniqueSubjects.map(sub => `<th width="60">${sub}</th>`).join('')}
+                            ${displayedSubjects.map(sub => `<th width="60">${sub}</th>`).join('')}
                             <th width="60">Rata2</th>
                             <th width="80">Predikat</th>
                         </tr>
@@ -316,6 +322,10 @@ const RankingTab = ({ students, currentUser }: { students: any[], currentUser: U
                         <option value="all">Semua Paket</option>
                         {uniquePakets.map(p => <option key={p} value={p}>{p}</option>)}
                     </select>
+                    <select className="p-2 border border-slate-200 rounded-lg text-sm font-bold bg-slate-50 outline-none focus:ring-2 focus:ring-indigo-100" value={filterSubject} onChange={e => setFilterSubject(e.target.value)}>
+                        <option value="all">Semua Mapel</option>
+                        {uniqueSubjects.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
                     {currentUser.role === 'admin_pusat' && (
                         <>
                             <select 
@@ -361,7 +371,7 @@ const RankingTab = ({ students, currentUser }: { students: any[], currentUser: U
                             <th className="p-4">Sekolah</th>
                             <th className="p-4">Kecamatan</th>
                             <th className="p-4 text-center">Paket</th>
-                            {uniqueSubjects.map(sub => (
+                            {displayedSubjects.map(sub => (
                                 <th key={sub} className="p-4 text-center border-l border-slate-200">{sub}</th>
                             ))}
                             <th className="p-4 text-center border-l border-slate-200">Akhir</th>
@@ -370,9 +380,9 @@ const RankingTab = ({ students, currentUser }: { students: any[], currentUser: U
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                         {loading ? (
-                            <tr><td colSpan={8 + uniqueSubjects.length} className="p-8 text-center text-slate-400"><Loader2 className="animate-spin inline mr-2"/> Memuat data...</td></tr>
+                            <tr><td colSpan={8 + displayedSubjects.length} className="p-8 text-center text-slate-400"><Loader2 className="animate-spin inline mr-2"/> Memuat data...</td></tr>
                         ) : paginatedData.length === 0 ? (
-                            <tr><td colSpan={8 + uniqueSubjects.length} className="p-8 text-center text-slate-400 italic">Data tidak ditemukan.</td></tr>
+                            <tr><td colSpan={8 + displayedSubjects.length} className="p-8 text-center text-slate-400 italic">Data tidak ditemukan.</td></tr>
                         ) : (
                             paginatedData.map((d, i) => {
                                 const globalRank = (currentPage - 1) * rowsPerPage + i + 1;
@@ -386,7 +396,7 @@ const RankingTab = ({ students, currentUser }: { students: any[], currentUser: U
                                     <td className="p-4 text-center">
                                         <span className="px-2 py-1 bg-slate-100 rounded text-[10px] font-bold text-slate-500">{d.id_paket}</span>
                                     </td>
-                                    {uniqueSubjects.map(sub => (
+                                    {displayedSubjects.map(sub => (
                                         <td key={sub} className="p-4 text-center font-bold text-slate-700 border-l border-slate-100">
                                             {d[`score_${sub}`] !== null ? d[`score_${sub}`] : '-'}
                                         </td>
