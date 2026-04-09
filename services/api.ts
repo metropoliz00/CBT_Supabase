@@ -61,6 +61,40 @@ export const api = {
       throw new Error('Password salah.');
     }
 
+    // --- SCHOOL SCHEDULE (GELOMBANG) CHECK ---
+    if (data.role !== 'admin_pusat') {
+        const schoolName = data.kelas_id || data.school;
+        if (schoolName) {
+            const { data: scheduleData } = await supabase
+                .from('school_schedules')
+                .select('*')
+                .eq('school', schoolName)
+                .single();
+            
+            if (scheduleData) {
+                const today = new Date();
+                const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+                
+                const startDate = scheduleData.tanggal;
+                const endDate = scheduleData.tanggal_selesai || scheduleData.tanggal;
+                
+                if (startDate && (todayStr < startDate || todayStr > endDate)) {
+                    const formatDate = (dStr: string) => {
+                        if (!dStr) return '';
+                        const parts = dStr.split('-');
+                        if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+                        return dStr;
+                    };
+                    const displayStart = formatDate(startDate);
+                    const displayEnd = formatDate(endDate);
+                    const dateRangeStr = startDate === endDate ? displayStart : `${displayStart} s/d ${displayEnd}`;
+                    
+                    throw new Error(`Jadwal ujian untuk sekolah Anda (Gelombang ${scheduleData.gelombang || '-'}) adalah tanggal ${dateRangeStr}. Anda tidak dapat login di luar jadwal tersebut.`);
+                }
+            }
+        }
+    }
+
     // Check Status: Only allow login if status is NOT 'EXAM' or 'FINISHED'
     // This is more robust: Allow OFFLINE, ONLINE (re-login), RESET, etc.
     // EXCEPTION: Admin/Proktor can bypass this check

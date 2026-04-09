@@ -268,12 +268,12 @@ function App() {
             setView('confirm');
         }
     } catch (err: any) {
-        if (err.message && (err.message.includes('Sesi ujian anda') || err.message.includes('belum dimulai'))) {
-             await showAlert(err.message, { type: 'error', title: 'Sesi Belum Aktif' });
+        if (err.message && (err.message.includes('Sesi ujian anda') || err.message.includes('belum dimulai') || err.message.includes('Jadwal ujian'))) {
+             await showAlert(err.message, { type: 'error', title: 'Akses Ditolak' });
         } else if (err.message && (err.message.includes('Failed to fetch') || err.message.includes('Script Error'))) {
              setErrorMsg('Gagal terhubung ke server. Pastikan Deploy Google Script sudah diperbarui (New Version).');
         } else {
-             setErrorMsg('Terjadi kesalahan koneksi. ' + (err.message || ''));
+             setErrorMsg(err.message || 'Terjadi kesalahan koneksi.');
         }
         console.error(err);
     } finally {
