@@ -65,22 +65,41 @@ const RilisTokenTab = ({ currentUser, token, duration, maxQuestions, surveyDurat
                     <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">Manajemen Token</h2>
                     <p className="text-slate-500 text-sm">Kelola akses masuk ujian dan konfigurasi sistem.</p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                     {isAdminPusat && (
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-lg shadow-sm">
-                            <span className="text-[10px] font-bold text-slate-500 uppercase">Auto</span>
-                            <button 
-                                onClick={async () => {
-                                    const newValue = configs.AUTO_SESSION_ACTIVATION !== 'TRUE';
-                                    await api.saveConfig('AUTO_SESSION_ACTIVATION', newValue ? 'TRUE' : 'FALSE');
-                                    refreshData();
-                                    showAlert(`Mode Otomatis ${newValue ? 'Diaktifkan' : 'Dimatikan'}`, { type: 'info' });
-                                }}
-                                className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors focus:outline-none ${configs.AUTO_SESSION_ACTIVATION === 'TRUE' ? 'bg-indigo-600' : 'bg-slate-300'}`}
-                            >
-                                <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${configs.AUTO_SESSION_ACTIVATION === 'TRUE' ? 'translate-x-6' : 'translate-x-1'}`} />
-                            </button>
-                        </div>
+                        <>
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-lg shadow-sm" title="Auto Sesi">
+                                <span className="text-[10px] font-bold text-slate-500 uppercase">Auto Sesi</span>
+                                <button 
+                                    onClick={async () => {
+                                        const newValue = configs.AUTO_SESSION_ACTIVATION !== 'TRUE';
+                                        await api.saveConfig('AUTO_SESSION_ACTIVATION', newValue ? 'TRUE' : 'FALSE');
+                                        refreshData();
+                                        showAlert(`Mode Auto Sesi ${newValue ? 'Diaktifkan' : 'Dimatikan'}`, { type: 'info' });
+                                    }}
+                                    className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors focus:outline-none ${configs.AUTO_SESSION_ACTIVATION === 'TRUE' ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                                >
+                                    <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${configs.AUTO_SESSION_ACTIVATION === 'TRUE' ? 'translate-x-6' : 'translate-x-1'}`} />
+                                </button>
+                            </div>
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-lg shadow-sm" title="Auto Token (30 Menit)">
+                                <span className="text-[10px] font-bold text-slate-500 uppercase">Auto Token</span>
+                                <button 
+                                    onClick={async () => {
+                                        const newValue = configs.AUTO_TOKEN_STATUS !== 'TRUE';
+                                        await api.saveConfig('AUTO_TOKEN_STATUS', newValue ? 'TRUE' : 'FALSE');
+                                        if (newValue) {
+                                            await api.saveConfig('AUTO_TOKEN_LAST_UPDATE', Date.now().toString());
+                                        }
+                                        refreshData();
+                                        showAlert(`Mode Auto Token ${newValue ? 'Diaktifkan' : 'Dimatikan'}`, { type: 'info' });
+                                    }}
+                                    className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors focus:outline-none ${configs.AUTO_TOKEN_STATUS === 'TRUE' ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                                >
+                                    <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${configs.AUTO_TOKEN_STATUS === 'TRUE' ? 'translate-x-6' : 'translate-x-1'}`} />
+                                </button>
+                            </div>
+                        </>
                     )}
                     <button onClick={refreshData} disabled={isRefreshing} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-sm font-bold hover:bg-slate-50 hover:text-indigo-600 transition shadow-sm w-fit">
                         <RefreshCw size={16} className={isRefreshing ? "animate-spin" : ""} />

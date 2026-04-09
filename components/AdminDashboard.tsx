@@ -174,6 +174,39 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
       document.title = `${activeLabel} | CBT Admin`;
   }, [activeTab, menuConfig]);
 
+  // Auto Token Logic
+  useEffect(() => {
+      const checkAutoToken = async () => {
+          if (currentUserState.role === 'admin_pusat' && dashboardData.configs?.AUTO_TOKEN_STATUS === 'TRUE') {
+              const lastUpdateStr = dashboardData.configs?.AUTO_TOKEN_LAST_UPDATE;
+              const lastUpdate = lastUpdateStr ? parseInt(lastUpdateStr) : 0;
+              const now = Date.now();
+              const thirtyMinutes = 30 * 60 * 1000;
+              
+              if (now - lastUpdate >= thirtyMinutes) {
+                  // Generate new token
+                  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+                  let result = '';
+                  for (let i = 0; i < 6; i++) {
+                    result += chars.charAt(Math.floor(Math.random() * chars.length));
+                  }
+                  
+                  try {
+                      await api.saveToken(result);
+                      await api.saveConfig('AUTO_TOKEN_LAST_UPDATE', now.toString());
+                      fetchData(true);
+                  } catch (e) {
+                      console.error("Failed to auto-update token", e);
+                  }
+              }
+          }
+      };
+
+      checkAutoToken();
+      const interval = setInterval(checkAutoToken, 60000); // Check every minute
+      return () => clearInterval(interval);
+  }, [dashboardData.configs?.AUTO_TOKEN_STATUS, dashboardData.configs?.AUTO_TOKEN_LAST_UPDATE, currentUserState.role]);
+
   const fetchData = async (silent = false) => {
     if (!silent) setIsRefreshing(true);
     try {
