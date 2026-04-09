@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { User, Exam, QuestionWithOptions } from './types';
 import { Key, User as UserIcon, Monitor, AlertCircle, School, LogOut, Check, Eye, EyeOff, Smartphone, Cpu, Wifi, ArrowRight, Loader2, WifiOff, X, Maximize, Activity, Clock, ClipboardList, LogIn, RefreshCw } from 'lucide-react';
 import StudentExam from './components/StudentExam';
@@ -23,7 +24,34 @@ const LoadingOverlay = ({ message }: { message: string }) => (
 );
 
 function App() {
-  const [view, setView] = useState<ViewState>('system_check');
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const view = useMemo<ViewState>(() => {
+    if (location.pathname === '/') return 'system_check';
+    if (location.pathname === '/login') return 'login';
+    if (location.pathname === '/confirm') return 'confirm';
+    if (location.pathname === '/exam') return 'exam';
+    if (location.pathname === '/survey-confirm') return 'survey_confirm';
+    if (location.pathname === '/survey') return 'survey';
+    if (location.pathname === '/result') return 'result';
+    if (location.pathname.startsWith('/admin')) return 'admin';
+    return 'system_check';
+  }, [location.pathname]);
+
+  const setView = (newView: ViewState) => {
+    switch (newView) {
+      case 'system_check': navigate('/'); break;
+      case 'login': navigate('/login'); break;
+      case 'confirm': navigate('/confirm'); break;
+      case 'exam': navigate('/exam'); break;
+      case 'survey_confirm': navigate('/survey-confirm'); break;
+      case 'survey': navigate('/survey'); break;
+      case 'result': navigate('/result'); break;
+      case 'admin': navigate('/admin'); break;
+    }
+  };
+
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [examList, setExamList] = useState<Exam[]>([]);
   const [allExams, setAllExams] = useState<Exam[]>([]);

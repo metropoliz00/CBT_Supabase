@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, LogOut, Menu, Monitor, Group, Clock, Printer, List, Calendar, Key, FileQuestion, LayoutDashboard, ClipboardList, BarChart3, Award, RefreshCw, X, CreditCard, ChevronDown, ChevronRight, Settings, AlertCircle, ShieldCheck, Globe } from 'lucide-react';
 import { api } from '../services/api';
 import { supabase } from '../services/supabase';
@@ -28,7 +29,7 @@ interface AdminDashboardProps {
     onLogout: () => void;
 }
 
-type TabType = 'overview' | 'rekap' | 'rekap_survey' | 'analisis' | 'ranking' | 'bank_soal' | 'data_user' | 'status_tes' | 'kelompok_tes' | 'rilis_token' | 'atur_sesi' | 'atur_gelombang' | 'cetak_absensi' | 'cetak_kartu' | 'settings' | 'dev_settings' | 'admin_management' | 'session_management' | 'system_config';
+type TabType = 'dashboard' | 'rekap' | 'rekap_survey' | 'analisis' | 'ranking' | 'bank_soal' | 'data_user' | 'status_tes' | 'kelompok_tes' | 'rilis_token' | 'atur_sesi' | 'atur_gelombang' | 'cetak_absensi' | 'cetak_kartu' | 'settings' | 'dev_settings' | 'admin_management' | 'session_management' | 'system_config';
 
 // Define Menu Structure Interface
 interface MenuItem {
@@ -46,11 +47,17 @@ interface MenuGroup {
 }
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
-  // Initialize from localStorage or default to 'overview'
-  const [activeTab, setActiveTab] = useState<TabType>(() => {
-      const savedTab = localStorage.getItem('cbt_admin_tab');
-      return (savedTab as TabType) || 'overview';
-  });
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const activeTab = useMemo<TabType>(() => {
+      const path = location.pathname.replace('/admin', '').replace('/', '');
+      if (!path) {
+          const savedTab = localStorage.getItem('cbt_admin_tab');
+          return (savedTab as TabType) || 'dashboard';
+      }
+      return path as TabType;
+  }, [location.pathname]);
 
   const [dashboardData, setDashboardData] = useState<any>({ 
       students: [], 
@@ -87,7 +94,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
 
   // Wrapper to switch tab and save to localStorage
   const handleTabChange = (tab: TabType) => {
-      setActiveTab(tab);
+      navigate(`/admin/${tab}`);
       localStorage.setItem('cbt_admin_tab', tab);
       if (window.innerWidth < 768) {
         setIsSidebarOpen(false);
@@ -111,7 +118,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
         id: 'main',
         label: 'Utama',
         items: [
-            { id: 'overview', label: 'Dashboard', icon: Home, roles: ['admin_pusat', 'admin_sekolah'] },
+            { id: 'dashboard', label: 'Dashboard', icon: Home, roles: ['admin_pusat', 'admin_sekolah'] },
         ]
     },
     {
@@ -392,7 +399,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
 
   // Poll for realtime updates on overview tab
   useEffect(() => {
-    if (activeTab === 'overview') {
+    if (activeTab === 'dashboard') {
         const interval = setInterval(() => {
             fetchData(true);
         }, 5000); // 5 seconds (User Request)
@@ -641,7 +648,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                         <button onClick={() => fetchData(false)} className="px-6 py-2 bg-amber-500 text-white rounded-lg font-bold text-sm shadow-lg shadow-amber-200 hover:bg-amber-600 transition">Coba Lagi</button>
                     </div>
                 )}
-                {activeTab === 'overview' && <OverviewTab dashboardData={dashboardData} currentUserState={currentUserState} />}
+                {activeTab === 'dashboard' && <OverviewTab dashboardData={dashboardData} currentUserState={currentUserState} />}
                 {activeTab === 'status_tes' && <StatusTesTab currentUser={currentUserState} students={dashboardData.allUsers || []} exams={dashboardData.activeExams || []} refreshData={() => fetchData()} />}
                 {activeTab === 'kelompok_tes' && <KelompokTesTab currentUser={currentUserState} students={dashboardData.allUsers || []} refreshData={() => fetchData()} />}
                 {activeTab === 'atur_sesi' && (
