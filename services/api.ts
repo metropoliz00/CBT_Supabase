@@ -89,7 +89,7 @@ export const api = {
                     const displayEnd = formatDate(endDate);
                     const dateRangeStr = startDate === endDate ? displayStart : `${displayStart} s/d ${displayEnd}`;
                     
-                    throw new Error(`Jadwal ujian untuk sekolah Anda (Gelombang ${scheduleData.gelombang || '-'}) adalah tanggal ${dateRangeStr}. Anda tidak dapat login di luar jadwal tersebut.`);
+                    throw new Error(`Jadwal ujian untuk sekolah Anda (Gelombang sesuai jadwal: ${(scheduleData.gelombang || '-').replace('Gelombang ', '')}) adalah tanggal ${dateRangeStr}. Anda tidak dapat login di luar jadwal tersebut.`);
                 }
             }
         }
