@@ -134,7 +134,7 @@ const RankingTab = ({ students, currentUser }: { students: any[], currentUser: U
         const result = Array.from(map.values()).map(item => {
             let total = 0;
             let count = 0;
-            uniqueSubjects.forEach(sub => {
+            displayedSubjects.forEach(sub => {
                 if (item[`score_${sub}`] !== null) {
                     total += item[`score_${sub}`];
                     count++;
@@ -142,11 +142,12 @@ const RankingTab = ({ students, currentUser }: { students: any[], currentUser: U
             });
             const paket = item.id_paket || 'none';
             const paketSubjects = subjectsPerPaket.get(paket)?.size || 0;
-            const avg = paketSubjects > 0 ? total / paketSubjects : 0;
+            const expectedSubjects = filterSubject === 'all' ? paketSubjects : displayedSubjects.length;
+            const avg = expectedSubjects > 0 ? total / expectedSubjects : 0;
             return { ...item, avg };
         });
         return result.sort((a, b) => b.avg - a.avg);
-    }, [data, userMap, filterPaket, uniqueSubjects, subjectsPerPaket]);
+    }, [data, userMap, filterPaket, uniqueSubjects, subjectsPerPaket, displayedSubjects, filterSubject]);
     
     const filteredData = useMemo(() => {
         let filtered = pivotedData;
