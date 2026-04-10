@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Calendar, Save, Loader2, ArrowRight, AlertCircle } from 'lucide-react';
+import { Calendar, Save, Loader2, ArrowRight, AlertCircle, Search, Filter } from 'lucide-react';
 import { api } from '../../services/api';
 import { SchoolSchedule } from '../../types';
 import { useAlert } from '../../context/AlertContext';
@@ -20,6 +20,10 @@ const AturGelombangTab = ({ students, currentUser, refreshData }: { students: an
     const [bulkShowToken, setBulkShowToken] = useState(false);
     const [selectedSchools, setSelectedSchools] = useState<Set<string>>(new Set());
 
+    // Search & Filter State
+    const [searchQuery, setSearchQuery] = useState('');
+    const [kecamatanFilter, setKecamatanFilter] = useState('All');
+
     const uniqueSchoolsData = useMemo(() => {
         let filteredStudents = students.filter(s => s.role === 'siswa');
 
@@ -38,8 +42,33 @@ const AturGelombangTab = ({ students, currentUser, refreshData }: { students: an
             }
         });
 
-        return Array.from(schoolMap.entries()).map(([school, kecamatan]) => ({ school, kecamatan })).sort((a, b) => a.school.localeCompare(b.school));
-    }, [students, currentUser]);
+        let result = Array.from(schoolMap.entries()).map(([school, kecamatan]) => ({ school, kecamatan }));
+
+        // Apply Search
+        if (searchQuery.trim() !== '') {
+            const q = searchQuery.toLowerCase();
+            result = result.filter(item => 
+                item.school.toLowerCase().includes(q) || 
+                item.kecamatan.toLowerCase().includes(q)
+            );
+        }
+
+        // Apply Kecamatan Filter
+        if (kecamatanFilter !== 'All') {
+            result = result.filter(item => item.kecamatan === kecamatanFilter);
+        }
+
+        return result.sort((a, b) => a.school.localeCompare(b.school));
+    }, [students, currentUser, searchQuery, kecamatanFilter]);
+
+    const allKecamatan = useMemo(() => {
+        const set = new Set<string>();
+        students.forEach(s => {
+            const k = s.kecamatan || s.id_kecamatan;
+            if (k && k !== '-') set.add(k);
+        });
+        return Array.from(set).sort();
+    }, [students]);
 
     const uniqueSchools = useMemo(() => uniqueSchoolsData.map(d => d.school), [uniqueSchoolsData]);
 
@@ -265,6 +294,36 @@ const AturGelombangTab = ({ students, currentUser, refreshData }: { students: an
                 <button onClick={handleBulkApply} className="bg-slate-800 text-white px-4 py-2.5 rounded-lg text-sm font-bold hover:bg-slate-900 transition mb-[1px] shadow-sm">
                     Terapkan
                 </button>
+             </div>
+
+             {/* SEARCH & FILTER */}
+             <div className="p-4 bg-white border-b border-slate-100 flex flex-wrap gap-4 items-center">
+                <div className="relative flex-1 min-w-[250px]">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16}/>
+                    <input 
+                        type="text" 
+                        placeholder="Cari nama sekolah atau kecamatan..." 
+                        className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 transition-all"
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                    />
+                </div>
+                <div className="flex items-center gap-2">
+                    <Filter size={16} className="text-slate-400"/>
+                    <select 
+                        className="p-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 transition-all min-w-[180px]"
+                        value={kecamatanFilter}
+                        onChange={e => setKecamatanFilter(e.target.value)}
+                    >
+                        <option value="All">Semua Kecamatan</option>
+                        {allKecamatan.map(k => (
+                            <option key={k} value={k}>{k}</option>
+                        ))}
+                    </select>
+                </div>
+                <div className="text-xs text-slate-400 ml-auto">
+                    Menampilkan <b>{uniqueSchoolsData.length}</b> sekolah
+                </div>
              </div>
 
              <div className="overflow-x-auto max-h-[600px]">
