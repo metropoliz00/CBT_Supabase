@@ -27,6 +27,7 @@ import SettingsTab from './admin/SettingsTab';
 interface AdminDashboardProps {
     user: User;
     onLogout: () => void;
+    onConfigChange?: () => void;
 }
 
 type TabType = 'dashboard' | 'rekap' | 'rekap_survey' | 'analisis' | 'ranking' | 'bank_soal' | 'data_user' | 'status_tes' | 'kelompok_tes' | 'rilis_token' | 'atur_sesi' | 'atur_gelombang' | 'cetak_absensi' | 'cetak_kartu' | 'settings' | 'dev_settings' | 'admin_management' | 'session_management' | 'system_config';
@@ -46,7 +47,7 @@ interface MenuGroup {
     items: MenuItem[];
 }
 
-const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
+const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout, onConfigChange }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -220,6 +221,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
         const data = await api.getDashboardData();
         if (data && typeof data === 'object' && Object.keys(data).length > 0) {
             setDashboardData(data);
+            
+            // Notify parent if config changed
+            if (onConfigChange) onConfigChange();
             
             // FIX: Sync current user data if found in dashboard data
             if (data.allUsers && Array.isArray(data.allUsers)) {
@@ -662,7 +666,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                         activeSessions={dashboardData.activeSessions || []}
                     />
                 )}
-                {activeTab === 'cetak_absensi' && <CetakAbsensiTab currentUser={currentUserState} students={dashboardData.allUsers || []} />}
+                {activeTab === 'cetak_absensi' && <CetakAbsensiTab currentUser={currentUserState} students={dashboardData.allUsers || []} configs={dashboardData.configs || {}} />}
                 {activeTab === 'cetak_kartu' && <CetakKartuTab currentUser={currentUserState} students={dashboardData.allUsers || []} schedules={dashboardData.schedules || []} configs={dashboardData.configs || {}} />}
                 {activeTab === 'data_user' && (currentUserState.role === 'admin_pusat' || currentUserState.role === 'admin_sekolah' || currentUserState.role === 'proktor') && <DaftarPesertaTab currentUser={currentUserState} onDataChange={() => fetchData()} />}
                 {activeTab === 'atur_gelombang' && currentUserState.role === 'admin_pusat' && <AturGelombangTab students={dashboardData.allUsers || []} currentUser={currentUserState} refreshData={() => fetchData(true)} />}

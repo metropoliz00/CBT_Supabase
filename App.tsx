@@ -93,6 +93,34 @@ function App() {
     document.title = `${viewTitles[view] || 'CBT'} | CBT System`;
   }, [view]);
 
+  const fetchGlobalConfig = async (force = false) => {
+      try {
+          const lastFetch = localStorage.getItem('cbt_config_time');
+          const cachedConfig = localStorage.getItem('cbt_config_data');
+          const now = new Date().getTime();
+          
+          // Use cache if less than 1 hour old and not forced
+          if (!force && lastFetch && cachedConfig && now - parseInt(lastFetch) < 3600000) {
+              try {
+                  const allConfigs = JSON.parse(cachedConfig);
+                  if (allConfigs && typeof allConfigs === 'object') {
+                      setConfigs(allConfigs);
+                      return;
+                  }
+              } catch (e) {
+                  console.warn("Failed to parse cached config", e);
+              }
+          }
+          
+          const allConfigs = await api.getAllConfig();
+          setConfigs(allConfigs);
+          localStorage.setItem('cbt_config_time', now.toString());
+          localStorage.setItem('cbt_config_data', JSON.stringify(allConfigs));
+      } catch (e) {
+          console.warn("Failed to fetch global config", e);
+      }
+  };
+
   // Apply Theme Color
   useEffect(() => {
     const themeColor = configs['THEME_COLOR'] || '#4f46e5';
@@ -119,33 +147,6 @@ function App() {
 
   // 0. Fetch Global Config on Mount
   useEffect(() => {
-    const fetchGlobalConfig = async () => {
-        try {
-            const lastFetch = localStorage.getItem('cbt_config_time');
-            const cachedConfig = localStorage.getItem('cbt_config_data');
-            const now = new Date().getTime();
-            
-            // Use cache if less than 1 hour old
-            if (lastFetch && cachedConfig && now - parseInt(lastFetch) < 3600000) {
-                try {
-                    const allConfigs = JSON.parse(cachedConfig);
-                    if (allConfigs && typeof allConfigs === 'object') {
-                        setConfigs(allConfigs);
-                        return;
-                    }
-                } catch (e) {
-                    console.warn("Failed to parse cached config", e);
-                }
-            }
-            
-            const allConfigs = await api.getAllConfig();
-            setConfigs(allConfigs);
-            localStorage.setItem('cbt_config_time', now.toString());
-            localStorage.setItem('cbt_config_data', JSON.stringify(allConfigs));
-        } catch (e) {
-            console.warn("Failed to fetch global config on mount", e);
-        }
-    };
     fetchGlobalConfig();
   }, []);
 
@@ -595,7 +596,7 @@ function App() {
     );
   }
 
-  if (view === 'admin' && currentUser) { return <AdminDashboard user={currentUser} onLogout={handleLogout} />; }
+  if (view === 'admin' && currentUser) { return <AdminDashboard user={currentUser} onLogout={handleLogout} onConfigChange={() => fetchGlobalConfig(true)} />; }
 
   if (view === 'confirm') {
     return (
