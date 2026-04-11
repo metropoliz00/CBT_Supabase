@@ -28,10 +28,14 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
     const [headerKartu, setHeaderKartu] = useState<string>(configs.HEADER_KARTU_PESERTA || 'TRY OUT TKA TAHUN 2026');
     const [headerRekap, setHeaderRekap] = useState<string>(configs.HEADER_REKAP_NILAI || 'TRY OUT TKA TAHUN 2026');
     const [headerPeringkat, setHeaderPeringkat] = useState<string>(configs.HEADER_PERINGKAT || 'TRY OUT TKA TAHUN 2026');
+    const [headerAbsensi, setHeaderAbsensi] = useState<string>(configs.HEADER_ABSENSI || 'TRY OUT TKA TAHUN 2026');
     const [footerText, setFooterText] = useState<string>(configs.FOOTER_TEXT || '@2026 | Dev. MeyGa Team TKA CBT System');
     const [loginCardImage, setLoginCardImage] = useState<string>(configs.LOGIN_CARD_IMAGE || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80');
     const [bgSystemCheck, setBgSystemCheck] = useState<string>(configs.BG_SYSTEM_CHECK || 'https://image2url.com/r2/default/images/1769879601173-bc7ec22d-7bb8-4ed8-91d7-b6407193627b.jpg');
     const [bgLogin, setBgLogin] = useState<string>(configs.BG_LOGIN || 'https://image2url.com/r2/default/images/1769880312544-946f6b70-4512-4c82-bb6a-cc432cd620fe.jpg');
+    
+    // Printing Header Master
+    const [printHeaderMaster, setPrintHeaderMaster] = useState<string>(configs.PRINT_HEADER_MASTER || 'TRY OUT TKA TAHUN 2026');
     
     // App Identity States
     const [appName, setAppName] = useState<string>(configs.APP_NAME || 'CBT');
@@ -92,10 +96,12 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
             setHeaderKartu(configs.HEADER_KARTU_PESERTA || 'TRY OUT TKA TAHUN 2026');
             setHeaderRekap(configs.HEADER_REKAP_NILAI || 'TRY OUT TKA TAHUN 2026');
             setHeaderPeringkat(configs.HEADER_PERINGKAT || 'TRY OUT TKA TAHUN 2026');
+            setHeaderAbsensi(configs.HEADER_ABSENSI || 'TRY OUT TKA TAHUN 2026');
             setFooterText(configs.FOOTER_TEXT || '@2026 | Dev. MeyGa Team TKA CBT System');
             setLoginCardImage(configs.LOGIN_CARD_IMAGE || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80');
             setBgSystemCheck(configs.BG_SYSTEM_CHECK || 'https://image2url.com/r2/default/images/1769879601173-bc7ec22d-7bb8-4ed8-91d7-b6407193627b.jpg');
             setBgLogin(configs.BG_LOGIN || 'https://image2url.com/r2/default/images/1769880312544-946f6b70-4512-4c82-bb6a-cc432cd620fe.jpg');
+            setPrintHeaderMaster(configs.PRINT_HEADER_MASTER || configs.HEADER_KARTU_PESERTA || 'TRY OUT TKA TAHUN 2026');
             setAppName(configs.APP_NAME || 'CBT');
             setAppSubtitle(configs.APP_SUBTITLE || 'Computer Based Test');
             setAppDescription(configs.APP_DESCRIPTION || 'Sistem Assesment Digital yang terintegrasi');
@@ -129,6 +135,7 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
             try {
                 const allConfigs = await api.getAllConfig();
                 if (allConfigs && Object.keys(allConfigs).length > 0) {
+                    setPrintHeaderMaster(allConfigs.PRINT_HEADER_MASTER || allConfigs.HEADER_KARTU_PESERTA || 'TRY OUT TKA TAHUN 2026');
                     setMaxQuestions(Number(allConfigs.MAX_QUESTIONS) || 0);
                     setSurveyDuration(Number(allConfigs.SURVEY_DURATION) || 30);
                     setExamDuration(Number(allConfigs.DURATION) || 60);
@@ -152,6 +159,7 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
                     setAppDescription(allConfigs.APP_DESCRIPTION || 'Sistem Assesment Digital yang terintegrasi');
                     setLogoKiri(allConfigs.LOGO_KIRI_URL || 'https://image2url.com/r2/default/images/1769821786493-a2e4eb8b-c903-460d-b8d9-44f326ff71bb.png');
                     setLogoKanan(allConfigs.LOGO_KANAN_URL || 'https://image2url.com/r2/default/images/1769821862384-d6ef24bf-e12c-4616-a255-7366afae4c30.png');
+                    setHeaderAbsensi(allConfigs.HEADER_ABSENSI || 'TRY OUT TKA TAHUN 2026');
                     setSsSoalId(allConfigs.SS_SOAL_ID || '');
                     setSsHasilId(allConfigs.SS_HASIL_ID || '');
                     
@@ -413,70 +421,42 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                     <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
                         <ClipboardList size={18} className="text-indigo-600" />
-                        <h3 className="font-bold text-slate-700">Judul Header Cetak</h3>
+                        <h3 className="font-bold text-slate-700">Judul Header Cetak Laporan</h3>
                     </div>
-                    <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Header Kartu Peserta */}
+                    <div className="p-6">
+                        {/* Master Print Header */}
                         <div className="space-y-2">
-                            <label className="block text-xs font-bold text-slate-500 uppercase">Header Kartu Peserta</label>
+                            <label className="block text-xs font-bold text-slate-500 uppercase">Header Cetak Laporan (Global)</label>
                             <div className="flex gap-2">
                                 <input 
                                     type="text" 
                                     className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 outline-none"
-                                    value={headerKartu}
-                                    onChange={(e) => setHeaderKartu(e.target.value)}
-                                    placeholder="Contoh: TRY OUT TKA TAHUN 2026"
+                                    value={printHeaderMaster}
+                                    onChange={(e) => setPrintHeaderMaster(e.target.value)}
+                                    placeholder="TRY OUT TKA TAHUN 2026"
                                 />
                                 <button 
-                                    onClick={() => handleSaveConfig('HEADER_KARTU_PESERTA', headerKartu)}
+                                    onClick={async () => {
+                                        await handleSaveConfig('PRINT_HEADER_MASTER', printHeaderMaster);
+                                        // Sync to all specific headers for consistency
+                                        await api.saveConfig('HEADER_KARTU_PESERTA', printHeaderMaster);
+                                        await api.saveConfig('HEADER_REKAP_NILAI', printHeaderMaster);
+                                        await api.saveConfig('HEADER_PERINGKAT', printHeaderMaster);
+                                        await api.saveConfig('HEADER_ABSENSI', printHeaderMaster);
+                                        
+                                        // Update local states too
+                                        setHeaderKartu(printHeaderMaster);
+                                        setHeaderRekap(printHeaderMaster);
+                                        setHeaderPeringkat(printHeaderMaster);
+                                        setHeaderAbsensi(printHeaderMaster);
+                                    }}
                                     disabled={isSaving}
-                                    className="px-4 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition shadow-sm disabled:opacity-50"
+                                    className="px-4 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-sm disabled:opacity-50"
                                 >
                                     <Save size={18}/>
                                 </button>
                             </div>
-                        </div>
-
-                        {/* Header Rekap Nilai */}
-                        <div className="space-y-2">
-                            <label className="block text-xs font-bold text-slate-500 uppercase">Header Rekap Nilai</label>
-                            <div className="flex gap-2">
-                                <input 
-                                    type="text" 
-                                    className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 outline-none"
-                                    value={headerRekap}
-                                    onChange={(e) => setHeaderRekap(e.target.value)}
-                                    placeholder="Contoh: TRY OUT TKA TAHUN 2026"
-                                />
-                                <button 
-                                    onClick={() => handleSaveConfig('HEADER_REKAP_NILAI', headerRekap)}
-                                    disabled={isSaving}
-                                    className="px-4 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition shadow-sm disabled:opacity-50"
-                                >
-                                    <Save size={18}/>
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Header Peringkat */}
-                        <div className="space-y-2">
-                            <label className="block text-xs font-bold text-slate-500 uppercase">Header Peringkat/Predikat</label>
-                            <div className="flex gap-2">
-                                <input 
-                                    type="text" 
-                                    className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 outline-none"
-                                    value={headerPeringkat}
-                                    onChange={(e) => setHeaderPeringkat(e.target.value)}
-                                    placeholder="Contoh: TRY OUT TKA TAHUN 2026"
-                                />
-                                <button 
-                                    onClick={() => handleSaveConfig('HEADER_PERINGKAT', headerPeringkat)}
-                                    disabled={isSaving}
-                                    className="px-4 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition shadow-sm disabled:opacity-50"
-                                >
-                                    <Save size={18}/>
-                                </button>
-                            </div>
+                            <p className="text-[10px] text-slate-400 italic mt-2">Satu input ini akan merubah header pada Kartu Peserta, Daftar Hadir, Rekap Nilai, dan Peringkat secara bersamaan.</p>
                         </div>
                     </div>
                 </div>

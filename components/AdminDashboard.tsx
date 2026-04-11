@@ -666,7 +666,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                         activeSessions={dashboardData.activeSessions || []}
                     />
                 )}
-                {activeTab === 'cetak_absensi' && <CetakAbsensiTab currentUser={currentUserState} students={dashboardData.allUsers || []} />}
+                {activeTab === 'cetak_absensi' && <CetakAbsensiTab currentUser={currentUserState} students={dashboardData.allUsers || []} configs={dashboardData.configs || {}} />}
                 {activeTab === 'cetak_kartu' && <CetakKartuTab currentUser={currentUserState} students={dashboardData.allUsers || []} schedules={dashboardData.schedules || []} configs={dashboardData.configs || {}} />}
                 {activeTab === 'data_user' && (currentUserState.role === 'admin_pusat' || currentUserState.role === 'admin_sekolah' || currentUserState.role === 'proktor') && <DaftarPesertaTab currentUser={currentUserState} onDataChange={() => fetchData()} />}
                 {activeTab === 'atur_gelombang' && currentUserState.role === 'admin_pusat' && <AturGelombangTab students={dashboardData.allUsers || []} currentUser={currentUserState} refreshData={() => fetchData(true)} />}
