@@ -217,6 +217,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
   const fetchData = async (silent = false) => {
     if (!silent) setIsRefreshing(true);
     try {
+        // Clear config cache to ensure fresh data
+        localStorage.removeItem('cbt_config_time');
+        localStorage.removeItem('cbt_config_data');
+        
         const data = await api.getDashboardData();
         if (data && typeof data === 'object' && Object.keys(data).length > 0) {
             setDashboardData(data);
@@ -504,7 +508,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                 <Monitor size={22} className="animate-pulse" />
              </div>
              <div>
-                <h1 className="text-lg font-extrabold text-slate-800 tracking-tight leading-none">CBT <span className="text-indigo-600">Admin</span></h1>
+                <h1 className="text-lg font-extrabold text-slate-800 tracking-tight leading-none">{dashboardData.configs?.APP_NAME || 'CBT'} <span className="text-indigo-600">Admin</span></h1>
                 <p className="text-[10px] font-bold text-indigo-500 mt-1 uppercase tracking-wider">{currentUserState.role === 'admin_pusat' ? 'Administrator' : 'Proktor Panel'}</p>
              </div>
           </div>

@@ -74,6 +74,18 @@ function App() {
   const [sysInfo, setSysInfo] = useState({ os: 'Unknown', device: 'Unknown', ram: 'Unknown', status: 'Checking...' });
 
   const { showAlert } = useAlert();
+  
+  const fetchGlobalConfig = async () => {
+    try {
+        const allConfigs = await api.getAllConfig();
+        setConfigs(allConfigs);
+        // Update cache for other components
+        localStorage.setItem('cbt_config_time', new Date().getTime().toString());
+        localStorage.setItem('cbt_config_data', JSON.stringify(allConfigs));
+    } catch (e) {
+        console.warn("Failed to fetch global config", e);
+    }
+  };
 
   // Update document title based on view
   useEffect(() => {
@@ -90,38 +102,14 @@ function App() {
       admin: 'Admin Dashboard'
     };
     
-    document.title = `${viewTitles[view] || 'CBT'} | CBT System`;
-  }, [view]);
+    document.title = `${viewTitles[view] || 'CBT'} | ${configs.APP_NAME || 'CBT'} System`;
+    
+    // Fetch fresh config when leaving admin or entering login/system_check
+    fetchGlobalConfig();
+  }, [view, configs.APP_NAME]);
 
   // 0. Fetch Global Config on Mount
   useEffect(() => {
-    const fetchGlobalConfig = async () => {
-        try {
-            const lastFetch = localStorage.getItem('cbt_config_time');
-            const cachedConfig = localStorage.getItem('cbt_config_data');
-            const now = new Date().getTime();
-            
-            // Use cache if less than 1 hour old
-            if (lastFetch && cachedConfig && now - parseInt(lastFetch) < 3600000) {
-                try {
-                    const allConfigs = JSON.parse(cachedConfig);
-                    if (allConfigs && typeof allConfigs === 'object') {
-                        setConfigs(allConfigs);
-                        return;
-                    }
-                } catch (e) {
-                    console.warn("Failed to parse cached config", e);
-                }
-            }
-            
-            const allConfigs = await api.getAllConfig();
-            setConfigs(allConfigs);
-            localStorage.setItem('cbt_config_time', now.toString());
-            localStorage.setItem('cbt_config_data', JSON.stringify(allConfigs));
-        } catch (e) {
-            console.warn("Failed to fetch global config on mount", e);
-        }
-    };
     fetchGlobalConfig();
   }, []);
 
@@ -553,7 +541,15 @@ function App() {
                     <div className="md:w-1/2 relative bg-slate-900 flex flex-col justify-center items-center text-white p-12 overflow-hidden group">
                         <div className="absolute inset-0 bg-gradient-to-br from-blue-600/50 to-indigo-900/60 z-10"></div>
                         <div className="absolute inset-0 z-0"><img src={configs.LOGIN_CARD_IMAGE || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"} className="w-full h-full object-cover opacity-40 group-hover:scale-105 transition-transform duration-1000" alt="bg"/></div>
-                        <div className="relative z-20 text-center"><div className="bg-white/20 backdrop-blur-md p-5 rounded-2xl inline-block mb-6 shadow-lg border border-white/20 animate-bounce"><Monitor size={56} className="text-blue-300"/></div><h1 className="text-5xl font-extrabold mb-2 tracking-tight">CBT</h1><h2 className="text-lg font-medium text-blue-200 uppercase tracking-widest mb-6">Computer Based Test</h2><div className="w-16 h-1 bg-blue-500 mx-auto mb-6 rounded-full"></div><p className="text-slate-300 font-light max-w-xs mx-auto leading-relaxed">Sistem Assesment Digital yang terintegrasi</p></div>
+                    <div className="relative z-20 text-center">
+                        <div className="bg-white/20 backdrop-blur-md p-5 rounded-2xl inline-block mb-6 shadow-lg border border-white/20 animate-bounce">
+                            <Monitor size={56} className="text-blue-300"/>
+                        </div>
+                        <h1 className="text-5xl font-extrabold mb-2 tracking-tight">{configs.APP_NAME || 'CBT'}</h1>
+                        <h2 className="text-lg font-medium text-blue-200 uppercase tracking-widest mb-6">{configs.APP_SUBTITLE || 'Computer Based Test'}</h2>
+                        <div className="w-16 h-1 bg-blue-500 mx-auto mb-6 rounded-full"></div>
+                        <p className="text-slate-300 font-light max-w-xs mx-auto leading-relaxed">{configs.APP_DESCRIPTION || 'Sistem Assesment Digital yang terintegrasi'}</p>
+                    </div>
                     </div>
                     <div className="md:w-1/2 p-10 md:p-14 flex flex-col justify-center bg-white/80 backdrop-blur">
                         <div className="mb-10"><h3 className="text-3xl font-bold text-slate-800">Login Peserta</h3><p className="text-slate-500 mt-2">Masukan identitas pengguna untuk memulai sesi.</p></div>

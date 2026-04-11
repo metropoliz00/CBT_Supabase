@@ -32,6 +32,13 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
     const [loginCardImage, setLoginCardImage] = useState<string>(configs.LOGIN_CARD_IMAGE || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80');
     const [bgSystemCheck, setBgSystemCheck] = useState<string>(configs.BG_SYSTEM_CHECK || 'https://image2url.com/r2/default/images/1769879601173-bc7ec22d-7bb8-4ed8-91d7-b6407193627b.jpg');
     const [bgLogin, setBgLogin] = useState<string>(configs.BG_LOGIN || 'https://image2url.com/r2/default/images/1769880312544-946f6b70-4512-4c82-bb6a-cc432cd620fe.jpg');
+    
+    // App Identity States
+    const [appName, setAppName] = useState<string>(configs.APP_NAME || 'CBT');
+    const [appSubtitle, setAppSubtitle] = useState<string>(configs.APP_SUBTITLE || 'Computer Based Test');
+    const [appDescription, setAppDescription] = useState<string>(configs.APP_DESCRIPTION || 'Sistem Assesment Digital yang terintegrasi');
+    const [logoKiri, setLogoKiri] = useState<string>(configs.LOGO_KIRI_URL || 'https://image2url.com/r2/default/images/1769821786493-a2e4eb8b-c903-460d-b8d9-44f326ff71bb.png');
+    const [logoKanan, setLogoKanan] = useState<string>(configs.LOGO_KANAN_URL || 'https://image2url.com/r2/default/images/1769821862384-d6ef24bf-e12c-4616-a255-7366afae4c30.png');
 
     const [sessionTimes, setSessionTimes] = useState<Record<string, { active: boolean, start: string, end: string }>>(() => {
         const sessions: Record<string, { active: boolean, start: string, end: string }> = {};
@@ -89,6 +96,11 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
             setLoginCardImage(configs.LOGIN_CARD_IMAGE || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80');
             setBgSystemCheck(configs.BG_SYSTEM_CHECK || 'https://image2url.com/r2/default/images/1769879601173-bc7ec22d-7bb8-4ed8-91d7-b6407193627b.jpg');
             setBgLogin(configs.BG_LOGIN || 'https://image2url.com/r2/default/images/1769880312544-946f6b70-4512-4c82-bb6a-cc432cd620fe.jpg');
+            setAppName(configs.APP_NAME || 'CBT');
+            setAppSubtitle(configs.APP_SUBTITLE || 'Computer Based Test');
+            setAppDescription(configs.APP_DESCRIPTION || 'Sistem Assesment Digital yang terintegrasi');
+            setLogoKiri(configs.LOGO_KIRI_URL || 'https://image2url.com/r2/default/images/1769821786493-a2e4eb8b-c903-460d-b8d9-44f326ff71bb.png');
+            setLogoKanan(configs.LOGO_KANAN_URL || 'https://image2url.com/r2/default/images/1769821862384-d6ef24bf-e12c-4616-a255-7366afae4c30.png');
             setSsSoalId(configs.SS_SOAL_ID || '');
             setSsHasilId(configs.SS_HASIL_ID || '');
             
@@ -117,7 +129,31 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
             try {
                 const allConfigs = await api.getAllConfig();
                 if (allConfigs && Object.keys(allConfigs).length > 0) {
-                    // ... (other configs) ...
+                    setMaxQuestions(Number(allConfigs.MAX_QUESTIONS) || 0);
+                    setSurveyDuration(Number(allConfigs.SURVEY_DURATION) || 30);
+                    setExamDuration(Number(allConfigs.DURATION) || 60);
+                    setShowSurvey(allConfigs.SHOW_SURVEY === 'TRUE');
+                    setAutoActivation(allConfigs.AUTO_SESSION_ACTIVATION === 'TRUE');
+                    setAllowProctorSessionEdit(allConfigs.ALLOW_PROCTOR_SESSION_EDIT === 'TRUE');
+                    setShowRekapToProctor(allConfigs.SHOW_REKAP_TO_PROCTOR === 'TRUE');
+                    setDevShow(allConfigs.DEV_SHOW !== 'FALSE');
+                    setDevName(allConfigs.DEV_NAME || '');
+                    setDevPhoto(allConfigs.DEV_PHOTO_URL || '');
+                    setDevQuote(allConfigs.DEV_QUOTE || '');
+                    setHeaderKartu(allConfigs.HEADER_KARTU_PESERTA || 'TRY OUT TKA TAHUN 2026');
+                    setHeaderRekap(allConfigs.HEADER_REKAP_NILAI || 'TRY OUT TKA TAHUN 2026');
+                    setHeaderPeringkat(allConfigs.HEADER_PERINGKAT || 'TRY OUT TKA TAHUN 2026');
+                    setFooterText(allConfigs.FOOTER_TEXT || '@2026 | Dev. MeyGa Team TKA CBT System');
+                    setLoginCardImage(allConfigs.LOGIN_CARD_IMAGE || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80');
+                    setBgSystemCheck(allConfigs.BG_SYSTEM_CHECK || 'https://image2url.com/r2/default/images/1769879601173-bc7ec22d-7bb8-4ed8-91d7-b6407193627b.jpg');
+                    setBgLogin(allConfigs.BG_LOGIN || 'https://image2url.com/r2/default/images/1769880312544-946f6b70-4512-4c82-bb6a-cc432cd620fe.jpg');
+                    setAppName(allConfigs.APP_NAME || 'CBT');
+                    setAppSubtitle(allConfigs.APP_SUBTITLE || 'Computer Based Test');
+                    setAppDescription(allConfigs.APP_DESCRIPTION || 'Sistem Assesment Digital yang terintegrasi');
+                    setLogoKiri(allConfigs.LOGO_KIRI_URL || 'https://image2url.com/r2/default/images/1769821786493-a2e4eb8b-c903-460d-b8d9-44f326ff71bb.png');
+                    setLogoKanan(allConfigs.LOGO_KANAN_URL || 'https://image2url.com/r2/default/images/1769821862384-d6ef24bf-e12c-4616-a255-7366afae4c30.png');
+                    setSsSoalId(allConfigs.SS_SOAL_ID || '');
+                    setSsHasilId(allConfigs.SS_HASIL_ID || '');
                     
                     const sessions: Record<string, { active: boolean, start: string, end: string }> = {};
                     for (let i = 1; i <= 4; i++) {
@@ -530,6 +566,109 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
                                 />
                                 <button 
                                     onClick={() => handleSaveConfig('BG_LOGIN', bgLogin)}
+                                    disabled={isSaving}
+                                    className="px-4 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition shadow-sm disabled:opacity-50"
+                                >
+                                    <Save size={18}/>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* App Name */}
+                        <div className="space-y-2">
+                            <label className="block text-xs font-bold text-slate-500 uppercase">Nama Aplikasi (Singkat)</label>
+                            <div className="flex gap-2">
+                                <input 
+                                    type="text" 
+                                    className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 outline-none"
+                                    value={appName}
+                                    onChange={(e) => setAppName(e.target.value)}
+                                    placeholder="CBT"
+                                />
+                                <button 
+                                    onClick={() => handleSaveConfig('APP_NAME', appName)}
+                                    disabled={isSaving}
+                                    className="px-4 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition shadow-sm disabled:opacity-50"
+                                >
+                                    <Save size={18}/>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* App Subtitle */}
+                        <div className="space-y-2">
+                            <label className="block text-xs font-bold text-slate-500 uppercase">Sub-judul Aplikasi</label>
+                            <div className="flex gap-2">
+                                <input 
+                                    type="text" 
+                                    className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 outline-none"
+                                    value={appSubtitle}
+                                    onChange={(e) => setAppSubtitle(e.target.value)}
+                                    placeholder="Computer Based Test"
+                                />
+                                <button 
+                                    onClick={() => handleSaveConfig('APP_SUBTITLE', appSubtitle)}
+                                    disabled={isSaving}
+                                    className="px-4 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition shadow-sm disabled:opacity-50"
+                                >
+                                    <Save size={18}/>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* App Description */}
+                        <div className="space-y-2">
+                            <label className="block text-xs font-bold text-slate-500 uppercase">Deskripsi Aplikasi</label>
+                            <div className="flex gap-2">
+                                <input 
+                                    type="text" 
+                                    className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 outline-none"
+                                    value={appDescription}
+                                    onChange={(e) => setAppDescription(e.target.value)}
+                                    placeholder="Sistem Assesment Digital..."
+                                />
+                                <button 
+                                    onClick={() => handleSaveConfig('APP_DESCRIPTION', appDescription)}
+                                    disabled={isSaving}
+                                    className="px-4 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition shadow-sm disabled:opacity-50"
+                                >
+                                    <Save size={18}/>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Logo Kiri */}
+                        <div className="space-y-2">
+                            <label className="block text-xs font-bold text-slate-500 uppercase">Logo Kiri (URL)</label>
+                            <div className="flex gap-2">
+                                <input 
+                                    type="text" 
+                                    className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 outline-none"
+                                    value={logoKiri}
+                                    onChange={(e) => setLogoKiri(e.target.value)}
+                                />
+                                <button 
+                                    onClick={() => handleSaveConfig('LOGO_KIRI_URL', logoKiri)}
+                                    disabled={isSaving}
+                                    className="px-4 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition shadow-sm disabled:opacity-50"
+                                >
+                                    <Save size={18}/>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Logo Kanan */}
+                        <div className="space-y-2">
+                            <label className="block text-xs font-bold text-slate-500 uppercase">Logo Kanan (URL)</label>
+                            <div className="flex gap-2">
+                                <input 
+                                    type="text" 
+                                    className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 outline-none"
+                                    value={logoKanan}
+                                    onChange={(e) => setLogoKanan(e.target.value)}
+                                />
+                                <button 
+                                    onClick={() => handleSaveConfig('LOGO_KANAN_URL', logoKanan)}
                                     disabled={isSaving}
                                     className="px-4 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition shadow-sm disabled:opacity-50"
                                 >

@@ -296,12 +296,12 @@ const RekapTab = ({ students, currentUser, configs }: { students: any[], current
             </head>
             <body>
                 <div class="header-container">
-                    <img src="https://image2url.com/r2/default/images/1769821786493-a2e4eb8b-c903-460d-b8d9-44f326ff71bb.png" class="logo" alt="Logo Kiri" />
+                    <img src="${configs.LOGO_KIRI_URL || 'https://image2url.com/r2/default/images/1769821786493-a2e4eb8b-c903-460d-b8d9-44f326ff71bb.png'}" class="logo" alt="Logo Kiri" />
                     <div class="header-text">
                         <h2>REKAPITULASI NILAI</h2>
                         <h2>${configs.HEADER_REKAP_NILAI || 'TRY OUT TKA TAHUN 2026'}</h2>
                     </div>
-                    <img src="https://image2url.com/r2/default/images/1769821862384-d6ef24bf-e12c-4616-a255-7366afae4c30.png" class="logo" alt="Logo Kanan" />
+                    <img src="${configs.LOGO_KANAN_URL || 'https://image2url.com/r2/default/images/1769821862384-d6ef24bf-e12c-4616-a255-7366afae4c30.png'}" class="logo" alt="Logo Kanan" />
                 </div>
 
                 <table class="info-table">

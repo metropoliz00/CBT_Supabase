@@ -75,13 +75,13 @@ const CetakKartuTab = ({ currentUser, students, schedules, configs }: { currentU
         const cardsHtml = filteredStudents.map((s) => `
             <div class="card">
                 <div class="card-header">
-                    <img src="https://image2url.com/r2/default/images/1769821786493-a2e4eb8b-c903-460d-b8d9-44f326ff71bb.png" class="logo" />
+                    <img src="${configs.LOGO_KIRI_URL || 'https://image2url.com/r2/default/images/1769821786493-a2e4eb8b-c903-460d-b8d9-44f326ff71bb.png'}" class="logo" />
                     <div class="header-text">
                         <h2>KARTU PESERTA</h2>
                         <p class="title-sub">${configs.HEADER_KARTU_PESERTA || 'TRY OUT TKA TAHUN 2026'}</p>
                         <p class="school-name">${s.kelas_id || s.school} - Kecamatan ${s.kecamatan || s.id_kecamatan || '-'}</p>
                     </div>
-                    <img src="https://image2url.com/r2/default/images/1769821862384-d6ef24bf-e12c-4616-a255-7366afae4c30.png" class="logo" />
+                    <img src="${configs.LOGO_KANAN_URL || 'https://image2url.com/r2/default/images/1769821862384-d6ef24bf-e12c-4616-a255-7366afae4c30.png'}" class="logo" />
                 </div>
                 <div class="card-body">
                     <div class="info-col">
