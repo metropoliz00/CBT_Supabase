@@ -7,13 +7,6 @@ export default {
   ],
   theme: {
     extend: {
-      colors: {
-        primary: {
-          DEFAULT: 'var(--primary-color)',
-          light: 'var(--primary-light)',
-          dark: 'var(--primary-dark)',
-        }
-      },
       fontFamily: {
         sans: ['Plus Jakarta Sans', 'sans-serif'],
       },

@@ -27,7 +27,6 @@ import SettingsTab from './admin/SettingsTab';
 interface AdminDashboardProps {
     user: User;
     onLogout: () => void;
-    onConfigChange?: () => void;
 }
 
 type TabType = 'dashboard' | 'rekap' | 'rekap_survey' | 'analisis' | 'ranking' | 'bank_soal' | 'data_user' | 'status_tes' | 'kelompok_tes' | 'rilis_token' | 'atur_sesi' | 'atur_gelombang' | 'cetak_absensi' | 'cetak_kartu' | 'settings' | 'dev_settings' | 'admin_management' | 'session_management' | 'system_config';
@@ -47,7 +46,7 @@ interface MenuGroup {
     items: MenuItem[];
 }
 
-const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout, onConfigChange }) => {
+const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -221,9 +220,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout, onConfi
         const data = await api.getDashboardData();
         if (data && typeof data === 'object' && Object.keys(data).length > 0) {
             setDashboardData(data);
-            
-            // Notify parent if config changed
-            if (onConfigChange) onConfigChange();
             
             // FIX: Sync current user data if found in dashboard data
             if (data.allUsers && Array.isArray(data.allUsers)) {
@@ -504,12 +500,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout, onConfi
         {/* Sidebar Header */}
         <div className="p-6 flex justify-between items-center border-b border-slate-100 bg-white">
           <div className="flex items-center gap-3">
-             <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20">
+             <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-200">
                 <Monitor size={22} className="animate-pulse" />
              </div>
              <div>
-                <h1 className="text-lg font-extrabold text-slate-800 tracking-tight leading-none">CBT <span className="text-primary">Admin</span></h1>
-                <p className="text-[10px] font-bold text-primary mt-1 uppercase tracking-wider">{currentUserState.role === 'admin_pusat' ? 'Administrator' : 'Proktor Panel'}</p>
+                <h1 className="text-lg font-extrabold text-slate-800 tracking-tight leading-none">CBT <span className="text-indigo-600">Admin</span></h1>
+                <p className="text-[10px] font-bold text-indigo-500 mt-1 uppercase tracking-wider">{currentUserState.role === 'admin_pusat' ? 'Administrator' : 'Proktor Panel'}</p>
              </div>
           </div>
           <button onClick={() => setIsSidebarOpen(false)} className="md:hidden p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition"><X size={20} /></button>
@@ -531,10 +527,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout, onConfi
                         {group.id !== 'main' && (
                             <button 
                                 onClick={() => toggleGroup(group.id)}
-                                className="w-full flex items-center justify-between px-3 py-2 text-xs font-extrabold text-slate-400 uppercase tracking-wider hover:text-primary transition-colors group select-none"
+                                className="w-full flex items-center justify-between px-3 py-2 text-xs font-extrabold text-slate-400 uppercase tracking-wider hover:text-indigo-600 transition-colors group select-none"
                             >
                                 <span>{group.label}</span>
-                                {isExpanded ? <ChevronDown size={14} className="text-slate-300 group-hover:text-primary"/> : <ChevronRight size={14} className="text-slate-300 group-hover:text-primary"/>}
+                                {isExpanded ? <ChevronDown size={14} className="text-slate-300 group-hover:text-indigo-500"/> : <ChevronRight size={14} className="text-slate-300 group-hover:text-indigo-500"/>}
                             </button>
                         )}
 
@@ -549,11 +545,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout, onConfi
                                         onClick={() => handleTabChange(item.id)}
                                         className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 group relative ${
                                             isActive 
-                                            ? 'bg-primary text-white shadow-md shadow-primary/20 translate-x-1' 
-                                            : 'text-slate-500 hover:bg-slate-50 hover:text-primary-dark'
+                                            ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200 translate-x-1' 
+                                            : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-700'
                                         }`}
                                     >
-                                        <Icon size={18} className={isActive ? 'text-primary-light' : 'text-slate-400 group-hover:text-primary transition-colors'} strokeWidth={2.5} />
+                                        <Icon size={18} className={isActive ? 'text-indigo-100' : 'text-slate-400 group-hover:text-indigo-500 transition-colors'} strokeWidth={2.5} />
                                         <span>{item.label}</span>
                                         {isActive && <div className="absolute right-3 w-1.5 h-1.5 bg-white rounded-full shadow-sm animate-pulse"></div>}
                                     </button>
@@ -579,12 +575,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout, onConfi
                         }}
                     />
                 ) : null}
-                <div className={`${currentUserState.photo_url ? 'hidden' : ''} w-9 h-9 rounded-full bg-primary-light flex items-center justify-center text-primary text-xs font-bold border border-primary/20 shadow-inner`}>
+                <div className={`${currentUserState.photo_url ? 'hidden' : ''} w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 text-xs font-bold border border-indigo-200 shadow-inner`}>
                     {currentUserState.username.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
                     <p className="text-[9px] font-bold text-slate-900 truncate">{currentUserState.nama_lengkap || currentUserState.username}</p>
-                    <p className="text-[10px] font-bold text-primary truncate">{currentUserState.role === 'admin_pusat' ? 'Administrator' : currentUserState.kelas_id}</p>
+                    <p className="text-[10px] font-bold text-indigo-600 truncate">{currentUserState.role === 'admin_pusat' ? 'Administrator' : currentUserState.kelas_id}</p>
                 </div>
             </div>
             <button onClick={onLogout} className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 transition">
@@ -666,7 +662,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout, onConfi
                         activeSessions={dashboardData.activeSessions || []}
                     />
                 )}
-                {activeTab === 'cetak_absensi' && <CetakAbsensiTab currentUser={currentUserState} students={dashboardData.allUsers || []} configs={dashboardData.configs || {}} />}
+                {activeTab === 'cetak_absensi' && <CetakAbsensiTab currentUser={currentUserState} students={dashboardData.allUsers || []} />}
                 {activeTab === 'cetak_kartu' && <CetakKartuTab currentUser={currentUserState} students={dashboardData.allUsers || []} schedules={dashboardData.schedules || []} configs={dashboardData.configs || {}} />}
                 {activeTab === 'data_user' && (currentUserState.role === 'admin_pusat' || currentUserState.role === 'admin_sekolah' || currentUserState.role === 'proktor') && <DaftarPesertaTab currentUser={currentUserState} onDataChange={() => fetchData()} />}
                 {activeTab === 'atur_gelombang' && currentUserState.role === 'admin_pusat' && <AturGelombangTab students={dashboardData.allUsers || []} currentUser={currentUserState} refreshData={() => fetchData(true)} />}

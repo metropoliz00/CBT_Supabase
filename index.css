@@ -2,12 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --primary-color: #4f46e5; /* Default indigo-600 */
-  --primary-light: #eef2ff; /* Default indigo-50 */
-  --primary-dark: #3730a3;  /* Default indigo-800 */
-}
-
 body {
   font-family: 'Plus Jakarta Sans', sans-serif;
   background-color: #f8fafc;

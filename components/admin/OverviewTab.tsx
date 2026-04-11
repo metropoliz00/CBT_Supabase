@@ -59,7 +59,7 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ dashboardData, currentUserSta
                 data: [
                     { value: offline, color: '#e2e8f0', label: 'Belum Login' },
                     { value: loggedIn, color: '#facc15', label: 'Sudah Login' },
-                    { value: working, color: 'var(--primary-color)', label: 'Mengerjakan' },
+                    { value: working, color: '#3b82f6', label: 'Mengerjakan' },
                     { value: finished, color: '#10b981', label: 'Selesai' },
                 ]
             };
