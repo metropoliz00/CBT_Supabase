@@ -7,7 +7,7 @@ import { User } from '../../types';
 import { useAlert } from '../../context/AlertContext';
 import Pagination from './Pagination';
 
-const RekapTab = ({ students, currentUser }: { students: any[], currentUser: User }) => {
+const RekapTab = ({ students, currentUser, configs }: { students: any[], currentUser: User, configs: Record<string, string> }) => {
     const { showAlert } = useAlert();
     const [data, setData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
@@ -299,7 +299,7 @@ const RekapTab = ({ students, currentUser }: { students: any[], currentUser: Use
                     <img src="https://image2url.com/r2/default/images/1769821786493-a2e4eb8b-c903-460d-b8d9-44f326ff71bb.png" class="logo" alt="Logo Kiri" />
                     <div class="header-text">
                         <h2>REKAPITULASI NILAI</h2>
-                        <h2>TRY OUT TKA TAHUN 2026</h2>
+                        <h2>${configs.HEADER_REKAP_NILAI || 'TRY OUT TKA TAHUN 2026'}</h2>
                     </div>
                     <img src="https://image2url.com/r2/default/images/1769821862384-d6ef24bf-e12c-4616-a255-7366afae4c30.png" class="logo" alt="Logo Kanan" />
                 </div>

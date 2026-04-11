@@ -500,12 +500,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
         {/* Sidebar Header */}
         <div className="p-6 flex justify-between items-center border-b border-slate-100 bg-white">
           <div className="flex items-center gap-3">
-             <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-200">
+             <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20">
                 <Monitor size={22} className="animate-pulse" />
              </div>
              <div>
-                <h1 className="text-lg font-extrabold text-slate-800 tracking-tight leading-none">CBT <span className="text-indigo-600">Admin</span></h1>
-                <p className="text-[10px] font-bold text-indigo-500 mt-1 uppercase tracking-wider">{currentUserState.role === 'admin_pusat' ? 'Administrator' : 'Proktor Panel'}</p>
+                <h1 className="text-lg font-extrabold text-slate-800 tracking-tight leading-none">CBT <span className="text-primary">Admin</span></h1>
+                <p className="text-[10px] font-bold text-primary mt-1 uppercase tracking-wider">{currentUserState.role === 'admin_pusat' ? 'Administrator' : 'Proktor Panel'}</p>
              </div>
           </div>
           <button onClick={() => setIsSidebarOpen(false)} className="md:hidden p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition"><X size={20} /></button>
@@ -527,10 +527,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                         {group.id !== 'main' && (
                             <button 
                                 onClick={() => toggleGroup(group.id)}
-                                className="w-full flex items-center justify-between px-3 py-2 text-xs font-extrabold text-slate-400 uppercase tracking-wider hover:text-indigo-600 transition-colors group select-none"
+                                className="w-full flex items-center justify-between px-3 py-2 text-xs font-extrabold text-slate-400 uppercase tracking-wider hover:text-primary transition-colors group select-none"
                             >
                                 <span>{group.label}</span>
-                                {isExpanded ? <ChevronDown size={14} className="text-slate-300 group-hover:text-indigo-500"/> : <ChevronRight size={14} className="text-slate-300 group-hover:text-indigo-500"/>}
+                                {isExpanded ? <ChevronDown size={14} className="text-slate-300 group-hover:text-primary"/> : <ChevronRight size={14} className="text-slate-300 group-hover:text-primary"/>}
                             </button>
                         )}
 
@@ -545,11 +545,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                                         onClick={() => handleTabChange(item.id)}
                                         className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 group relative ${
                                             isActive 
-                                            ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200 translate-x-1' 
-                                            : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-700'
+                                            ? 'bg-primary text-white shadow-md shadow-primary/20 translate-x-1' 
+                                            : 'text-slate-500 hover:bg-slate-50 hover:text-primary-dark'
                                         }`}
                                     >
-                                        <Icon size={18} className={isActive ? 'text-indigo-100' : 'text-slate-400 group-hover:text-indigo-500 transition-colors'} strokeWidth={2.5} />
+                                        <Icon size={18} className={isActive ? 'text-primary-light' : 'text-slate-400 group-hover:text-primary transition-colors'} strokeWidth={2.5} />
                                         <span>{item.label}</span>
                                         {isActive && <div className="absolute right-3 w-1.5 h-1.5 bg-white rounded-full shadow-sm animate-pulse"></div>}
                                     </button>
@@ -575,12 +575,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                         }}
                     />
                 ) : null}
-                <div className={`${currentUserState.photo_url ? 'hidden' : ''} w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 text-xs font-bold border border-indigo-200 shadow-inner`}>
+                <div className={`${currentUserState.photo_url ? 'hidden' : ''} w-9 h-9 rounded-full bg-primary-light flex items-center justify-center text-primary text-xs font-bold border border-primary/20 shadow-inner`}>
                     {currentUserState.username.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
                     <p className="text-[9px] font-bold text-slate-900 truncate">{currentUserState.nama_lengkap || currentUserState.username}</p>
-                    <p className="text-[10px] font-bold text-indigo-600 truncate">{currentUserState.role === 'admin_pusat' ? 'Administrator' : currentUserState.kelas_id}</p>
+                    <p className="text-[10px] font-bold text-primary truncate">{currentUserState.role === 'admin_pusat' ? 'Administrator' : currentUserState.kelas_id}</p>
                 </div>
             </div>
             <button onClick={onLogout} className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 transition">
@@ -663,14 +663,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                     />
                 )}
                 {activeTab === 'cetak_absensi' && <CetakAbsensiTab currentUser={currentUserState} students={dashboardData.allUsers || []} />}
-                {activeTab === 'cetak_kartu' && <CetakKartuTab currentUser={currentUserState} students={dashboardData.allUsers || []} schedules={dashboardData.schedules || []} />}
+                {activeTab === 'cetak_kartu' && <CetakKartuTab currentUser={currentUserState} students={dashboardData.allUsers || []} schedules={dashboardData.schedules || []} configs={dashboardData.configs || {}} />}
                 {activeTab === 'data_user' && (currentUserState.role === 'admin_pusat' || currentUserState.role === 'admin_sekolah' || currentUserState.role === 'proktor') && <DaftarPesertaTab currentUser={currentUserState} onDataChange={() => fetchData()} />}
                 {activeTab === 'atur_gelombang' && currentUserState.role === 'admin_pusat' && <AturGelombangTab students={dashboardData.allUsers || []} currentUser={currentUserState} refreshData={() => fetchData(true)} />}
                 {activeTab === 'rilis_token' && <RilisTokenTab currentUser={currentUserState} token={dashboardData.token} duration={dashboardData.duration} maxQuestions={dashboardData.maxQuestions} surveyDuration={dashboardData.surveyDuration} refreshData={() => fetchData()} isRefreshing={isRefreshing} configs={dashboardData.configs || {}} activeSessions={dashboardData.activeSessions || []} schedules={dashboardData.schedules || []} />}
                 {activeTab === 'bank_soal' && currentUserState.role === 'admin_pusat' && <BankSoalTab />}
-                {activeTab === 'rekap' && (currentUserState.role === 'admin_pusat' || (currentUserState.role === 'admin_sekolah' && dashboardData.configs?.SHOW_REKAP_TO_PROCTOR === 'TRUE')) && <RekapTab students={dashboardData.allUsers} currentUser={currentUserState} />}
+                {activeTab === 'rekap' && (currentUserState.role === 'admin_pusat' || (currentUserState.role === 'admin_sekolah' && dashboardData.configs?.SHOW_REKAP_TO_PROCTOR === 'TRUE')) && <RekapTab students={dashboardData.allUsers} currentUser={currentUserState} configs={dashboardData.configs || {}} />}
                 {activeTab === 'rekap_survey' && currentUserState.role === 'admin_pusat' && <RekapSurveyTab students={dashboardData.allUsers || []} currentUser={currentUserState} />}
-                {activeTab === 'ranking' && (currentUserState.role === 'admin_pusat' || (currentUserState.role === 'admin_sekolah' && dashboardData.configs?.SHOW_REKAP_TO_PROCTOR === 'TRUE')) && <RankingTab students={dashboardData.allUsers} currentUser={currentUserState} />}
+                {activeTab === 'ranking' && (currentUserState.role === 'admin_pusat' || (currentUserState.role === 'admin_sekolah' && dashboardData.configs?.SHOW_REKAP_TO_PROCTOR === 'TRUE')) && <RankingTab students={dashboardData.allUsers} currentUser={currentUserState} configs={dashboardData.configs || {}} />}
                 {activeTab === 'analisis' && currentUserState.role === 'admin_pusat' && <AnalisisTab students={dashboardData.allUsers} />}
                 {activeTab === 'system_config' && currentUserState.role === 'admin_pusat' && (
                     <SettingsTab 

@@ -5,7 +5,7 @@ import { User } from '../../types';
 import { api } from '../../services/api';
 import { useAlert } from '../../context/AlertContext';
 
-const CetakKartuTab = ({ currentUser, students, schedules }: { currentUser: User, students: any[], schedules: any[] }) => {
+const CetakKartuTab = ({ currentUser, students, schedules, configs }: { currentUser: User, students: any[], schedules: any[], configs: Record<string, string> }) => {
     const { showAlert } = useAlert();
     const [filterSchool, setFilterSchool] = useState('all');
     const [filterKecamatan, setFilterKecamatan] = useState('all');
@@ -78,7 +78,7 @@ const CetakKartuTab = ({ currentUser, students, schedules }: { currentUser: User
                     <img src="https://image2url.com/r2/default/images/1769821786493-a2e4eb8b-c903-460d-b8d9-44f326ff71bb.png" class="logo" />
                     <div class="header-text">
                         <h2>KARTU PESERTA</h2>
-                        <p class="title-sub">TRY OUT TKA TAHUN 2026</p>
+                        <p class="title-sub">${configs.HEADER_KARTU_PESERTA || 'TRY OUT TKA TAHUN 2026'}</p>
                         <p class="school-name">${s.kelas_id || s.school} - Kecamatan ${s.kecamatan || s.id_kecamatan || '-'}</p>
                     </div>
                     <img src="https://image2url.com/r2/default/images/1769821862384-d6ef24bf-e12c-4616-a255-7366afae4c30.png" class="logo" />

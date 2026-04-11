@@ -93,6 +93,30 @@ function App() {
     document.title = `${viewTitles[view] || 'CBT'} | CBT System`;
   }, [view]);
 
+  // Apply Theme Color
+  useEffect(() => {
+    const themeColor = configs['THEME_COLOR'] || '#4f46e5';
+    document.documentElement.style.setProperty('--primary-color', themeColor);
+    
+    const hexToRgb = (hex: string) => {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+      } : null;
+    };
+
+    const rgb = hexToRgb(themeColor);
+    if (rgb) {
+      // Light version (10% opacity)
+      document.documentElement.style.setProperty('--primary-light', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.1)`);
+      // Dark version (darken by 20%)
+      const darken = (val: number) => Math.max(0, Math.floor(val * 0.8));
+      document.documentElement.style.setProperty('--primary-dark', `rgb(${darken(rgb.r)}, ${darken(rgb.g)}, ${darken(rgb.b)})`);
+    }
+  }, [configs]);
+
   // 0. Fetch Global Config on Mount
   useEffect(() => {
     const fetchGlobalConfig = async () => {
@@ -479,15 +503,15 @@ function App() {
             <div 
                 className="absolute inset-0 z-0 bg-cover bg-center"
                 style={{ 
-                    backgroundImage: 'url("https://image2url.com/r2/default/images/1769879601173-bc7ec22d-7bb8-4ed8-91d7-b6407193627b.jpg")',
+                    backgroundImage: `url("${configs.BG_SYSTEM_CHECK || 'https://image2url.com/r2/default/images/1769879601173-bc7ec22d-7bb8-4ed8-91d7-b6407193627b.jpg'}")`,
                     opacity: 0.6
                 }}
             />            
             {/* Content Container */}
             <div className="bg-white/95 backdrop-blur-sm max-w-md w-full rounded-2xl p-8 shadow-2xl border border-white/20 relative z-10 overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
+                <div className="absolute top-0 left-0 w-full h-1.5 bg-primary"></div>
                 <div className="text-center mb-8">
-                    <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                    <div className="w-16 h-16 bg-primary-light text-primary rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
                         <Monitor size={32} />
                     </div>
                     <h2 className="text-2xl font-extrabold text-slate-800">System Check</h2>
@@ -525,7 +549,7 @@ function App() {
                         <div className={`w-3 h-3 rounded-full ${isOffline ? 'bg-red-500 animate-ping' : 'bg-emerald-500'}`}></div>
                     </div>
                 </div>
-                <button onClick={() => { enterFullscreen(); setView('login'); }} disabled={isOffline} className={`w-full font-bold py-4 rounded-xl shadow-lg transition flex items-center justify-center gap-2 group ${isOffline ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 text-white hover:shadow-indigo-500/30'}`}>
+                <button onClick={() => { enterFullscreen(); setView('login'); }} disabled={isOffline} className={`w-full font-bold py-4 rounded-xl shadow-lg transition flex items-center justify-center gap-2 group ${isOffline ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-primary hover:bg-primary-dark text-white hover:shadow-primary/30'}`}>
                     {isOffline ? "KONEKSI TERPUTUS" : (<>LANJUTKAN <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" /></>)}
                 </button>
                 <p className="text-center text-[10px] text-slate-400 mt-6">Klik "LANJUTKAN" untuk masuk ke halaman Login.</p>
@@ -544,28 +568,28 @@ function App() {
                 <div 
                     className="absolute inset-0 z-0 bg-cover bg-center"
                     style={{ 
-                        backgroundImage: 'url("https://image2url.com/r2/default/images/1769880312544-946f6b70-4512-4c82-bb6a-cc432cd620fe.jpg")',
+                        backgroundImage: `url("${configs.BG_LOGIN || 'https://image2url.com/r2/default/images/1769880312544-946f6b70-4512-4c82-bb6a-cc432cd620fe.jpg'}")`,
                         opacity: 0.2
                     }}
                 />
                 
                 <div className="bg-white w-full max-w-5xl rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row z-10 fade-in border border-white/50">
                     <div className="md:w-1/2 relative bg-slate-900 flex flex-col justify-center items-center text-white p-12 overflow-hidden group">
-                        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/50 to-indigo-900/60 z-10"></div>
-                        <div className="absolute inset-0 z-0"><img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" className="w-full h-full object-cover opacity-40 group-hover:scale-105 transition-transform duration-1000" alt="bg"/></div>
-                        <div className="relative z-20 text-center"><div className="bg-white/20 backdrop-blur-md p-5 rounded-2xl inline-block mb-6 shadow-lg border border-white/20 animate-bounce"><Monitor size={56} className="text-blue-300"/></div><h1 className="text-5xl font-extrabold mb-2 tracking-tight">CBT</h1><h2 className="text-lg font-medium text-blue-200 uppercase tracking-widest mb-6">Computer Based Test</h2><div className="w-16 h-1 bg-blue-500 mx-auto mb-6 rounded-full"></div><p className="text-slate-300 font-light max-w-xs mx-auto leading-relaxed">Sistem Assesment Digital yang terintegrasi</p></div>
+                        <div className="absolute inset-0 bg-primary/60 z-10"></div>
+                        <div className="absolute inset-0 z-0"><img src={configs.LOGIN_CARD_IMAGE || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"} className="w-full h-full object-cover opacity-40 group-hover:scale-105 transition-transform duration-1000" alt="bg"/></div>
+                        <div className="relative z-20 text-center"><div className="bg-white/20 backdrop-blur-md p-5 rounded-2xl inline-block mb-6 shadow-lg border border-white/20 animate-bounce"><Monitor size={56} className="text-primary-light"/></div><h1 className="text-5xl font-extrabold mb-2 tracking-tight">CBT</h1><h2 className="text-lg font-medium text-primary-light uppercase tracking-widest mb-6">Computer Based Test</h2><div className="w-16 h-1 bg-primary mx-auto mb-6 rounded-full"></div><p className="text-slate-300 font-light max-w-xs mx-auto leading-relaxed">Sistem Assesment Digital yang terintegrasi</p></div>
                     </div>
                     <div className="md:w-1/2 p-10 md:p-14 flex flex-col justify-center bg-white/80 backdrop-blur">
                         <div className="mb-10"><h3 className="text-3xl font-bold text-slate-800">Login Peserta</h3><p className="text-slate-500 mt-2">Masukan identitas pengguna untuk memulai sesi.</p></div>
                         <form onSubmit={handleLogin} className="space-y-6">
-                            <div><label className="block text-slate-700 text-xs font-bold mb-2 uppercase tracking-wide">Username</label><div className="relative group"><div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600 transition-colors"><UserIcon size={20}/></div><input type="text" className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition font-medium text-slate-700 placeholder-transparent" value={loginForm.username} onChange={e=>setLoginForm({...loginForm, username:e.target.value})} placeholder="Username" required /></div></div>
-                            <div><label className="block text-slate-700 text-xs font-bold mb-2 uppercase tracking-wide">Password</label><div className="relative group"><div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600 transition-colors"><Key size={20}/></div><input type={showPassword ? "text" : "password"} className="w-full pl-11 pr-12 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition font-medium text-slate-700 placeholder-transparent" value={loginForm.password} onChange={e=>setLoginForm({...loginForm, password:e.target.value})} placeholder="Password" /><button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-blue-600 transition-colors cursor-pointer">{showPassword ? <EyeOff size={20}/> : <Eye size={20}/>}</button></div></div>
+                             <div><label className="block text-slate-700 text-xs font-bold mb-2 uppercase tracking-wide">Username</label><div className="relative group"><div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-primary transition-colors"><UserIcon size={20}/></div><input type="text" className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary-light outline-none transition font-medium text-slate-700 placeholder-transparent" value={loginForm.username} onChange={e=>setLoginForm({...loginForm, username:e.target.value})} placeholder="Username" required /></div></div>
+                            <div><label className="block text-slate-700 text-xs font-bold mb-2 uppercase tracking-wide">Password</label><div className="relative group"><div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-primary transition-colors"><Key size={20}/></div><input type={showPassword ? "text" : "password"} className="w-full pl-11 pr-12 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary-light outline-none transition font-medium text-slate-700 placeholder-transparent" value={loginForm.password} onChange={e=>setLoginForm({...loginForm, password:e.target.value})} placeholder="Password" /><button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-primary transition-colors cursor-pointer">{showPassword ? <EyeOff size={20}/> : <Eye size={20}/>}</button></div></div>
                             {errorMsg && (<div className="flex items-start gap-2 text-red-500 text-sm bg-red-50 p-3 rounded-lg border border-red-100 animate-pulse whitespace-pre-wrap"><AlertCircle size={16} className="mt-0.5 shrink-0" /> {errorMsg}</div>)}
-                            <button disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-blue-500/30 transform hover:-translate-y-0.5 transition-all duration-200 flex justify-center items-center mt-4 gap-2">{loading ? (<><Loader2 size={24} className="animate-spin" /><span>MEMUAT...</span></>) : (<><span>LOGIN</span><LogIn size={20} className="opacity-80" /></>)}</button>
+                            <button disabled={loading} className="w-full bg-primary hover:bg-primary-dark text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-primary/30 transform hover:-translate-y-0.5 transition-all duration-200 flex justify-center items-center mt-4 gap-2">{loading ? (<><Loader2 size={24} className="animate-spin" /><span>MEMUAT...</span></>) : (<><span>LOGIN</span><LogIn size={20} className="opacity-80" /></>)}</button>
                         </form>
                     </div>
                 </div>
-                <footer className="absolute bottom-4 text-slate-400 text-xs font-bold tracking-wide z-10">@2026 | Dev. MeyGa Team TKA CBT System</footer>
+                <footer className="absolute bottom-4 text-slate-400 text-xs font-bold tracking-wide z-10">{configs.FOOTER_TEXT || "@2026 | Dev. MeyGa Team TKA CBT System"}</footer>
             </div>
         </>
     );

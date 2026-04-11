@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Settings, RefreshCw, Save, Loader2, ShieldCheck, Database, Clock, Layers, Globe, ClipboardList } from 'lucide-react';
+import { Settings, RefreshCw, Save, Loader2, ShieldCheck, Database, Clock, Layers, Globe, ClipboardList, Monitor } from 'lucide-react';
 import { api } from '../../services/api';
 import { User } from '../../types';
 import { useAlert } from '../../context/AlertContext';
@@ -23,6 +23,17 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
     const [devName, setDevName] = useState<string>(configs.DEV_NAME || '');
     const [devPhoto, setDevPhoto] = useState<string>(configs.DEV_PHOTO_URL || '');
     const [devQuote, setDevQuote] = useState<string>(configs.DEV_QUOTE || '');
+    
+    // Header Print States
+    const [headerKartu, setHeaderKartu] = useState<string>(configs.HEADER_KARTU_PESERTA || 'TRY OUT TKA TAHUN 2026');
+    const [headerRekap, setHeaderRekap] = useState<string>(configs.HEADER_REKAP_NILAI || 'TRY OUT TKA TAHUN 2026');
+    const [headerPeringkat, setHeaderPeringkat] = useState<string>(configs.HEADER_PERINGKAT || 'TRY OUT TKA TAHUN 2026');
+    const [footerText, setFooterText] = useState<string>(configs.FOOTER_TEXT || '@2026 | Dev. MeyGa Team TKA CBT System');
+    const [loginCardImage, setLoginCardImage] = useState<string>(configs.LOGIN_CARD_IMAGE || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80');
+    const [bgSystemCheck, setBgSystemCheck] = useState<string>(configs.BG_SYSTEM_CHECK || 'https://image2url.com/r2/default/images/1769879601173-bc7ec22d-7bb8-4ed8-91d7-b6407193627b.jpg');
+    const [bgLogin, setBgLogin] = useState<string>(configs.BG_LOGIN || 'https://image2url.com/r2/default/images/1769880312544-946f6b70-4512-4c82-bb6a-cc432cd620fe.jpg');
+    const [themeColor, setThemeColor] = useState<string>(configs.THEME_COLOR || '#4f46e5');
+
     const [sessionTimes, setSessionTimes] = useState<Record<string, { active: boolean, start: string, end: string }>>(() => {
         const sessions: Record<string, { active: boolean, start: string, end: string }> = {};
         for (let i = 1; i <= 4; i++) {
@@ -72,6 +83,14 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
             setDevName(configs.DEV_NAME || '');
             setDevPhoto(configs.DEV_PHOTO_URL || '');
             setDevQuote(configs.DEV_QUOTE || '');
+            setHeaderKartu(configs.HEADER_KARTU_PESERTA || 'TRY OUT TKA TAHUN 2026');
+            setHeaderRekap(configs.HEADER_REKAP_NILAI || 'TRY OUT TKA TAHUN 2026');
+            setHeaderPeringkat(configs.HEADER_PERINGKAT || 'TRY OUT TKA TAHUN 2026');
+            setFooterText(configs.FOOTER_TEXT || '@2026 | Dev. MeyGa Team TKA CBT System');
+            setLoginCardImage(configs.LOGIN_CARD_IMAGE || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80');
+            setBgSystemCheck(configs.BG_SYSTEM_CHECK || 'https://image2url.com/r2/default/images/1769879601173-bc7ec22d-7bb8-4ed8-91d7-b6407193627b.jpg');
+            setBgLogin(configs.BG_LOGIN || 'https://image2url.com/r2/default/images/1769880312544-946f6b70-4512-4c82-bb6a-cc432cd620fe.jpg');
+            setThemeColor(configs.THEME_COLOR || '#4f46e5');
             setSsSoalId(configs.SS_SOAL_ID || '');
             setSsHasilId(configs.SS_HASIL_ID || '');
             
@@ -211,7 +230,7 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                     <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                            <Settings size={18} className="text-indigo-600" />
+                            <Settings size={18} className="text-primary" />
                             <h3 className="font-bold text-slate-700">Pengaturan Umum</h3>
                         </div>
                         <button 
@@ -231,7 +250,7 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
                                 }
                             }}
                             disabled={isSaving}
-                            className="flex items-center gap-2 px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold hover:bg-indigo-200 transition"
+                            className="flex items-center gap-2 px-3 py-1.5 bg-primary-light text-primary rounded-lg text-xs font-bold hover:bg-primary/20 transition"
                         >
                             <RefreshCw size={14} className={isSaving ? 'animate-spin' : ''} />
                             Sinkronkan Durasi
@@ -250,7 +269,7 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
                                     setShowSurvey(newValue);
                                     handleSaveConfig('SHOW_SURVEY', newValue ? 'TRUE' : 'FALSE');
                                 }}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${showSurvey ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${showSurvey ? 'bg-primary' : 'bg-slate-300'}`}
                             >
                                 <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showSurvey ? 'translate-x-6' : 'translate-x-1'}`} />
                             </button>
@@ -268,7 +287,7 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
                                     setAllowProctorSessionEdit(newValue);
                                     handleSaveConfig('ALLOW_PROCTOR_SESSION_EDIT', newValue ? 'TRUE' : 'FALSE');
                                 }}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${allowProctorSessionEdit ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${allowProctorSessionEdit ? 'bg-primary' : 'bg-slate-300'}`}
                             >
                                 <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${allowProctorSessionEdit ? 'translate-x-6' : 'translate-x-1'}`} />
                             </button>
@@ -286,7 +305,7 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
                                     setShowRekapToProctor(newValue);
                                     handleSaveConfig('SHOW_REKAP_TO_PROCTOR', newValue ? 'TRUE' : 'FALSE');
                                 }}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${showRekapToProctor ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${showRekapToProctor ? 'bg-primary' : 'bg-slate-300'}`}
                             >
                                 <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showRekapToProctor ? 'translate-x-6' : 'translate-x-1'}`} />
                             </button>
@@ -298,7 +317,7 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
                             <div className="flex gap-2">
                                 <input 
                                     type="number" 
-                                    className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 outline-none"
+                                    className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:ring-2 focus:ring-primary-light outline-none"
                                     value={examDuration}
                                     onChange={(e) => setExamDuration(Number(e.target.value))}
                                 />
@@ -350,6 +369,228 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
                                     <Save size={18}/>
                                 </button>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Header Print Settings Section */}
+            {(mode === 'all' || mode === 'config') && (
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
+                        <ClipboardList size={18} className="text-primary" />
+                        <h3 className="font-bold text-slate-700">Judul Header Cetak</h3>
+                    </div>
+                    <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Header Kartu Peserta */}
+                        <div className="space-y-2">
+                            <label className="block text-xs font-bold text-slate-500 uppercase">Header Kartu Peserta</label>
+                            <div className="flex gap-2">
+                                <input 
+                                    type="text" 
+                                    className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 outline-none"
+                                    value={headerKartu}
+                                    onChange={(e) => setHeaderKartu(e.target.value)}
+                                    placeholder="Contoh: TRY OUT TKA TAHUN 2026"
+                                />
+                                <button 
+                                    onClick={() => handleSaveConfig('HEADER_KARTU_PESERTA', headerKartu)}
+                                    disabled={isSaving}
+                                    className="px-4 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition shadow-sm disabled:opacity-50"
+                                >
+                                    <Save size={18}/>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Header Rekap Nilai */}
+                        <div className="space-y-2">
+                            <label className="block text-xs font-bold text-slate-500 uppercase">Header Rekap Nilai</label>
+                            <div className="flex gap-2">
+                                <input 
+                                    type="text" 
+                                    className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 outline-none"
+                                    value={headerRekap}
+                                    onChange={(e) => setHeaderRekap(e.target.value)}
+                                    placeholder="Contoh: TRY OUT TKA TAHUN 2026"
+                                />
+                                <button 
+                                    onClick={() => handleSaveConfig('HEADER_REKAP_NILAI', headerRekap)}
+                                    disabled={isSaving}
+                                    className="px-4 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition shadow-sm disabled:opacity-50"
+                                >
+                                    <Save size={18}/>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Header Peringkat */}
+                        <div className="space-y-2">
+                            <label className="block text-xs font-bold text-slate-500 uppercase">Header Peringkat/Predikat</label>
+                            <div className="flex gap-2">
+                                <input 
+                                    type="text" 
+                                    className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 outline-none"
+                                    value={headerPeringkat}
+                                    onChange={(e) => setHeaderPeringkat(e.target.value)}
+                                    placeholder="Contoh: TRY OUT TKA TAHUN 2026"
+                                />
+                                <button 
+                                    onClick={() => handleSaveConfig('HEADER_PERINGKAT', headerPeringkat)}
+                                    disabled={isSaving}
+                                    className="px-4 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition shadow-sm disabled:opacity-50"
+                                >
+                                    <Save size={18}/>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* UI & Footer Settings Section */}
+            {(mode === 'all' || mode === 'config') && (
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
+                        <Monitor size={18} className="text-primary" />
+                        <h3 className="font-bold text-slate-700">Tampilan & Footer</h3>
+                    </div>
+                    <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Footer Text */}
+                        <div className="space-y-2">
+                            <label className="block text-xs font-bold text-slate-500 uppercase">Teks Footer Login</label>
+                            <div className="flex gap-2">
+                                <input 
+                                    type="text" 
+                                    className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 outline-none"
+                                    value={footerText}
+                                    onChange={(e) => setFooterText(e.target.value)}
+                                    placeholder="Contoh: @2026 | Dev. Team"
+                                />
+                                <button 
+                                    onClick={() => handleSaveConfig('FOOTER_TEXT', footerText)}
+                                    disabled={isSaving}
+                                    className="px-4 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition shadow-sm disabled:opacity-50"
+                                >
+                                    <Save size={18}/>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Login Card Image */}
+                        <div className="space-y-2">
+                            <label className="block text-xs font-bold text-slate-500 uppercase">Gambar Card Login (URL)</label>
+                            <div className="flex gap-2">
+                                <input 
+                                    type="text" 
+                                    className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 outline-none"
+                                    value={loginCardImage}
+                                    onChange={(e) => setLoginCardImage(e.target.value)}
+                                    placeholder="https://..."
+                                />
+                                <button 
+                                    onClick={() => handleSaveConfig('LOGIN_CARD_IMAGE', loginCardImage)}
+                                    disabled={isSaving}
+                                    className="px-4 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition shadow-sm disabled:opacity-50"
+                                >
+                                    <Save size={18}/>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* BG System Check */}
+                        <div className="space-y-2">
+                            <label className="block text-xs font-bold text-slate-500 uppercase">Background System Check (URL)</label>
+                            <div className="flex gap-2">
+                                <input 
+                                    type="text" 
+                                    className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 outline-none"
+                                    value={bgSystemCheck}
+                                    onChange={(e) => setBgSystemCheck(e.target.value)}
+                                    placeholder="https://..."
+                                />
+                                <button 
+                                    onClick={() => handleSaveConfig('BG_SYSTEM_CHECK', bgSystemCheck)}
+                                    disabled={isSaving}
+                                    className="px-4 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition shadow-sm disabled:opacity-50"
+                                >
+                                    <Save size={18}/>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* BG Login */}
+                        <div className="space-y-2">
+                            <label className="block text-xs font-bold text-slate-500 uppercase">Background Login (URL)</label>
+                            <div className="flex gap-2">
+                                <input 
+                                    type="text" 
+                                    className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 outline-none"
+                                    value={bgLogin}
+                                    onChange={(e) => setBgLogin(e.target.value)}
+                                    placeholder="https://..."
+                                />
+                                <button 
+                                    onClick={() => handleSaveConfig('BG_LOGIN', bgLogin)}
+                                    disabled={isSaving}
+                                    className="px-4 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition shadow-sm disabled:opacity-50"
+                                >
+                                    <Save size={18}/>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Theme Color */}
+                        <div className="space-y-2 md:col-span-2">
+                            <label className="block text-xs font-bold text-slate-500 uppercase">Warna Tema Aplikasi</label>
+                            <div className="flex flex-wrap gap-4 items-center p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                <div className="flex items-center gap-3">
+                                    <input 
+                                        type="color" 
+                                        className="w-12 h-12 rounded-lg cursor-pointer border-none bg-transparent"
+                                        value={themeColor}
+                                        onChange={(e) => setThemeColor(e.target.value)}
+                                    />
+                                    <input 
+                                        type="text" 
+                                        className="w-28 p-2 bg-white border border-slate-200 rounded-lg font-mono text-sm"
+                                        value={themeColor}
+                                        onChange={(e) => setThemeColor(e.target.value)}
+                                    />
+                                </div>
+                                
+                                <div className="h-8 w-px bg-slate-200 mx-2 hidden md:block"></div>
+                                
+                                <div className="flex flex-wrap gap-2">
+                                    {[
+                                        { name: 'Indigo', color: '#4f46e5' },
+                                        { name: 'Blue', color: '#2563eb' },
+                                        { name: 'Emerald', color: '#059669' },
+                                        { name: 'Rose', color: '#e11d48' },
+                                        { name: 'Amber', color: '#d97706' },
+                                        { name: 'Violet', color: '#7c3aed' },
+                                        { name: 'Slate', color: '#475569' },
+                                    ].map((c) => (
+                                        <button
+                                            key={c.color}
+                                            onClick={() => setThemeColor(c.color)}
+                                            className={`w-8 h-8 rounded-full border-2 transition-transform hover:scale-110 ${themeColor === c.color ? 'border-slate-800 scale-110' : 'border-transparent'}`}
+                                            style={{ backgroundColor: c.color }}
+                                            title={c.name}
+                                        />
+                                    ))}
+                                </div>
+
+                                <button 
+                                    onClick={() => handleSaveConfig('THEME_COLOR', themeColor)}
+                                    disabled={isSaving}
+                                    className="ml-auto px-6 py-2 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition shadow-sm disabled:opacity-50 flex items-center gap-2"
+                                >
+                                    <Save size={18}/>
+                                    Simpan Tema
+                                </button>
+                            </div>
+                            <p className="text-[10px] text-slate-400 mt-1 italic">*Warna tema akan diterapkan pada tombol, aksen, dan elemen utama aplikasi.</p>
                         </div>
                     </div>
                 </div>
