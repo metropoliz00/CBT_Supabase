@@ -50,13 +50,148 @@ body {
   animation: shimmer 2s infinite linear;
 }
 
+/* ===================================================
+   PRECISION A4 PRINT STYLES - 10MM MARGIN (ALL DOCUMENTS)
+   =================================================== */
 @media print {
-  aside, header, button, .no-print { display: none !important; }
-  main { margin: 0 !important; padding: 0 !important; width: 100% !important; height: auto !important; overflow: visible !important; }
-  body { background: white !important; overflow: visible !important; }
-  .card, .table-container, .bg-white { box-shadow: none !important; border: none !important; }
-  table { border-collapse: collapse; width: 100%; font-size: 11px; }
-  th, td { border: 1px solid #000 !important; padding: 4px !important; color: black !important; page-break-inside: avoid; }
-  thead { display: table-header-group; } 
-  tfoot { display: table-footer-group; }
+  @page {
+    size: A4 portrait;
+    margin: 10mm !important;
+  }
+
+  @page landscape {
+    size: A4 landscape;
+    margin: 10mm !important;
+  }
+
+  .print-landscape {
+    page: landscape;
+  }
+
+  *, *::before, *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+    box-sizing: border-box !important;
+  }
+
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 9.5pt !important;
+    line-height: 1.25 !important;
+    overflow: visible !important;
+  }
+
+  /* Hide screen navigation, headers, controls and non-printable elements */
+  aside, 
+  nav, 
+  header:not(.print-header), 
+  footer:not(.print-footer), 
+  button, 
+  input, 
+  select, 
+  textarea, 
+  .no-print, 
+  .pagination,
+  [role="navigation"], 
+  [role="tablist"] {
+    display: none !important;
+  }
+
+  /* Reset layout containers */
+  main, #root, .min-h-screen {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Flatten card structures for clean print */
+  .card, 
+  .table-container, 
+  .bg-white, 
+  .bg-slate-50, 
+  .glass-panel,
+  .rounded-xl, 
+  .rounded-2xl {
+    box-shadow: none !important;
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Precision Tables */
+  table, .table-print {
+    border-collapse: collapse !important;
+    border-spacing: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    font-size: 9pt !important;
+    margin-bottom: 12px !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+
+  thead {
+    display: table-header-group !important;
+  }
+
+  tfoot {
+    display: table-footer-group !important;
+  }
+
+  tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  th, td {
+    border: 1px solid #000000 !important;
+    padding: 4px 6px !important;
+    color: #000000 !important;
+    vertical-align: middle !important;
+    line-height: 1.2 !important;
+  }
+
+  th {
+    background-color: #f0f0f0 !important;
+    font-weight: bold !important;
+    text-align: center !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Print utilities */
+  .page-break-inside-avoid, 
+  .no-break, 
+  .signature-section, 
+  .header-container {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .page-break-before {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
+
+  .page-break-after {
+    page-break-after: always !important;
+    break-after: page !important;
+  }
 }
+

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, LogOut, Menu, Monitor, Group, Clock, Printer, List, Calendar, Key, FileQuestion, LayoutDashboard, ClipboardList, BarChart3, Award, RefreshCw, X, CreditCard, ChevronDown, ChevronRight, Settings, AlertCircle, ShieldCheck, Globe } from 'lucide-react';
+import { Home, LogOut, Menu, Monitor, Group, Clock, Printer, List, Calendar, Key, FileQuestion, LayoutDashboard, ClipboardList, BarChart3, Award, RefreshCw, X, CreditCard, ChevronDown, ChevronRight, Settings, AlertCircle, ShieldCheck, Globe, FileCheck } from 'lucide-react';
 import { api } from '../services/api';
 import { supabase } from '../services/supabase';
 import { User } from '../types';
@@ -15,6 +15,7 @@ import AturSesiTab from './admin/AturSesiTab';
 import CetakAbsensiTab from './admin/CetakAbsensiTab';
 import CetakKartuTab from './admin/CetakKartuTab';
 import RekapTab from './admin/RekapTab';
+import HasilPekerjaanTab from './admin/HasilPekerjaanTab';
 import RankingTab from './admin/RankingTab';
 import AnalisisTab from './admin/AnalisisTab';
 import StatusTesTab from './admin/StatusTesTab';
@@ -29,7 +30,7 @@ interface AdminDashboardProps {
     onLogout: () => void;
 }
 
-type TabType = 'dashboard' | 'rekap' | 'rekap_survey' | 'analisis' | 'ranking' | 'bank_soal' | 'data_user' | 'status_tes' | 'kelompok_tes' | 'rilis_token' | 'atur_sesi' | 'atur_gelombang' | 'cetak_absensi' | 'cetak_kartu' | 'settings' | 'dev_settings' | 'admin_management' | 'session_management' | 'system_config';
+type TabType = 'dashboard' | 'rekap' | 'hasil_pekerjaan' | 'rekap_survey' | 'analisis' | 'ranking' | 'bank_soal' | 'data_user' | 'status_tes' | 'kelompok_tes' | 'rilis_token' | 'atur_sesi' | 'atur_gelombang' | 'cetak_absensi' | 'cetak_kartu' | 'settings' | 'dev_settings' | 'admin_management' | 'session_management' | 'system_config';
 
 // Define Menu Structure Interface
 interface MenuItem {
@@ -76,6 +77,25 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarMinimized, setIsSidebarMinimized] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('cbt_admin_sidebar_minimized') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleSidebarMinimize = () => {
+    setIsSidebarMinimized(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem('cbt_admin_sidebar_minimized', String(next));
+      } catch (e) {
+        // ignore storage error
+      }
+      return next;
+    });
+  };
   
   // State for Accordion Menu
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
@@ -140,6 +160,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
         label: 'Laporan & Data',
         items: [
             { id: 'bank_soal', label: 'Bank Soal & Survey', icon: FileQuestion, roles: ['admin_pusat'] },
+            { id: 'hasil_pekerjaan', label: 'Hasil Tes Siswa', icon: FileCheck, roles: rekapRoles },
             { id: 'rekap', label: 'Rekap Nilai', icon: LayoutDashboard, roles: rekapRoles },
             { id: 'rekap_survey', label: 'Rekap Survey', icon: ClipboardList, roles: ['admin_pusat'] },
             { id: 'analisis', label: 'Analisis Soal', icon: BarChart3, roles: ['admin_pusat'] },
@@ -478,10 +499,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
             }
           }
         )
-        .subscribe();
+        .subscribe((status) => {
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            console.warn(`Realtime users channel status: ${status}`);
+          }
+        });
 
       return () => {
-        supabase.removeChannel(channel);
+        try {
+          supabase.removeChannel(channel);
+        } catch (e) {
+          // ignore cleanup errors
+        }
       };
   }, []);
 
@@ -500,23 +529,56 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
       {isSidebarOpen && <div className="fixed inset-0 bg-black/60 z-40 md:hidden fade-in backdrop-blur-sm" onClick={() => setIsSidebarOpen(false)}></div>}
       
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-slate-200 flex flex-col transition-transform duration-300 cubic-bezier(0.4, 0, 0.2, 1) md:translate-x-0 md:static md:inset-auto md:flex shadow-xl md:shadow-none ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed inset-y-0 left-0 z-50 bg-white border-r border-slate-200 flex flex-col transition-all duration-300 cubic-bezier(0.4, 0, 0.2, 1) md:translate-x-0 md:static md:inset-auto md:flex shadow-xl md:shadow-none ${
+        isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      } ${
+        isSidebarMinimized ? 'w-72 md:w-20' : 'w-72 md:w-72'
+      }`}>
         {/* Sidebar Header */}
-        <div className="p-6 flex justify-between items-center border-b border-slate-100 bg-white">
-          <div className="flex items-center gap-3">
-             <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-200">
-                <Monitor size={22} className="animate-pulse" />
+        <div className={`border-b border-slate-100 bg-white flex items-center transition-all duration-300 ${
+          isSidebarMinimized ? 'p-3 flex-col gap-2 justify-center' : 'p-5 justify-between'
+        }`}>
+          <div className={`flex items-center gap-3 min-w-0 ${isSidebarMinimized ? 'justify-center' : ''}`}>
+             <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-200 flex-shrink-0">
+                <Monitor size={22} className={isSidebarMinimized ? '' : 'animate-pulse'} />
              </div>
-             <div>
-                <h1 className="text-lg font-extrabold text-slate-800 tracking-tight leading-none">{dashboardData.configs?.APP_NAME || 'CBT'} <span className="text-indigo-600">Admin</span></h1>
-                <p className="text-[10px] font-bold text-indigo-500 mt-1 uppercase tracking-wider">{currentUserState.role === 'admin_pusat' ? 'Administrator' : 'Proktor Panel'}</p>
-             </div>
+             {!isSidebarMinimized && (
+               <div className="min-w-0">
+                  <h1 className="text-lg font-extrabold text-slate-800 tracking-tight leading-none truncate">
+                    {dashboardData.configs?.APP_NAME || 'CBT'} <span className="text-indigo-600">Admin</span>
+                  </h1>
+                  <p className="text-[10px] font-bold text-indigo-500 mt-1 uppercase tracking-wider truncate">
+                    {currentUserState.role === 'admin_pusat' ? 'Administrator' : 'Proktor Panel'}
+                  </p>
+               </div>
+             )}
           </div>
-          <button onClick={() => setIsSidebarOpen(false)} className="md:hidden p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition"><X size={20} /></button>
+
+          <div className="flex items-center gap-1">
+            {/* Desktop Hamburger Toggle Button */}
+            <button
+              onClick={toggleSidebarMinimize}
+              className="hidden md:flex p-2 rounded-xl text-slate-500 hover:text-indigo-600 hover:bg-slate-100 active:scale-95 transition items-center justify-center"
+              title={isSidebarMinimized ? 'Perluas Sidebar' : 'Kecilkan Sidebar (Hanya Icon)'}
+              aria-label="Toggle Sidebar"
+            >
+              <Menu size={20} />
+            </button>
+
+            {/* Mobile Close Button */}
+            <button 
+              onClick={() => setIsSidebarOpen(false)} 
+              className="md:hidden p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition"
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         {/* Sidebar Nav */}
-        <nav className="flex-1 px-4 py-6 space-y-6 overflow-y-auto custom-scrollbar">
+        <nav className={`flex-1 overflow-y-auto custom-scrollbar transition-all duration-300 ${
+          isSidebarMinimized ? 'px-2 py-4 space-y-3' : 'px-4 py-6 space-y-6'
+        }`}>
             {menuConfig.map(group => {
                 // Filter items based on role
                 const filteredItems = group.items.filter(item => item.roles.includes(currentUserState.role));
@@ -524,11 +586,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                 if (filteredItems.length === 0) return null;
 
                 const isExpanded = expandedGroups[group.id];
+                const showGroupItems = isSidebarMinimized || isExpanded || group.id === 'main';
 
                 return (
                     <div key={group.id} className="space-y-1">
                         {/* Group Header (Accordion Toggle) */}
-                        {group.id !== 'main' && (
+                        {group.id !== 'main' && !isSidebarMinimized && (
                             <button 
                                 onClick={() => toggleGroup(group.id)}
                                 className="w-full flex items-center justify-between px-3 py-2 text-xs font-extrabold text-slate-400 uppercase tracking-wider hover:text-indigo-600 transition-colors group select-none"
@@ -538,8 +601,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                             </button>
                         )}
 
+                        {group.id !== 'main' && isSidebarMinimized && (
+                            <div className="my-2 border-t border-slate-100 mx-2" />
+                        )}
+
                         {/* Group Items */}
-                        <div className={`space-y-1 overflow-hidden transition-all duration-300 ease-in-out ${isExpanded || group.id === 'main' ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                        <div className={`space-y-1 overflow-hidden transition-all duration-300 ease-in-out ${showGroupItems ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
                             {filteredItems.map(item => {
                                 const isActive = activeTab === item.id;
                                 const Icon = item.icon;
@@ -547,15 +614,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                                     <button
                                         key={item.id}
                                         onClick={() => handleTabChange(item.id)}
-                                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 group relative ${
+                                        title={item.label}
+                                        className={`w-full flex items-center rounded-xl transition-all duration-200 group relative ${
+                                            isSidebarMinimized
+                                                ? 'justify-center p-3'
+                                                : 'gap-3 px-3 py-2.5 text-sm font-bold'
+                                        } ${
                                             isActive 
-                                            ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200 translate-x-1' 
+                                            ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' 
                                             : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-700'
                                         }`}
                                     >
-                                        <Icon size={18} className={isActive ? 'text-indigo-100' : 'text-slate-400 group-hover:text-indigo-500 transition-colors'} strokeWidth={2.5} />
-                                        <span>{item.label}</span>
-                                        {isActive && <div className="absolute right-3 w-1.5 h-1.5 bg-white rounded-full shadow-sm animate-pulse"></div>}
+                                        <Icon size={isSidebarMinimized ? 20 : 18} className={isActive ? 'text-indigo-100' : 'text-slate-400 group-hover:text-indigo-500 transition-colors'} strokeWidth={2.5} />
+                                        {!isSidebarMinimized && <span>{item.label}</span>}
+                                        {!isSidebarMinimized && isActive && <div className="absolute right-3 w-1.5 h-1.5 bg-white rounded-full shadow-sm animate-pulse"></div>}
                                     </button>
                                 );
                             })}
@@ -566,9 +638,42 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
         </nav>
 
         {/* Sidebar Footer */}
-        <div className="p-4 border-t border-slate-100 bg-slate-50/50">
-            <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm mb-3 flex items-center gap-3">
-                 {currentUserState.photo_url ? (
+        <div className={`border-t border-slate-100 bg-slate-50/50 transition-all duration-300 ${
+          isSidebarMinimized ? 'p-2' : 'p-4'
+        }`}>
+            {!isSidebarMinimized ? (
+              <>
+                <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm mb-3 flex items-center gap-3">
+                     {currentUserState.photo_url ? (
+                        <img 
+                            src={currentUserState.photo_url} 
+                            className="w-9 h-9 rounded-full object-cover border border-slate-200 bg-white" 
+                            alt="Profile"
+                            onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                            }}
+                        />
+                    ) : null}
+                    <div className={`${currentUserState.photo_url ? 'hidden' : ''} w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 text-xs font-bold border border-indigo-200 shadow-inner`}>
+                        {currentUserState.username.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-[9px] font-bold text-slate-900 truncate">{currentUserState.nama_lengkap || currentUserState.username}</p>
+                        <p className="text-[10px] font-bold text-indigo-600 truncate">{currentUserState.role === 'admin_pusat' ? 'Administrator' : currentUserState.kelas_id}</p>
+                    </div>
+                </div>
+                <button onClick={onLogout} className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 transition">
+                    <LogOut size={16} /> Keluar
+                </button>
+              </>
+            ) : (
+              <div className="flex flex-col items-center gap-2">
+                <div 
+                  className="cursor-pointer" 
+                  title={`${currentUserState.nama_lengkap || currentUserState.username} (${currentUserState.role === 'admin_pusat' ? 'Administrator' : currentUserState.kelas_id})`}
+                >
+                  {currentUserState.photo_url ? (
                     <img 
                         src={currentUserState.photo_url} 
                         className="w-9 h-9 rounded-full object-cover border border-slate-200 bg-white" 
@@ -578,18 +683,21 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                             e.currentTarget.nextElementSibling?.classList.remove('hidden');
                         }}
                     />
-                ) : null}
-                <div className={`${currentUserState.photo_url ? 'hidden' : ''} w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 text-xs font-bold border border-indigo-200 shadow-inner`}>
-                    {currentUserState.username.charAt(0).toUpperCase()}
+                  ) : (
+                    <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 text-xs font-bold border border-indigo-200 shadow-inner">
+                        {currentUserState.username.charAt(0).toUpperCase()}
+                    </div>
+                  )}
                 </div>
-                <div className="flex-1 min-w-0">
-                    <p className="text-[9px] font-bold text-slate-900 truncate">{currentUserState.nama_lengkap || currentUserState.username}</p>
-                    <p className="text-[10px] font-bold text-indigo-600 truncate">{currentUserState.role === 'admin_pusat' ? 'Administrator' : currentUserState.kelas_id}</p>
-                </div>
-            </div>
-            <button onClick={onLogout} className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 transition">
-                <LogOut size={16} /> Keluar
-            </button>
+                <button 
+                  onClick={onLogout} 
+                  title="Keluar" 
+                  className="flex items-center justify-center w-full p-2.5 rounded-xl text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 transition"
+                >
+                  <LogOut size={16} />
+                </button>
+              </div>
+            )}
         </div>
       </aside>
 
@@ -621,8 +729,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
           {/* Desktop Header */}
           <div className="hidden md:flex justify-between items-center mb-8">
             <div>
-                <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">{getTabTitle()}</h2>
-                <p className="text-sm text-slate-500 mt-1">Kelola data dan pantau aktivitas ujian secara realtime.</p>
+              <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">{getTabTitle()}</h2>
+              <p className="text-sm text-slate-500 mt-1">Kelola data dan pantau aktivitas ujian secara realtime.</p>
             </div>
             <div className="flex items-center gap-3">
               <div className="hidden md:flex flex-col items-end mr-2">
@@ -672,8 +780,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
                 {activeTab === 'atur_gelombang' && currentUserState.role === 'admin_pusat' && <AturGelombangTab students={dashboardData.allUsers || []} currentUser={currentUserState} refreshData={() => fetchData(true)} />}
                 {activeTab === 'rilis_token' && <RilisTokenTab currentUser={currentUserState} token={dashboardData.token} duration={dashboardData.duration} maxQuestions={dashboardData.maxQuestions} surveyDuration={dashboardData.surveyDuration} refreshData={() => fetchData()} isRefreshing={isRefreshing} configs={dashboardData.configs || {}} activeSessions={dashboardData.activeSessions || []} schedules={dashboardData.schedules || []} />}
                 {activeTab === 'bank_soal' && currentUserState.role === 'admin_pusat' && <BankSoalTab />}
+                {activeTab === 'hasil_pekerjaan' && (currentUserState.role === 'admin_pusat' || (currentUserState.role === 'admin_sekolah' && dashboardData.configs?.SHOW_REKAP_TO_PROCTOR === 'TRUE') || (currentUserState.role === 'proktor' && dashboardData.configs?.SHOW_REKAP_TO_PROCTOR === 'TRUE')) && (
+                    <HasilPekerjaanTab 
+                        students={dashboardData.allUsers || []} 
+                        currentUser={currentUserState} 
+                        configs={dashboardData.configs || {}} 
+                    />
+                )}
                 {activeTab === 'rekap' && (currentUserState.role === 'admin_pusat' || (currentUserState.role === 'admin_sekolah' && dashboardData.configs?.SHOW_REKAP_TO_PROCTOR === 'TRUE')) && <RekapTab students={dashboardData.allUsers} currentUser={currentUserState} configs={dashboardData.configs || {}} />}
-                {activeTab === 'rekap_survey' && currentUserState.role === 'admin_pusat' && <RekapSurveyTab students={dashboardData.allUsers || []} currentUser={currentUserState} />}
+                {activeTab === 'rekap_survey' && currentUserState.role === 'admin_pusat' && <RekapSurveyTab students={dashboardData.allUsers || []} currentUser={currentUserState} configs={dashboardData.configs || {}} />}
                 {activeTab === 'ranking' && (currentUserState.role === 'admin_pusat' || (currentUserState.role === 'admin_sekolah' && dashboardData.configs?.SHOW_REKAP_TO_PROCTOR === 'TRUE')) && <RankingTab students={dashboardData.allUsers} currentUser={currentUserState} configs={dashboardData.configs || {}} />}
                 {activeTab === 'analisis' && currentUserState.role === 'admin_pusat' && <AnalisisTab students={dashboardData.allUsers} />}
                 {activeTab === 'system_config' && currentUserState.role === 'admin_pusat' && (

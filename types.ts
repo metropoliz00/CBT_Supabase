@@ -50,6 +50,7 @@ export interface Question {
 // Interface for Admin CRUD (Flat structure matching spreadsheet columns)
 export interface QuestionRow {
   id: string;
+  exam_id?: string;
   text_soal: string;
   tipe_soal: QuestionType;
   gambar: string;

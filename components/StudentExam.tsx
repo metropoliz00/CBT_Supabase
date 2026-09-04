@@ -4,6 +4,8 @@ import { Clock, Check, ChevronLeft, ChevronRight, LayoutDashboard, Flag, Monitor
 import { QuestionWithOptions, UserAnswerValue, Exam } from '../types';
 import { api } from '../services/api';
 import { useAlert } from '../context/AlertContext';
+import { isImageMedia } from '../utils/wacanaHelper';
+import { WacanaViewer } from './WacanaViewer';
 
 interface StudentExamProps {
   exam: Exam;
@@ -449,20 +451,28 @@ const StudentExam: React.FC<StudentExamProps> = ({ exam, questions, userFullName
               <div className={(currentQ.gambar || currentQ.tipe_soal === 'BS') ? "grid grid-cols-1 lg:grid-cols-2 gap-8 items-start" : "w-full flex flex-col gap-6"}>
                 <div className="flex flex-col gap-6 w-full">
                     {currentQ.gambar && (
-                        <div className="flex flex-col gap-4">
-                            <div className="bg-slate-50 p-4 md:p-6 rounded-xl border border-slate-200 flex flex-col items-center justify-center min-h-[200px] md:min-h-[300px] relative group overflow-hidden">
-                                <div className="relative cursor-zoom-in w-full h-full flex items-center justify-center" onClick={() => setZoomedImage(currentQ.gambar!)}>
-                                    <img src={currentQ.gambar} alt="Soal" className="max-w-full h-auto rounded-lg shadow-sm max-h-[400px] md:max-h-[500px] object-contain transition-transform duration-300 group-hover:scale-[1.02]" />
-                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center rounded-lg"><div className="bg-black/70 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 transform translate-y-2 group-hover:translate-y-0"><Maximize size={14} /> Klik untuk memperbesar</div></div>
+                        isImageMedia(currentQ.gambar) ? (
+                            <div className="flex flex-col gap-4">
+                                <div className="bg-slate-50 p-4 md:p-6 rounded-xl border border-slate-200 flex flex-col items-center justify-center min-h-[200px] md:min-h-[300px] relative group overflow-hidden">
+                                    <div className="relative cursor-zoom-in w-full h-full flex items-center justify-center" onClick={() => setZoomedImage(currentQ.gambar!)}>
+                                        <img src={currentQ.gambar} alt="Soal" className="max-w-full h-auto rounded-lg shadow-sm max-h-[400px] md:max-h-[500px] object-contain transition-transform duration-300 group-hover:scale-[1.02]" />
+                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center rounded-lg"><div className="bg-black/70 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 transform translate-y-2 group-hover:translate-y-0"><Maximize size={14} /> Klik untuk memperbesar</div></div>
+                                    </div>
+                                    <p className="text-[10px] text-slate-400 mt-2 italic text-center flex items-center gap-1"><ZoomIn size={12}/> Klik gambar untuk mode zoom & pan</p>
                                 </div>
-                                <p className="text-[10px] text-slate-400 mt-2 italic text-center flex items-center gap-1"><ZoomIn size={12}/> Klik gambar untuk mode zoom & pan</p>
+                                {currentQ.keterangan_gambar && (
+                                    <p className={`font-medium text-blue-600 text-center w-full leading-relaxed ${fontSize === 'sm' ? 'text-base' : fontSize === 'lg' ? 'text-2xl' : 'text-xl'}`}>
+                                        {currentQ.keterangan_gambar}
+                                    </p>
+                                )}
                             </div>
-                            {currentQ.keterangan_gambar && (
-                                <p className={`font-medium text-blue-600 text-center w-full leading-relaxed ${fontSize === 'sm' ? 'text-base' : fontSize === 'lg' ? 'text-2xl' : 'text-xl'}`}>
-                                    {currentQ.keterangan_gambar}
-                                </p>
-                            )}
-                        </div>
+                        ) : (
+                            <WacanaViewer 
+                                content={currentQ.gambar} 
+                                caption={currentQ.keterangan_gambar} 
+                                fontSize={fontSize} 
+                            />
+                        )
                     )}
                     {currentQ.tipe_soal === 'BS' && (
                          <div className={`font-medium whitespace-pre-wrap leading-relaxed text-justify break-words ${fontSize === 'sm' ? 'text-base' : fontSize === 'lg' ? 'text-2xl' : 'text-lg'}`}>

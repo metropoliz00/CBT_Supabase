@@ -1,12 +1,12 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { ClipboardList, FileText, Loader2, RefreshCw, Search } from 'lucide-react';
+import { ClipboardList, FileText, Loader2, Printer, RefreshCw, Search } from 'lucide-react';
 import { api } from '../../services/api';
 import { exportToExcel } from '../../utils/adminHelpers';
 import { User } from '../../types';
 import Pagination from './Pagination';
 
-const RekapSurveyTab = ({ students, currentUser }: { students: any[], currentUser: User }) => {
+const RekapSurveyTab = ({ students, currentUser, configs = {} }: { students: any[], currentUser: User, configs?: Record<string, string> }) => {
     const [selectedSurvey, setSelectedSurvey] = useState('Survey_Karakter');
     const [data, setData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
@@ -176,6 +176,252 @@ const RekapSurveyTab = ({ students, currentUser }: { students: any[], currentUse
         exportToExcel(exportData, `Rekap_${selectedSurvey}`, "Data");
     };
 
+    const handlePrint = () => {
+        if (filteredData.length === 0) return;
+
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) return;
+
+        const surveyTitle = surveyOptions.find(s => s.id === selectedSurvey)?.name || selectedSurvey.replace(/_/g, ' ');
+        const currentDate = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+        const proktorName = currentUser.nama_lengkap || currentUser.username || "Administrator";
+
+        const rowsHtml = filteredData.map((d, index) => {
+            const pred = getSurveyPredicate(d.rata);
+            return `
+                <tr>
+                    <td class="text-center">${index + 1}</td>
+                    <td class="text-center font-mono">${d.username}</td>
+                    <td class="font-bold">${d.nama}</td>
+                    <td>${d.sekolah || '-'}</td>
+                    <td>${d.kecamatan || '-'}</td>
+                    <td class="text-center">${d.id_paket || '-'}</td>
+                    <td class="text-center font-bold">${d.total}</td>
+                    <td class="text-center font-bold">${d.rata}</td>
+                    <td class="text-center font-bold">${pred}</td>
+                </tr>
+            `;
+        }).join('');
+
+        const htmlContent = `
+            <!DOCTYPE html>
+            <html lang="id">
+            <head>
+                <meta charset="UTF-8">
+                <title>Rekap Survey - ${surveyTitle}</title>
+                <style>
+                    @page {
+                        size: A4 landscape;
+                        margin: 10mm !important;
+                    }
+                    *, *::before, *::after {
+                        box-sizing: border-box !important;
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
+                    html, body {
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        width: 100% !important;
+                        background: #ffffff !important;
+                        color: #000000 !important;
+                        font-family: Arial, Helvetica, sans-serif;
+                        font-size: 8.5pt;
+                    }
+                    @media screen {
+                        body {
+                            background-color: #f1f5f9 !important;
+                            padding: 20px !important;
+                            display: flex;
+                            justify-content: center;
+                        }
+                        .document-sheet {
+                            background: #ffffff !important;
+                            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                            padding: 10mm !important;
+                        }
+                    }
+                    @media print {
+                        body {
+                            background-color: #ffffff !important;
+                            padding: 0 !important;
+                        }
+                        .document-sheet {
+                            box-shadow: none !important;
+                            padding: 0 !important;
+                            width: 100% !important;
+                        }
+                    }
+                    .document-sheet {
+                        width: 277mm;
+                        margin: 0 auto;
+                        box-sizing: border-box !important;
+                    }
+                    .header-container {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        border-bottom: 2px solid #000000;
+                        padding-bottom: 3mm;
+                        margin-bottom: 4mm;
+                    }
+                    .header-logo {
+                        width: 18mm;
+                        height: 18mm;
+                        object-fit: contain;
+                    }
+                    .header-title-box {
+                        text-align: center;
+                        flex: 1;
+                        padding: 0 5mm;
+                    }
+                    .header-title-box h1 {
+                        margin: 0;
+                        font-size: 13pt;
+                        font-weight: bold;
+                        text-transform: uppercase;
+                        letter-spacing: 0.5px;
+                    }
+                    .header-title-box h2 {
+                        margin: 1.5mm 0 0 0;
+                        font-size: 10.5pt;
+                        font-weight: bold;
+                    }
+                    .header-title-box p {
+                        margin: 1mm 0 0 0;
+                        font-size: 8pt;
+                        color: #333333;
+                    }
+                    .meta-info-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-bottom: 3.5mm;
+                        font-size: 8pt;
+                    }
+                    .meta-info-table td {
+                        padding: 1mm 1.5mm;
+                        vertical-align: top;
+                    }
+                    .data-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        font-size: 7.8pt;
+                    }
+                    .data-table th, .data-table td {
+                        border: 0.8px solid #000000;
+                        padding: 1.5mm 2mm;
+                        vertical-align: middle;
+                    }
+                    .data-table thead th {
+                        background-color: #f1f5f9 !important;
+                        font-weight: bold;
+                        text-transform: uppercase;
+                        text-align: center;
+                        font-size: 7.5pt;
+                    }
+                    .data-table thead {
+                        display: table-header-group;
+                    }
+                    .data-table tr {
+                        page-break-inside: avoid !important;
+                        break-inside: avoid !important;
+                    }
+                    .text-center { text-align: center; }
+                    .font-mono { font-family: monospace; }
+                    .font-bold { font-weight: bold; }
+                    .signature-section {
+                        margin-top: 6mm;
+                        display: flex;
+                        justify-content: flex-end;
+                        page-break-inside: avoid !important;
+                        break-inside: avoid !important;
+                    }
+                    .signature-box {
+                        text-align: center;
+                        width: 65mm;
+                        font-size: 8pt;
+                    }
+                    .signature-space {
+                        height: 16mm;
+                    }
+                    .signature-name {
+                        font-weight: bold;
+                        text-decoration: underline;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="document-sheet">
+                    <div class="header-container">
+                        <img src="${configs.LOGO_KIRI_URL || 'https://image2url.com/r2/default/images/1769821786493-a2e4eb8b-c903-460d-b8d9-44f326ff71bb.png'}" class="header-logo" alt="Logo Kiri" />
+                        <div class="header-title-box">
+                            <h1>REKAPITULASI HASIL SURVEY</h1>
+                            <h2>${surveyTitle.toUpperCase()}</h2>
+                            <p>${configs.PRINT_HEADER_MASTER || 'TRY OUT TKA TAHUN 2026'}</p>
+                        </div>
+                        <img src="${configs.LOGO_KANAN_URL || 'https://image2url.com/r2/default/images/1769821862384-d6ef24bf-e12c-4616-a255-7366afae4c30.png'}" class="header-logo" alt="Logo Kanan" />
+                    </div>
+
+                    <table class="meta-info-table">
+                        <tr>
+                            <td style="width: 15%;"><strong>Survey</strong></td>
+                            <td style="width: 35%;">: ${surveyTitle}</td>
+                            <td style="width: 15%;"><strong>Kecamatan</strong></td>
+                            <td style="width: 35%;">: ${filterKecamatan === 'all' ? 'Semua Kecamatan' : filterKecamatan}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Sekolah</strong></td>
+                            <td>: ${filterSchool === 'all' ? 'Semua Sekolah' : filterSchool}</td>
+                            <td><strong>Total Peserta</strong></td>
+                            <td>: ${filteredData.length} Peserta</td>
+                        </tr>
+                    </table>
+
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 28px;">No</th>
+                                <th style="width: 80px;">Username</th>
+                                <th>Nama Peserta</th>
+                                <th>Sekolah</th>
+                                <th>Kecamatan</th>
+                                <th style="width: 45px;">Paket</th>
+                                <th style="width: 45px;">Total</th>
+                                <th style="width: 55px;">Rata-rata</th>
+                                <th style="width: 75px;">Predikat</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml}
+                        </tbody>
+                    </table>
+
+                    <div class="signature-section">
+                        <div class="signature-box">
+                            <p style="margin: 0;">Tuban, ${currentDate}</p>
+                            <p style="margin: 1mm 0 0 0;">Penanggung Jawab,</p>
+                            <div class="signature-space"></div>
+                            <p class="signature-name" style="margin: 0;">${proktorName}</p>
+                            <p style="margin: 0.5mm 0 0 0; font-size: 7.5pt; color: #555;">NIP: .......................................</p>
+                        </div>
+                    </div>
+                </div>
+                <script>
+                    window.onload = function() {
+                        setTimeout(function() {
+                            window.print();
+                        }, 250);
+                    }
+                </script>
+            </body>
+            </html>
+        `;
+
+        printWindow.document.open();
+        printWindow.document.write(htmlContent);
+        printWindow.document.close();
+    };
+
     const questionKeys = useMemo(() => {
         const keys = new Set<string>();
         data.forEach(d => {
@@ -230,6 +476,9 @@ const RekapSurveyTab = ({ students, currentUser }: { students: any[], currentUse
                         </select>
                         <button onClick={handleExport} disabled={filteredData.length === 0} className="bg-emerald-50 text-emerald-600 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-emerald-100 border border-emerald-100 transition shadow-sm disabled:opacity-50">
                             <FileText size={14}/> Export
+                        </button>
+                        <button onClick={handlePrint} disabled={filteredData.length === 0} className="bg-rose-50 text-rose-600 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-rose-100 border border-rose-100 transition shadow-sm disabled:opacity-50">
+                            <Printer size={14}/> Cetak PDF
                         </button>
                     </div>
                 </div>

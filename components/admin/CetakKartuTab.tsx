@@ -72,142 +72,306 @@ const CetakKartuTab = ({ currentUser, students, schedules, configs }: { currentU
 
         const proktorName = currentUser.nama_lengkap || "...........................";
         
-        const cardsHtml = filteredStudents.map((s) => `
-            <div class="card">
-                <div class="card-header">
-                    <img src="${configs.LOGO_KIRI_URL || 'https://image2url.com/r2/default/images/1769821786493-a2e4eb8b-c903-460d-b8d9-44f326ff71bb.png'}" class="logo" />
-                    <div class="header-text">
-                        <h2>KARTU PESERTA</h2>
-                        <p class="title-sub">${configs.PRINT_HEADER_MASTER || configs.HEADER_KARTU_PESERTA || 'TRY OUT TKA TAHUN 2026'}</p>
-                        <p class="school-name">${s.kelas_id || s.school} - Kecamatan ${s.kecamatan || s.id_kecamatan || '-'}</p>
-                    </div>
-                    <img src="${configs.LOGO_KANAN_URL || 'https://image2url.com/r2/default/images/1769821862384-d6ef24bf-e12c-4616-a255-7366afae4c30.png'}" class="logo" />
-                </div>
-                <div class="card-body">
-                    <div class="info-col">
-                        <table class="info-table">
-                            <tr><td width="65">Nama</td><td>: <b>${s.nama_lengkap || s.fullname}</b></td></tr>
-                            <tr><td>Sekolah</td><td>: ${s.kelas_id || s.school}</td></tr>
-                            <tr><td>Gelombang</td><td>: ${getGelombang(s.kelas_id || s.school)}</td></tr>
-                            <tr><td>Sesi/Paket</td><td>: <b>${s.session || '-'}, ${s.id_paket || '-'}</b></td></tr>
-                            <tr><td>Username</td><td>: <b>${s.username}</b></td></tr>
-                            <tr><td>Password</td><td>: <b>${s.password || '-'}</b></td></tr>
-                        </table>
-                    </div>
-                    <div class="photo-col">
-                        <div class="photo-box">
-                            ${s.photo_url 
-                                ? `<img src="${s.photo_url}" style="width:100%; height:100%; object-fit:cover;" />` 
-                                : `<span style="font-size:8pt; color:#ccc; text-align:center;">FOTO<br>3x4</span>`
-                            }
+        // Chunk students into pages of 8 cards (2 columns x 4 rows) for exact A4 paper fit
+        const chunkArray = (arr: any[], size: number) => {
+            const chunks = [];
+            for (let i = 0; i < arr.length; i += size) {
+                chunks.push(arr.slice(i, i + size));
+            }
+            return chunks;
+        };
+
+        const pages = chunkArray(filteredStudents, 8);
+
+        const pagesHtml = pages.map((pageStudents, pageIdx) => `
+            <div class="page-sheet">
+                <div class="cards-grid">
+                    ${pageStudents.map((s: any) => `
+                        <div class="card">
+                            <div class="card-header">
+                                <img src="${configs.LOGO_KIRI_URL || 'https://image2url.com/r2/default/images/1769821786493-a2e4eb8b-c903-460d-b8d9-44f326ff71bb.png'}" class="logo" alt="Logo" />
+                                <div class="header-text">
+                                    <h2>KARTU PESERTA</h2>
+                                    <p class="title-sub">${configs.PRINT_HEADER_MASTER || configs.HEADER_KARTU_PESERTA || 'TRY OUT TKA TAHUN 2026'}</p>
+                                    <p class="school-name">${s.kelas_id || s.school} - Kecamatan ${s.kecamatan || s.id_kecamatan || '-'}</p>
+                                </div>
+                                <img src="${configs.LOGO_KANAN_URL || 'https://image2url.com/r2/default/images/1769821862384-d6ef24bf-e12c-4616-a255-7366afae4c30.png'}" class="logo" alt="Logo" />
+                            </div>
+                            <div class="card-body">
+                                <div class="info-col">
+                                    <table class="info-table">
+                                        <tr><td style="width: 22mm;">Nama</td><td style="width: 2mm;">:</td><td class="bold-val">${s.nama_lengkap || s.fullname}</td></tr>
+                                        <tr><td>Sekolah</td><td>:</td><td>${s.kelas_id || s.school}</td></tr>
+                                        <tr><td>Gelombang</td><td>:</td><td>${getGelombang(s.kelas_id || s.school)}</td></tr>
+                                        <tr><td>Sesi / Paket</td><td>:</td><td class="bold-val">${s.session || '-'}, ${s.id_paket || '-'}</td></tr>
+                                        <tr><td>Username</td><td>:</td><td class="bold-val">${s.username}</td></tr>
+                                        <tr><td>Password</td><td>:</td><td class="bold-val">${s.password || '-'}</td></tr>
+                                    </table>
+                                </div>
+                                <div class="photo-col">
+                                    <div class="photo-box">
+                                        ${s.photo_url 
+                                            ? `<img src="${s.photo_url}" style="width:100%; height:100%; object-fit:cover;" alt="Foto" />` 
+                                            : `<span>FOTO<br>3x4</span>`
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <div class="signature">
+                                    <p>Proktor,</p>
+                                    <div class="sig-space"></div>
+                                    <p class="proktor-name">${proktorName}</p>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
-                <div class="card-footer">
-                    <div class="signature">
-                        <p>Proktor</p>
-                        <div class="sig-space"></div>
-                        <p class="proktor-name"><b>${proktorName}</b></p>
-                    </div>
+                    `).join('')}
                 </div>
             </div>
         `).join('');
 
         const htmlContent = `
             <!DOCTYPE html>
-            <html>
+            <html lang="id">
             <head>
-                <title>Cetak Kartu Peserta_TKA 2026</title>
+                <meta charset="UTF-8">
+                <title>Cetak Kartu Peserta - TKA 2026</title>
                 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23000000'%3E%3Cpath d='M19 8h-1V3H6v5H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zM8 5h8v3H8V5zm8 12v2H8v-2h8zm2-2v-2H6v2H4v-4c0-.55.45-1 1-1h14c.55 0 1 .45 1 1v4h-2z'/%3E%3Ccircle cx='18' cy='11.5' r='1'/%3E%3C/svg%3E" />
                 <style>
-                    @page { size: A4 portrait; margin: 4mm; }
-                    body { font-family: Arial, sans-serif; -webkit-print-color-adjust: exact; background: #eee; }
-                    .page-container {
-                        display: grid;
-                        grid-template-columns: repeat(2, 1fr);
-                        gap: 2mm;
-                        width: 100%;
-                        max-width: 202mm;
-                        margin: 0 auto;
+                    @page {
+                        size: A4 portrait;
+                        margin: 10mm !important;
                     }
-                    .card {
-                        background: white;
-                        border: 1px solid #000;
-                        width: 100mm;
-                        height: 68mm;
-                        padding: 5px;
-                        box-sizing: border-box;
-                        position: relative;
-                        page-break-inside: avoid;
+
+                    *, *::before, *::after {
+                        box-sizing: border-box !important;
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                        color-adjust: exact !important;
+                    }
+
+                    html, body {
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        width: 100% !important;
+                        background: #ffffff !important;
+                        color: #000000 !important;
+                        font-family: Arial, Helvetica, sans-serif;
+                    }
+
+                    @media screen {
+                        body {
+                            background-color: #f1f5f9 !important;
+                            padding: 20px !important;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            gap: 20px;
+                        }
+                        .page-sheet {
+                            background: #ffffff !important;
+                            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                            padding: 0;
+                        }
+                    }
+
+                    @media print {
+                        body {
+                            background-color: #ffffff !important;
+                            padding: 0 !important;
+                        }
+                        .page-sheet {
+                            box-shadow: none !important;
+                            padding: 0 !important;
+                        }
+                        button, .no-print {
+                            display: none !important;
+                        }
+                    }
+
+                    .page-sheet {
+                        width: 190mm;
+                        height: 277mm;
+                        max-height: 277mm;
+                        box-sizing: border-box !important;
+                        page-break-after: always !important;
+                        break-after: page !important;
                         display: flex;
                         flex-direction: column;
+                        justify-content: flex-start;
+                        overflow: hidden;
                     }
+
+                    .page-sheet:last-child {
+                        page-break-after: auto !important;
+                        break-after: auto !important;
+                    }
+
+                    .cards-grid {
+                        display: grid;
+                        grid-template-columns: repeat(2, 93mm);
+                        grid-template-rows: repeat(4, 65mm);
+                        column-gap: 4mm;
+                        row-gap: 3mm;
+                        width: 190mm;
+                        box-sizing: border-box !important;
+                    }
+
+                    .card {
+                        background: #ffffff !important;
+                        border: 1px solid #000000 !important;
+                        width: 93mm;
+                        height: 65mm;
+                        max-height: 65mm;
+                        padding: 3mm;
+                        box-sizing: border-box !important;
+                        position: relative;
+                        page-break-inside: avoid !important;
+                        break-inside: avoid !important;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: space-between;
+                        overflow: hidden;
+                    }
+
                     .card-header {
                         display: flex;
                         align-items: center;
                         justify-content: space-between;
-                        border-bottom: 2px double #000;
-                        padding-bottom: 3px;
-                        margin-bottom: 4px;
-                        height: 15mm;
+                        border-bottom: 1.5px solid #000000;
+                        padding-bottom: 2px;
+                        margin-bottom: 2px;
+                        height: 12mm;
+                        box-sizing: border-box;
                     }
-                    .logo { height: 12mm; width: auto; object-fit: contain; }
-                    .header-text { text-align: center; flex: 1; }
-                    .header-text h2 { font-size: 11pt; margin: 0; font-weight: bold; }
-                    .header-text .title-sub { font-size: 10pt; margin: 2px 0 0; font-weight: bold; }
-                    .header-text .school-name { font-size: 8pt; margin: 2px 0 0; font-style: italic; }
-                    
-                    .card-body { 
-                        display: flex; 
-                        flex: 1; 
-                        gap: 5px; 
-                        padding-top: 2px;
+                    .logo {
+                        height: 10.5mm;
+                        width: auto;
+                        max-width: 13mm;
+                        object-fit: contain;
                     }
-                    .info-col { flex: 1; }
-                    .info-table { width: 100%; font-size: 8pt; border-collapse: collapse; }
-                    .info-table td { padding: 2px 1px; vertical-align: top; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 55mm; }
-                    
-                    .photo-col { width: 22mm; display: flex; justify-content: center; align-items: flex-start; padding-top: 0; }
+                    .header-text {
+                        text-align: center;
+                        flex: 1;
+                        padding: 0 4px;
+                    }
+                    .header-text h2 {
+                        font-size: 8pt;
+                        margin: 0;
+                        font-weight: bold;
+                        line-height: 1.1;
+                    }
+                    .header-text .title-sub {
+                        font-size: 6.8pt;
+                        margin: 1px 0 0;
+                        font-weight: bold;
+                        line-height: 1.1;
+                    }
+                    .header-text .school-name {
+                        font-size: 6pt;
+                        margin: 1px 0 0;
+                        font-style: italic;
+                        line-height: 1.1;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        max-width: 58mm;
+                    }
+
+                    .card-body {
+                        display: flex;
+                        flex: 1;
+                        gap: 2mm;
+                        align-items: flex-start;
+                        overflow: hidden;
+                        padding: 1px 0;
+                    }
+                    .info-col {
+                        flex: 1;
+                        min-width: 0;
+                    }
+                    .info-table {
+                        width: 100%;
+                        font-size: 6.8pt;
+                        border-collapse: collapse;
+                        line-height: 1.25;
+                    }
+                    .info-table td {
+                        padding: 0.8px 1px;
+                        vertical-align: top;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        border: none !important;
+                    }
+                    .bold-val {
+                        font-weight: bold;
+                    }
+
+                    .photo-col {
+                        width: 19mm;
+                        display: flex;
+                        justify-content: center;
+                        align-items: flex-start;
+                        flex-shrink: 0;
+                    }
                     .photo-box {
-                        width: 20mm; height: 26mm;
-                        border: 1px solid #999;
-                        display: flex; align-items: center; justify-content: center;
+                        width: 18mm;
+                        height: 24mm;
+                        border: 1px solid #999999;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        background-color: #fafafa;
+                        font-size: 6pt;
+                        color: #777777;
+                        text-align: center;
+                        line-height: 1.2;
                     }
 
                     .card-footer {
-                        position: absolute;
-                        bottom: 6px;
-                        right: 55px;
-                        width: 160px;
-                        text-align: center;
+                        display: flex;
+                        justify-content: flex-end;
+                        margin-top: 1px;
+                        height: 11mm;
+                        box-sizing: border-box;
                     }
                     .signature {
-                        font-size: 9pt;
+                        font-size: 6pt;
+                        text-align: center;
+                        width: 38mm;
+                        line-height: 1.15;
                     }
-                    .signature p { margin: 0; }
+                    .signature p {
+                        margin: 0;
+                    }
+                    .sig-space {
+                        height: 5.5mm;
+                    }
                     .signature .proktor-name {
-                        font-size: 7pt; 
-                        line-height: 1.2;
-                    }
-                    .sig-space { height: 15px; }
-
-                    @media print {
-                        body { background: white; }
-                        .page-container { gap: 2mm; }
+                        font-size: 6pt;
+                        font-weight: bold;
+                        text-decoration: underline;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
                     }
                 </style>
             </head>
             <body>
-                <div class="page-container">
-                    ${cardsHtml}
-                </div>
+                ${pagesHtml}
                 <script>
-                    window.onload = function() { window.print(); }
+                    window.onload = function() {
+                        setTimeout(function() {
+                            window.print();
+                        }, 250);
+                    }
                 </script>
             </body>
             </html>
         `;
 
+        printWindow.document.open();
         printWindow.document.write(htmlContent);
         printWindow.document.close();
     };

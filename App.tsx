@@ -286,12 +286,12 @@ function App() {
     } catch (err: any) {
         if (err.message && (err.message.includes('Sesi ujian anda') || err.message.includes('belum dimulai') || err.message.includes('Jadwal ujian'))) {
              await showAlert(err.message, { type: 'error', title: 'Akses Ditolak' });
-        } else if (err.message && (err.message.includes('Failed to fetch') || err.message.includes('Script Error'))) {
-             setErrorMsg('Gagal terhubung ke server. Pastikan Deploy Google Script sudah diperbarui (New Version).');
+        } else if (err.message && (err.message.includes('Failed to fetch') || err.message.includes('NetworkError') || err.message.includes('Script Error') || err.message.includes('network'))) {
+             setErrorMsg('Gagal terhubung ke database server. Pastikan perangkat Anda terhubung ke internet dan coba lagi.');
         } else {
              setErrorMsg(err.message || 'Terjadi kesalahan koneksi.');
         }
-        console.error(err);
+        console.error("Login attempt failed:", err);
     } finally {
         setLoading(false);
     }

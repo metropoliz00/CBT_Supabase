@@ -38,17 +38,41 @@ export const api = {
 
   // Unified Login Function
   login: async (username: string, password?: string): Promise<User> => {
-    const { data, error } = await supabase
+    const cleanUsername = (username || '').trim();
+    if (!cleanUsername) {
+      throw new Error('Silakan masukkan username.');
+    }
+
+    // 1. Try exact match
+    let { data, error } = await supabase
       .from('users')
       .select('*')
-      .eq('username', username)
-      .single();
+      .eq('username', cleanUsername)
+      .maybeSingle();
+
+    // 2. If not found, try case-insensitive match (ilike)
+    if (!data && (!error || error.code === 'PGRST116')) {
+      const { data: ilikeData, error: ilikeError } = await supabase
+        .from('users')
+        .select('*')
+        .ilike('username', cleanUsername)
+        .limit(1);
+      
+      if (ilikeData && ilikeData.length > 0) {
+        data = ilikeData[0];
+        error = null;
+      } else if (ilikeError) {
+        error = ilikeError;
+      }
+    }
 
     if (error) {
       console.error("Supabase login error:", error);
-      // If the error is PGRST116, it means no rows returned (user not found)
       if (error.code === 'PGRST116') {
           throw new Error('Username tidak ditemukan.');
+      }
+      if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError') || error.message?.includes('network')) {
+          throw new Error('Gagal terhubung ke database server. Pastikan perangkat Anda terhubung ke internet.');
       }
       throw new Error(`Database error: ${error.message}`);
     }
@@ -57,12 +81,12 @@ export const api = {
       throw new Error('Username tidak ditemukan.');
     }
 
-    if (password && data.password !== password) {
+    if (password !== undefined && String(data.password || '').trim() !== String(password || '').trim()) {
       throw new Error('Password salah.');
     }
 
-    // --- SCHOOL SCHEDULE (GELOMBANG) CHECK ---
-    if (data.role !== 'admin_pusat') {
+    // --- SCHOOL SCHEDULE (GELOMBANG) CHECK (Only applies to students) ---
+    if (data.role === 'siswa') {
         const schoolName = data.kelas_id || data.school;
         if (schoolName) {
             const { data: scheduleData } = await supabase
@@ -145,7 +169,7 @@ export const api = {
             status: 'LOGGED_IN', 
             last_active: new Date().toISOString() 
         })
-        .eq('username', username);
+        .eq('username', data.username);
     
     if (updateError) {
         console.warn("Login status update warning:", updateError);
@@ -153,7 +177,7 @@ export const api = {
 
     // Log Login Activity
     if (data.role === 'siswa') {
-        await api.logActivity(username, 'LOGIN');
+        await api.logActivity(data.username, 'LOGIN');
     }
 
     return {
@@ -399,6 +423,19 @@ export const api = {
   },
 
   // --- ADMIN CRUD ---
+  getAllQuestions: async (subject?: string): Promise<QuestionRow[]> => {
+      let query = supabase.from('questions').select('*');
+      if (subject && subject !== 'all') {
+          query = query.eq('exam_id', subject);
+      }
+      const { data, error } = await query;
+      if (error || !data) return [];
+      return data.map((q: any) => ({
+          ...q,
+          bobot: q.bobot_nilai
+      })) as QuestionRow[];
+  },
+
   getRawQuestions: async (subject: string): Promise<QuestionRow[]> => {
       const { data, error } = await supabase.from('questions').select('*').eq('exam_id', subject);
       if (error || !data) return [];
@@ -583,7 +620,7 @@ export const api = {
   getRecap: async (): Promise<any[]> => {
       const { data, error } = await supabase
         .from('exam_results')
-        .select(`*, users (nama_lengkap, kelas_id, kecamatan, id_sekolah, id_gugus, id_kecamatan, id_paket)`);
+        .select(`*, users (nama_lengkap, kelas_id, kecamatan, id_sekolah, id_gugus, id_kecamatan, id_paket, session)`);
         
       if (error || !data) return [];
       
@@ -599,7 +636,8 @@ export const api = {
           id_sekolah: String(r.users?.id_sekolah || ''),
           id_gugus: String(r.users?.id_gugus || ''),
           id_kecamatan: String(r.users?.id_kecamatan || ''),
-          id_paket: String(r.paket_id || r.users?.id_paket || '')
+          id_paket: String(r.paket_id || r.users?.id_paket || ''),
+          session: String(r.users?.session || '')
       }));
   },
 
@@ -743,29 +781,38 @@ export const api = {
       return { success: true, message: 'Cache cleared' };
   },
 
+  // Cache for dashboard data to prevent UI disruptions during temporary connection blips
+  _cachedDashboardData: null as any,
+
   getDashboardData: async () => {
       try {
-          const { data: usersData, error: usersError } = await supabase.from('users').select('*');
-          if (usersError) throw usersError;
+          // Parallel fetch to avoid sequential latency and timeouts
+          const [usersRes, examsRes, configRes, schedulesRes, feedRes] = await Promise.allSettled([
+              supabase.from('users').select('*'),
+              supabase.from('exams').select('*'),
+              supabase.from('config').select('*'),
+              supabase.from('school_schedules').select('*'),
+              supabase.from('activity_logs').select('*').order('created_at', { ascending: false }).limit(50)
+          ]);
 
-          const { data: exams, error: examsError } = await supabase.from('exams').select('*');
-          if (examsError) throw examsError;
+          const usersData = usersRes.status === 'fulfilled' && !usersRes.value.error ? usersRes.value.data : null;
+          const exams = examsRes.status === 'fulfilled' && !examsRes.value.error ? examsRes.value.data : [];
+          const configData = configRes.status === 'fulfilled' && !configRes.value.error ? configRes.value.data : null;
+          const schedules = schedulesRes.status === 'fulfilled' && !schedulesRes.value.error ? schedulesRes.value.data : [];
+          const activityFeed = feedRes.status === 'fulfilled' && !feedRes.value.error ? feedRes.value.data : [];
 
-          const { data: configData, error: configError } = await supabase.from('config').select('*');
-          if (configError) throw configError;
+          // If critical queries fail, check if we have cached data to serve safely
+          if (!usersData && api._cachedDashboardData) {
+              console.warn("Using cached dashboard data due to network blip");
+              return api._cachedDashboardData;
+          }
 
-          const { data: schedules, error: schedulesError } = await supabase.from('school_schedules').select('*');
-          if (schedulesError) throw schedulesError;
-          
-          // Fetch Activity Logs - JOIN IN MEMORY (More robust if FK is missing)
-          const { data: activityFeed, error: feedError } = await supabase
-              .from('activity_logs')
-              .select('*')
-              .order('created_at', { ascending: false })
-              .limit(50);
-          if (feedError) throw feedError;
+          if (usersRes.status === 'rejected' || (usersRes.status === 'fulfilled' && usersRes.value.error)) {
+              const err = usersRes.status === 'rejected' ? usersRes.reason : usersRes.value.error;
+              throw err;
+          }
 
-          const feed = activityFeed?.map((log: any) => {
+          const feed = (activityFeed || []).map((log: any) => {
               const logUsername = String(log.username || '').toLowerCase();
               const user = (usersData || []).find((u: any) => String(u.username || '').toLowerCase() === logUsername);
               
@@ -779,7 +826,7 @@ export const api = {
                   id_kecamatan: user?.id_kecamatan || '-',
                   id_paket: user?.id_paket || '-'
               };
-          }) || [];
+          });
           
           const users = (usersData || []).map((u: any) => ({
               ...u,
@@ -798,7 +845,7 @@ export const api = {
               photo_url: formatGoogleDriveUrl(u.photo_url)
           }));
 
-          const configs = configData?.reduce((acc, curr) => ({ ...acc, [curr.key]: curr.value }), {}) || {};
+          const configs = (configData || []).reduce((acc: any, curr: any) => ({ ...acc, [curr.key]: curr.value }), {}) || {};
           
           const activeSessions = [];
           for (let i = 1; i <= 4; i++) {
@@ -808,7 +855,7 @@ export const api = {
               }
           }
 
-          return {
+          const result = {
               allUsers: users || [],
               activeExams: exams || [],
               token: configs['TOKEN'] || 'TOKEN',
@@ -820,7 +867,14 @@ export const api = {
               schedules: schedules || [],
               activityFeed: feed
           };
+
+          api._cachedDashboardData = result;
+          return result;
       } catch (e: any) {
+          if (api._cachedDashboardData) {
+              console.warn("Dashboard data fetch error (falling back to cache):", e);
+              return api._cachedDashboardData;
+          }
           console.error("Dashboard data fetch error:", e);
           throw new Error(`Database error: ${e.message || 'Unknown error'}`);
       }

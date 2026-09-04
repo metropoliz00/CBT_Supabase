@@ -268,79 +268,228 @@ const RekapTab = ({ students, currentUser, configs }: { students: any[], current
 
         const htmlContent = `
             <!DOCTYPE html>
-            <html>
+            <html lang="id">
             <head>
-                <title>Rekap Nilai TKA 2026</title>
+                <meta charset="UTF-8">
+                <title>Rekap Nilai - ${schoolName} - ${kecamatanName}</title>
                 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23000000'%3E%3Cpath d='M19 8h-1V3H6v5H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zM8 5h8v3H8V5zm8 12v2H8v-2h8zm2-2v-2H6v2H4v-4c0-.55.45-1 1-1h14c.55 0 1 .45 1 1v4h-2z'/%3E%3Ccircle cx='18' cy='11.5' r='1'/%3E%3C/svg%3E" />
                 <style>
-                    body { font-family: 'Times New Roman', serif; padding: 20px; color: #000; }
-                    .header-container { display: flex; align-items: center; justify-content: space-between; border-bottom: 3px double black; padding-bottom: 10px; margin-bottom: 20px; }
-                    .logo { height: 80px; width: auto; object-fit: contain; }
-                    .header-text { text-align: center; flex-grow: 1; padding: 0 10px; }
-                    .header-text h2 { margin: 0; font-size: 18px; text-transform: uppercase; line-height: 1.2; }
-                    .header-text h3 { margin: 5px 0 0; font-size: 16px; font-weight: normal; }
-                    .info-table { margin-bottom: 20px; font-size: 14px; width: 100%; }
-                    .info-table td { padding: 2px; vertical-align: top; }
-                    .main-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-                    .main-table th, .main-table td { border: 1px solid black; padding: 6px; }
-                    .main-table th { background-color: #f0f0f0; text-align: center; font-weight: bold; }
-                    .signature-section { margin-top: 50px; float: right; width: 250px; text-align: center; font-size: 14px; }
+                    @page {
+                        size: A4 landscape;
+                        margin: 10mm !important;
+                    }
+
+                    *, *::before, *::after {
+                        box-sizing: border-box !important;
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                        color-adjust: exact !important;
+                    }
+
+                    html, body {
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        width: 100% !important;
+                        background: #ffffff !important;
+                        color: #000000 !important;
+                        font-family: 'Times New Roman', Times, serif;
+                        font-size: 8.5pt;
+                        line-height: 1.2;
+                    }
+
+                    @media screen {
+                        body {
+                            background-color: #f1f5f9 !important;
+                            padding: 20px !important;
+                            display: flex;
+                            justify-content: center;
+                        }
+                        .document-sheet {
+                            background: #ffffff !important;
+                            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                            padding: 10mm !important;
+                            width: 297mm;
+                            min-height: 210mm;
+                            margin: 0 auto;
+                        }
+                    }
+
                     @media print {
-                        @page { size: A4 landscape; margin: 1cm; }
-                        button { display: none; }
-                        body { padding: 0; }
-                        .header-container { -webkit-print-color-adjust: exact; }
-                        .main-table th { -webkit-print-color-adjust: exact; background-color: #f0f0f0 !important; }
+                        body {
+                            padding: 0 !important;
+                            background: #ffffff !important;
+                        }
+                        .document-sheet {
+                            box-shadow: none !important;
+                            padding: 0 !important;
+                            margin: 0 !important;
+                            width: 100% !important;
+                        }
+                        button, .no-print {
+                            display: none !important;
+                        }
+                    }
+
+                    .header-container {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        border-bottom: 2.5px double #000000;
+                        padding-bottom: 8px;
+                        margin-bottom: 12px;
+                        page-break-inside: avoid !important;
+                        break-inside: avoid !important;
+                    }
+                    .logo {
+                        height: 60px;
+                        width: auto;
+                        max-width: 75px;
+                        object-fit: contain;
+                    }
+                    .header-text {
+                        text-align: center;
+                        flex-grow: 1;
+                        padding: 0 10px;
+                    }
+                    .header-text h2 {
+                        margin: 0;
+                        font-size: 13pt;
+                        text-transform: uppercase;
+                        line-height: 1.2;
+                        font-weight: bold;
+                    }
+                    .header-text h3 {
+                        margin: 3px 0 0;
+                        font-size: 10.5pt;
+                        font-weight: normal;
+                        line-height: 1.2;
+                    }
+
+                    .info-table {
+                        margin-bottom: 10px;
+                        font-size: 9pt;
+                        width: 100%;
+                        border-collapse: collapse;
+                        page-break-inside: avoid !important;
+                        break-inside: avoid !important;
+                    }
+                    .info-table td {
+                        padding: 2px 4px;
+                        vertical-align: top;
+                        border: none !important;
+                    }
+
+                    .main-table {
+                        width: 100% !important;
+                        border-collapse: collapse !important;
+                        border-spacing: 0 !important;
+                        font-size: 8.5pt;
+                        margin-bottom: 12px;
+                        page-break-inside: auto !important;
+                        break-inside: auto !important;
+                    }
+                    .main-table th, .main-table td {
+                        border: 1px solid #000000 !important;
+                        padding: 4px 5px !important;
+                        vertical-align: middle;
+                        line-height: 1.15;
+                    }
+                    .main-table th {
+                        background-color: #f0f0f0 !important;
+                        text-align: center;
+                        font-weight: bold;
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
+                    thead {
+                        display: table-header-group !important;
+                    }
+                    tfoot {
+                        display: table-footer-group !important;
+                    }
+                    tr {
+                        page-break-inside: avoid !important;
+                        break-inside: avoid !important;
+                    }
+
+                    .signature-section {
+                        margin-top: 20px;
+                        float: right;
+                        width: 220px;
+                        text-align: center;
+                        font-size: 9pt;
+                        page-break-inside: avoid !important;
+                        break-inside: avoid !important;
+                        clear: both;
+                    }
+                    .signature-section p {
+                        margin: 0;
+                        line-height: 1.3;
+                    }
+                    .signature-section .sig-space {
+                        height: 45px;
+                    }
+                    .signature-section .signer-name {
+                        font-weight: bold;
+                        text-decoration: underline;
                     }
                 </style>
             </head>
             <body>
-                <div class="header-container">
-                    <img src="${configs.LOGO_KIRI_URL || 'https://image2url.com/r2/default/images/1769821786493-a2e4eb8b-c903-460d-b8d9-44f326ff71bb.png'}" class="logo" alt="Logo Kiri" />
-                    <div class="header-text">
-                        <h2>REKAPITULASI NILAI</h2>
-                        <h2>${configs.PRINT_HEADER_MASTER || configs.HEADER_REKAP_NILAI || 'TRY OUT TKA TAHUN 2026'}</h2>
+                <div class="document-sheet">
+                    <div class="header-container">
+                        <img src="${configs.LOGO_KIRI_URL || 'https://image2url.com/r2/default/images/1769821786493-a2e4eb8b-c903-460d-b8d9-44f326ff71bb.png'}" class="logo" alt="Logo Kiri" />
+                        <div class="header-text">
+                            <h2>REKAPITULASI NILAI</h2>
+                            <h2>${configs.PRINT_HEADER_MASTER || configs.HEADER_REKAP_NILAI || 'TRY OUT TKA TAHUN 2026'}</h2>
+                            <h3>${schoolName} ${kecamatanName !== '-' ? `- Kecamatan ${kecamatanName}` : ''}</h3>
+                        </div>
+                        <img src="${configs.LOGO_KANAN_URL || 'https://image2url.com/r2/default/images/1769821862384-d6ef24bf-e12c-4616-a255-7366afae4c30.png'}" class="logo" alt="Logo Kanan" />
                     </div>
-                    <img src="${configs.LOGO_KANAN_URL || 'https://image2url.com/r2/default/images/1769821862384-d6ef24bf-e12c-4616-a255-7366afae4c30.png'}" class="logo" alt="Logo Kanan" />
-                </div>
 
-                <table class="info-table">
-                    <tr><td width="150">Kecamatan</td><td>: ${kecamatanName}</td></tr>
-                    <tr><td width="150">Sekolah</td><td>: ${schoolName}</td></tr>
-                    <tr><td>Tanggal Cetak</td><td>: ${dateNow}</td></tr>
-                </table>
+                    <table class="info-table">
+                        <tr><td style="width: 120px; font-weight: bold;">Kecamatan</td><td style="width: 10px;">:</td><td>${kecamatanName}</td></tr>
+                        <tr><td style="font-weight: bold;">Sekolah</td><td>:</td><td>${schoolName}</td></tr>
+                        <tr><td style="font-weight: bold;">Tanggal Cetak</td><td>:</td><td>${dateNow}</td></tr>
+                    </table>
 
-                <table class="main-table">
-                    <thead>
-                        <tr>
-                            <th width="40">No</th>
-                            <th>Username</th>
-                            <th>Nama Peserta</th>
-                            <th>Sekolah</th>
-                            <th>Kecamatan</th>
-                            <th width="80">ID Paket</th>
-                            ${displayedSubjects.map(sub => `<th width="80">${sub}</th>`).join('')}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${rowsHtml}
-                    </tbody>
-                </table>
+                    <table class="main-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 35px;">No</th>
+                                <th style="width: 90px;">Username</th>
+                                <th>Nama Peserta</th>
+                                <th style="width: 140px;">Sekolah</th>
+                                <th style="width: 95px;">Kecamatan</th>
+                                <th style="width: 70px;">ID Paket</th>
+                                ${displayedSubjects.map(sub => `<th style="width: 55px;">${sub}</th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml}
+                        </tbody>
+                    </table>
 
-                <div class="signature-section">
-                    <p>${signatureDate}</p>
-                    <p>Koordinator</p>
-                    <br/><br/><br/>
-                    <p style="text-decoration; font-weight: bold;">${adminName}</p>
+                    <div class="signature-section">
+                        <p>${signatureDate}</p>
+                        <p>Koordinator,</p>
+                        <div class="sig-space"></div>
+                        <p class="signer-name">${adminName}</p>
+                    </div>
                 </div>
 
                 <script>
-                    window.onload = function() { window.print(); }
+                    window.onload = function() {
+                        setTimeout(function() {
+                            window.print();
+                        }, 250);
+                    }
                 </script>
             </body>
             </html>
         `;
 
+        printWindow.document.open();
         printWindow.document.write(htmlContent);
         printWindow.document.close();
     };

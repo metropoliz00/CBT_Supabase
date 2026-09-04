@@ -1,9 +1,11 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { FileQuestion, Download, Upload, Loader2, Plus, Edit, Trash2, X, Save, Image as ImageIcon, Search } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { FileQuestion, Download, Upload, Loader2, Plus, Edit, Trash2, X, Save, Image as ImageIcon, Search, BookOpen, Eye } from 'lucide-react';
 import { api } from '../../services/api';
 import { QuestionRow } from '../../types';
 import { useAlert } from '../../context/AlertContext';
+import { isImageMedia, parseWacana, fileToBase64 } from '../../utils/wacanaHelper';
+import { WacanaViewer } from '../WacanaViewer';
 import * as XLSX from 'xlsx';
 
 const BankSoalTab = () => {
@@ -21,6 +23,13 @@ const BankSoalTab = () => {
     const [newSubjectName, setNewSubjectName] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedPaket, setSelectedPaket] = useState('all');
+    const [uploadingPhoto, setUploadingPhoto] = useState(false);
+    const [wacanaModalData, setWacanaModalData] = useState<{ title: string; content: string; caption?: string } | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const optAInputRef = useRef<HTMLInputElement>(null);
+    const optBInputRef = useRef<HTMLInputElement>(null);
+    const optCInputRef = useRef<HTMLInputElement>(null);
+    const optDInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         const loadSubjects = async () => {
@@ -96,6 +105,40 @@ const BankSoalTab = () => {
         setQuestions(data);
         setModalOpen(false);
         setLoadingData(false);
+    };
+
+    const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+        const file = files[0];
+        try {
+            setUploadingPhoto(true);
+            const base64 = await fileToBase64(file);
+            if (currentQ) {
+                setCurrentQ({ ...currentQ, gambar: base64 });
+            }
+        } catch (err: any) {
+            showAlert(err.message || "Gagal mengunggah foto menjadi base64.", { type: 'error' });
+        } finally {
+            setUploadingPhoto(false);
+            if (e.target) e.target.value = '';
+        }
+    };
+
+    const handleOptionPhotoUpload = async (optKey: 'opsi_a' | 'opsi_b' | 'opsi_c' | 'opsi_d', e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+        const file = files[0];
+        try {
+            const base64 = await fileToBase64(file, 800, 800, 0.85);
+            if (currentQ) {
+                setCurrentQ({ ...currentQ, [optKey]: base64 });
+            }
+        } catch (err: any) {
+            showAlert(err.message || "Gagal mengunggah foto opsi.", { type: 'error' });
+        } finally {
+            if (e.target) e.target.value = '';
+        }
     };
 
     // --- IMPORT / EXPORT LOGIC ---
@@ -352,27 +395,63 @@ const BankSoalTab = () => {
                                         <td className="p-4">
                                             <div className="line-clamp-2 font-medium text-slate-700">{q.text_soal}</div>
                                             {q.gambar && (
-                                                <div className="mt-2 flex items-start gap-2">
-                                                    <div className="relative group">
-                                                        <img 
-                                                            src={formatImgUrl(q.gambar)} 
-                                                            alt="Soal" 
-                                                            className="h-12 w-auto min-w-[3rem] object-contain rounded-md border border-slate-200 bg-white shadow-sm hover:scale-[3] hover:z-50 origin-top-left transition-transform duration-200 cursor-pointer"
-                                                            onError={(e) => {
-                                                                e.currentTarget.style.display = 'none';
-                                                                e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                                                            }}
-                                                        />
-                                                        <div className="hidden flex items-center gap-1 text-xs text-red-400 bg-red-50 px-2 py-1 rounded border border-red-100 mt-1">
-                                                            <ImageIcon size={12}/> Link Rusak
+                                                isImageMedia(q.gambar) ? (
+                                                    <div className="mt-2 flex items-start gap-2">
+                                                        <div className="relative group">
+                                                            <img 
+                                                                src={formatImgUrl(q.gambar)} 
+                                                                alt="Soal" 
+                                                                className="h-12 w-auto min-w-[3rem] object-contain rounded-md border border-slate-200 bg-white shadow-sm hover:scale-[3] hover:z-50 origin-top-left transition-transform duration-200 cursor-pointer"
+                                                                onError={(e) => {
+                                                                    e.currentTarget.style.display = 'none';
+                                                                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                                                                }}
+                                                            />
+                                                            <div className="hidden flex items-center gap-1 text-xs text-red-400 bg-red-50 px-2 py-1 rounded border border-red-100 mt-1">
+                                                                <ImageIcon size={12}/> Link Rusak
+                                                            </div>
                                                         </div>
+                                                        {q.keterangan_gambar ? (
+                                                            <span className="text-[10px] text-slate-400 italic leading-tight self-center line-clamp-2 max-w-[200px]">"{q.keterangan_gambar}"</span>
+                                                        ) : (
+                                                            <span className="text-[10px] text-blue-400 font-bold bg-blue-50 px-1.5 py-0.5 rounded self-center">
+                                                                {q.gambar.startsWith('data:image') ? 'BASE64' : 'IMG'}
+                                                            </span>
+                                                        )}
                                                     </div>
-                                                    {q.keterangan_gambar ? (
-                                                        <span className="text-[10px] text-slate-400 italic leading-tight self-center line-clamp-2 max-w-[200px]">"{q.keterangan_gambar}"</span>
-                                                    ) : (
-                                                        <span className="text-[10px] text-blue-400 font-bold bg-blue-50 px-1.5 py-0.5 rounded self-center">IMG</span>
-                                                    )}
-                                                </div>
+                                                ) : (
+                                                    (() => {
+                                                        const parsed = parseWacana(q.gambar);
+                                                        return (
+                                                            <div 
+                                                                onClick={() => setWacanaModalData({ title: parsed.title, content: q.gambar, caption: q.keterangan_gambar })}
+                                                                className="mt-2 bg-indigo-50/80 hover:bg-indigo-100/90 border border-indigo-200/80 rounded-lg p-2.5 max-w-md cursor-pointer transition group shadow-2xs"
+                                                                title="Klik untuk membaca teks wacana lengkap"
+                                                            >
+                                                                <div className="flex items-center justify-between gap-2">
+                                                                    <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-700 min-w-0">
+                                                                        <BookOpen size={14} className="text-indigo-600 flex-shrink-0" />
+                                                                        <span className="text-[9px] bg-indigo-200 text-indigo-800 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider flex-shrink-0">Wacana</span>
+                                                                        <span className="font-bold text-slate-800 truncate">{parsed.title || 'Tanpa Judul'}</span>
+                                                                    </div>
+                                                                    <span className="text-[11px] text-indigo-600 font-semibold flex items-center gap-0.5 group-hover:underline flex-shrink-0">
+                                                                        <Eye size={12} /> Baca
+                                                                    </span>
+                                                                </div>
+                                                                {parsed.paragraphs.length > 0 && (
+                                                                    <p className="text-xs text-slate-600 line-clamp-2 mt-1 italic pl-5 leading-relaxed">
+                                                                        {parsed.paragraphs[0]}
+                                                                    </p>
+                                                                )}
+                                                                {q.keterangan_gambar && (
+                                                                    <span className="text-[10px] text-slate-400 block mt-1 pl-5 italic truncate">
+                                                                        Ket: "{q.keterangan_gambar}"
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })()
+                                                )
                                             )}
                                             {!q.gambar && q.keterangan_gambar && <span className="text-[10px] text-slate-400 block mt-0.5 italic">"{q.keterangan_gambar}"</span>}
                                         </td>
@@ -456,68 +535,160 @@ const BankSoalTab = () => {
              
              {/* EDIT MODAL */}
              {modalOpen && currentQ && (
-                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-                     <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl max-h-[90vh] flex flex-col">
-                        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-2xl">
-                            <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2"><Edit size={20} className="text-indigo-600"/> {currentQ.id ? 'Edit Data' : 'Tambah Baru'}</h3>
-                            <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={24}/></button>
+                 <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-3 md:p-6 pt-3 md:pt-5 overflow-y-auto backdrop-blur-sm">
+                     <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl max-h-[95vh] flex flex-col my-1 md:my-2 animate-in fade-in slide-in-from-top-3 duration-200">
+                        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-2xl">
+                            <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2"><Edit size={20} className="text-indigo-600"/> {currentQ.id ? 'Edit Soal' : 'Tambah Soal Baru'}</h3>
+                            <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-200 transition cursor-pointer"><X size={22}/></button>
                         </div>
-                        <div className="p-8 overflow-y-auto flex-1">
+                        <div className="p-5 md:p-6 overflow-y-auto flex-1">
                             <form id="qForm" onSubmit={handleSave} className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-3 gap-3">
                                         <div>
                                             <label className="block text-xs font-bold text-slate-500 uppercase mb-1">ID</label>
-                                            <input required type="text" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg font-mono font-bold focus:ring-2 focus:ring-indigo-100 outline-none" value={currentQ.id} onChange={e => setCurrentQ({...currentQ, id: e.target.value})} />
+                                            <input required type="text" className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg font-mono font-bold focus:ring-2 focus:ring-indigo-100 outline-none text-sm" value={currentQ.id} onChange={e => setCurrentQ({...currentQ, id: e.target.value})} />
                                         </div>
                                         <div>
                                             <label className="block text-xs font-bold text-slate-500 uppercase mb-1">ID Paket Soal</label>
-                                            <input type="text" className="w-full p-3 bg-white border border-slate-200 rounded-lg font-bold text-indigo-600 focus:ring-2 focus:ring-indigo-100 outline-none" value={currentQ.id_paket || ''} onChange={e => setCurrentQ({...currentQ, id_paket: e.target.value})} placeholder="Contoh: PAKET-01" />
+                                            <input type="text" className="w-full p-2.5 bg-white border border-slate-200 rounded-lg font-bold text-indigo-600 focus:ring-2 focus:ring-indigo-100 outline-none text-sm" value={currentQ.id_paket || ''} onChange={e => setCurrentQ({...currentQ, id_paket: e.target.value})} placeholder="PAKET-01" />
                                         </div>
-                                    </div>
-                                    {!isSurveyMode && (
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Tipe</label>
-                                        <select className="w-full p-3 bg-white border border-slate-200 rounded-lg focus:ring-indigo-100 outline-none" value={currentQ.tipe_soal} onChange={e => setCurrentQ({...currentQ, tipe_soal: e.target.value as any})}>
-                                            <option value="PG">Pilihan Ganda</option>
-                                            <option value="PGK">Pilihan Ganda Kompleks</option>
-                                            <option value="BS">Benar / Salah</option>
-                                        </select>
-                                    </div>
-                                    )}
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Teks {isSurveyMode ? 'Pernyataan' : 'Soal'}</label>
-                                        <textarea required rows={5} className="w-full p-3 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-100 outline-none" value={currentQ.text_soal} onChange={e => setCurrentQ({...currentQ, text_soal: e.target.value})}></textarea>
-                                    </div>
-                                    
-                                    {!isSurveyMode && (
-                                    <>
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Link Gambar (URL / Base64)</label>
-                                        <input type="text" className="w-full p-3 bg-white border border-slate-200 rounded-lg" value={currentQ.gambar} onChange={e => setCurrentQ({...currentQ, gambar: e.target.value})} placeholder="https://..." />
-                                        {currentQ.gambar && (
-                                            <div className="mt-2 bg-slate-50 p-2 rounded border border-slate-200">
-                                                <p className="text-[10px] text-slate-400 mb-1">Preview:</p>
-                                                <img src={formatImgUrl(currentQ.gambar)} className="h-20 object-contain rounded" alt="Preview"/>
-                                            </div>
+                                        {!isSurveyMode && (
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Tipe</label>
+                                            <select className="w-full p-2.5 bg-white border border-slate-200 rounded-lg focus:ring-indigo-100 outline-none text-sm font-semibold" value={currentQ.tipe_soal} onChange={e => setCurrentQ({...currentQ, tipe_soal: e.target.value as any})}>
+                                                <option value="PG">Pilihan Ganda</option>
+                                                <option value="PGK">Pilihan Ganda Kompleks</option>
+                                                <option value="BS">Benar / Salah</option>
+                                            </select>
+                                        </div>
                                         )}
                                     </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Keterangan Gambar (Opsional)</label>
-                                        <input type="text" className="w-full p-3 bg-white border border-slate-200 rounded-lg" value={currentQ.keterangan_gambar} onChange={e => setCurrentQ({...currentQ, keterangan_gambar: e.target.value})} placeholder="Keterangan singkat..." />
-                                    </div>
 
-                                    <div className="grid grid-cols-2 gap-4">
+                                    {isSurveyMode ? (
                                         <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Kunci Jawaban</label>
-                                            <input required type="text" className="w-full p-3 bg-emerald-50 border border-emerald-200 rounded-lg font-bold text-emerald-700" value={currentQ.kunci_jawaban} onChange={e => setCurrentQ({...currentQ, kunci_jawaban: e.target.value})} />
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Teks Pernyataan</label>
+                                            <textarea required rows={5} className="w-full p-3 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-100 outline-none text-sm leading-relaxed" value={currentQ.text_soal} onChange={e => setCurrentQ({...currentQ, text_soal: e.target.value})}></textarea>
                                         </div>
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Bobot Nilai</label>
-                                            <input type="number" className="w-full p-3 bg-white border border-slate-200 rounded-lg" value={currentQ.bobot} onChange={e => setCurrentQ({...currentQ, bobot: Number(e.target.value)})} />
-                                        </div>
-                                    </div>
-                                    </>
+                                    ) : (
+                                        <>
+                                            {/* 1. URL / TEKS WACANA */}
+                                            <div>
+                                                <div className="flex items-center justify-between mb-1.5 gap-2">
+                                                    <label className="block text-xs font-bold text-slate-700 uppercase">
+                                                        URL / Teks Wacana
+                                                    </label>
+                                                    <div>
+                                                        <input 
+                                                            type="file" 
+                                                            accept="image/*" 
+                                                            ref={fileInputRef} 
+                                                            onChange={handlePhotoUpload} 
+                                                            className="hidden" 
+                                                        />
+                                                        <button 
+                                                            type="button" 
+                                                            onClick={() => fileInputRef.current?.click()} 
+                                                            disabled={uploadingPhoto}
+                                                            className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold flex items-center gap-1.5 transition active:scale-95 shadow-2xs cursor-pointer"
+                                                        >
+                                                            {uploadingPhoto ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
+                                                            <span>Upload Gambar</span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <textarea 
+                                                    rows={4} 
+                                                    className="w-full p-3 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-100 outline-none leading-relaxed font-sans" 
+                                                    value={currentQ.gambar} 
+                                                    onChange={e => setCurrentQ({...currentQ, gambar: e.target.value})} 
+                                                    placeholder="URL / Teks Wacana" 
+                                                />
+
+                                                {/* Live Preview for URL / Teks Wacana */}
+                                                {currentQ.gambar && currentQ.gambar.trim() && (
+                                                    <div className="mt-2">
+                                                        {isImageMedia(currentQ.gambar) ? (
+                                                            <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex items-center justify-between gap-3">
+                                                                <div className="flex items-center gap-3 overflow-hidden">
+                                                                    <img 
+                                                                        src={formatImgUrl(currentQ.gambar)} 
+                                                                        className="h-14 w-auto max-w-[100px] object-contain rounded-lg border border-slate-200 bg-white shadow-2xs" 
+                                                                        alt="Preview"
+                                                                    />
+                                                                    <div className="min-w-0">
+                                                                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                                                                            {currentQ.gambar.startsWith('data:image') ? 'Foto Base64' : 'Link URL Gambar'}
+                                                                        </span>
+                                                                        <p className="text-xs text-slate-500 truncate mt-1 max-w-[200px]">
+                                                                            {currentQ.gambar.startsWith('data:image') 
+                                                                                ? `Ukuran: ${Math.round((currentQ.gambar.length * 3/4) / 1024)} KB` 
+                                                                                : currentQ.gambar}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                                <button 
+                                                                    type="button" 
+                                                                    onClick={() => setCurrentQ({...currentQ, gambar: ''})}
+                                                                    className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                                                                    title="Hapus gambar"
+                                                                >
+                                                                    <Trash2 size={13} /> Hapus
+                                                                </button>
+                                                            </div>
+                                                        ) : (
+                                                            <WacanaViewer 
+                                                                content={currentQ.gambar} 
+                                                                caption={currentQ.keterangan_gambar}
+                                                                fontSize="sm"
+                                                                isPreview={true}
+                                                                className="max-h-48 overflow-y-auto"
+                                                            />
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* 2. KETERANGAN */}
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                                                    Keterangan
+                                                </label>
+                                                <input 
+                                                    type="text" 
+                                                    className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-100 outline-none" 
+                                                    value={currentQ.keterangan_gambar || ''} 
+                                                    onChange={e => setCurrentQ({...currentQ, keterangan_gambar: e.target.value})} 
+                                                    placeholder="Keterangan singkat, sumber teks wacana, dll..." 
+                                                />
+                                            </div>
+
+                                            {/* 3. PERTANYAAN */}
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                                                    Pertanyaan
+                                                </label>
+                                                <textarea 
+                                                    required 
+                                                    rows={4} 
+                                                    className="w-full p-3 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-100 outline-none text-sm font-medium leading-relaxed" 
+                                                    value={currentQ.text_soal} 
+                                                    onChange={e => setCurrentQ({...currentQ, text_soal: e.target.value})}
+                                                    placeholder="Tuliskan pertanyaan di sini..."
+                                                />
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Kunci Jawaban</label>
+                                                    <input required type="text" className="w-full p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg font-bold text-emerald-700 uppercase text-sm" value={currentQ.kunci_jawaban} onChange={e => setCurrentQ({...currentQ, kunci_jawaban: e.target.value})} />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Bobot Nilai</label>
+                                                    <input type="number" className="w-full p-2.5 bg-white border border-slate-200 rounded-lg font-bold text-sm" value={currentQ.bobot} onChange={e => setCurrentQ({...currentQ, bobot: Number(e.target.value)})} />
+                                                </div>
+                                            </div>
+                                        </>
                                     )}
                                 </div>
                                 {isSurveyMode ? (
@@ -556,33 +727,106 @@ const BankSoalTab = () => {
                                 <div className="space-y-4 bg-slate-50 p-6 rounded-xl border border-slate-100">
                                     <h4 className="font-bold text-slate-700 border-b pb-2 mb-2">Pilihan Jawaban / Pernyataan</h4>
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Opsi A / Pernyataan 1</label>
-                                        <input type="text" className="w-full p-3 bg-white border border-slate-200 rounded-lg" value={currentQ.opsi_a} onChange={e => setCurrentQ({...currentQ, opsi_a: e.target.value})} />
+                                        <div className="flex items-center justify-between mb-1">
+                                            <label className="block text-xs font-bold text-slate-500 uppercase">Opsi A / Pernyataan 1</label>
+                                            <div>
+                                                <input type="file" accept="image/*" ref={optAInputRef} onChange={e => handleOptionPhotoUpload('opsi_a', e)} className="hidden" />
+                                                <button type="button" onClick={() => optAInputRef.current?.click()} className="text-[11px] text-indigo-600 hover:text-indigo-800 flex items-center gap-1 font-semibold cursor-pointer">
+                                                    <Upload size={12}/> Upload Gambar
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <input type="text" className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-sm" value={currentQ.opsi_a} onChange={e => setCurrentQ({...currentQ, opsi_a: e.target.value})} placeholder="Teks opsi atau URL/Base64 gambar..." />
+                                        {currentQ.opsi_a && currentQ.opsi_a.startsWith('data:image') && (
+                                            <img src={currentQ.opsi_a} alt="Opsi A" className="h-10 mt-1 object-contain rounded border border-slate-200 bg-white" />
+                                        )}
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Opsi B / Pernyataan 2</label>
-                                        <input type="text" className="w-full p-3 bg-white border border-slate-200 rounded-lg" value={currentQ.opsi_b} onChange={e => setCurrentQ({...currentQ, opsi_b: e.target.value})} />
+                                        <div className="flex items-center justify-between mb-1">
+                                            <label className="block text-xs font-bold text-slate-500 uppercase">Opsi B / Pernyataan 2</label>
+                                            <div>
+                                                <input type="file" accept="image/*" ref={optBInputRef} onChange={e => handleOptionPhotoUpload('opsi_b', e)} className="hidden" />
+                                                <button type="button" onClick={() => optBInputRef.current?.click()} className="text-[11px] text-indigo-600 hover:text-indigo-800 flex items-center gap-1 font-semibold cursor-pointer">
+                                                    <Upload size={12}/> Upload Gambar
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <input type="text" className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-sm" value={currentQ.opsi_b} onChange={e => setCurrentQ({...currentQ, opsi_b: e.target.value})} placeholder="Teks opsi atau URL/Base64 gambar..." />
+                                        {currentQ.opsi_b && currentQ.opsi_b.startsWith('data:image') && (
+                                            <img src={currentQ.opsi_b} alt="Opsi B" className="h-10 mt-1 object-contain rounded border border-slate-200 bg-white" />
+                                        )}
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Opsi C / Pernyataan 3</label>
-                                        <input type="text" className="w-full p-3 bg-white border border-slate-200 rounded-lg" value={currentQ.opsi_c} onChange={e => setCurrentQ({...currentQ, opsi_c: e.target.value})} />
+                                        <div className="flex items-center justify-between mb-1">
+                                            <label className="block text-xs font-bold text-slate-500 uppercase">Opsi C / Pernyataan 3</label>
+                                            <div>
+                                                <input type="file" accept="image/*" ref={optCInputRef} onChange={e => handleOptionPhotoUpload('opsi_c', e)} className="hidden" />
+                                                <button type="button" onClick={() => optCInputRef.current?.click()} className="text-[11px] text-indigo-600 hover:text-indigo-800 flex items-center gap-1 font-semibold cursor-pointer">
+                                                    <Upload size={12}/> Upload Gambar
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <input type="text" className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-sm" value={currentQ.opsi_c} onChange={e => setCurrentQ({...currentQ, opsi_c: e.target.value})} placeholder="Teks opsi atau URL/Base64 gambar..." />
+                                        {currentQ.opsi_c && currentQ.opsi_c.startsWith('data:image') && (
+                                            <img src={currentQ.opsi_c} alt="Opsi C" className="h-10 mt-1 object-contain rounded border border-slate-200 bg-white" />
+                                        )}
                                     </div>
                                     {currentQ.tipe_soal !== 'PGK' && (
                                         <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Opsi D / Pernyataan 4</label>
-                                            <input type="text" className="w-full p-3 bg-white border border-slate-200 rounded-lg" value={currentQ.opsi_d} onChange={e => setCurrentQ({...currentQ, opsi_d: e.target.value})} />
+                                            <div className="flex items-center justify-between mb-1">
+                                                <label className="block text-xs font-bold text-slate-500 uppercase">Opsi D / Pernyataan 4</label>
+                                                <div>
+                                                    <input type="file" accept="image/*" ref={optDInputRef} onChange={e => handleOptionPhotoUpload('opsi_d', e)} className="hidden" />
+                                                    <button type="button" onClick={() => optDInputRef.current?.click()} className="text-[11px] text-indigo-600 hover:text-indigo-800 flex items-center gap-1 font-semibold cursor-pointer">
+                                                        <Upload size={12}/> Upload Gambar
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <input type="text" className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-sm" value={currentQ.opsi_d} onChange={e => setCurrentQ({...currentQ, opsi_d: e.target.value})} placeholder="Teks opsi atau URL/Base64 gambar..." />
+                                            {currentQ.opsi_d && currentQ.opsi_d.startsWith('data:image') && (
+                                                <img src={currentQ.opsi_d} alt="Opsi D" className="h-10 mt-1 object-contain rounded border border-slate-200 bg-white" />
+                                            )}
                                         </div>
                                     )}
                                 </div>
                                 )}
                             </form>
                         </div>
-                        <div className="p-6 border-t border-slate-100 bg-slate-50 rounded-b-2xl flex justify-end gap-3">
-                            <button onClick={() => setModalOpen(false)} className="px-6 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-200 transition">Batal</button>
-                            <button type="submit" form="qForm" disabled={loadingData} className="px-6 py-3 rounded-xl font-bold bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition flex items-center gap-2">
-                                {loadingData ? <><div className="loader w-4 h-4 border-2"></div> Menyimpan...</> : <><Save size={18}/> Simpan Data</>}
+                        <div className="px-6 py-3.5 border-t border-slate-100 bg-slate-50 rounded-b-2xl flex justify-end gap-3">
+                            <button onClick={() => setModalOpen(false)} className="px-5 py-2.5 rounded-xl font-bold text-slate-500 hover:bg-slate-200 transition text-sm cursor-pointer">Batal</button>
+                            <button type="submit" form="qForm" disabled={loadingData} className="px-5 py-2.5 rounded-xl font-bold bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition flex items-center gap-2 text-sm cursor-pointer">
+                                {loadingData ? <><div className="loader w-4 h-4 border-2"></div> Menyimpan...</> : <><Save size={17}/> Simpan Data</>}
                             </button>
                         </div>
+                     </div>
+                 </div>
+             )}
+
+             {/* WACANA READER MODAL */}
+             {wacanaModalData && (
+                 <div className="fixed inset-0 bg-black/60 z-50 flex items-start justify-center p-4 pt-6 overflow-y-auto backdrop-blur-sm animate-in fade-in duration-200">
+                     <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl max-h-[88vh] flex flex-col my-2 overflow-hidden">
+                         <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                             <div className="flex items-center gap-2 text-indigo-700 font-bold">
+                                 <BookOpen size={20} />
+                                 <span>Teks / Wacana Bacaan</span>
+                             </div>
+                             <button onClick={() => setWacanaModalData(null)} className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200 transition cursor-pointer">
+                                 <X size={20} />
+                             </button>
+                         </div>
+                         <div className="p-6 overflow-y-auto flex-1">
+                             <WacanaViewer 
+                                 content={wacanaModalData.content} 
+                                 caption={wacanaModalData.caption} 
+                                 fontSize="md" 
+                             />
+                         </div>
+                         <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
+                             <button onClick={() => setWacanaModalData(null)} className="px-5 py-2 rounded-xl font-bold bg-slate-200 hover:bg-slate-300 text-slate-700 transition cursor-pointer">
+                                 Tutup
+                             </button>
+                         </div>
                      </div>
                  </div>
              )}
