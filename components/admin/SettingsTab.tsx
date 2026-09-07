@@ -1,15 +1,18 @@
 
 import React, { useState, useEffect } from 'react';
-import { Settings, RefreshCw, Save, Loader2, ShieldCheck, Database, Clock, Layers, Globe, ClipboardList, Monitor } from 'lucide-react';
+import { Settings, RefreshCw, Save, Loader2, ShieldCheck, Database, Clock, Layers, Globe, ClipboardList, Monitor, Copy, Check, FileCode } from 'lucide-react';
 import { api } from '../../services/api';
 import { User } from '../../types';
 import { useAlert } from '../../context/AlertContext';
+import { MASTER_SQL_SCHEMA } from '../../services/sqlSchema';
 import AdminManagement from './AdminManagement';
 
 const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { currentUser: User, onDataChange: () => void, configs: Record<string, string>, mode?: 'all' | 'config' | 'dev' | 'session' | 'admin' }) => {
     const { showAlert } = useAlert();
     const [isInitializing, setIsInitializing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [showSqlScript, setShowSqlScript] = useState(false);
+    const [isCopied, setIsCopied] = useState(false);
     
     // Config states (These were moved from RilisTokenTab)
     const [maxQuestions, setMaxQuestions] = useState<number>(Number(configs.MAX_QUESTIONS) || 0);
@@ -892,12 +895,73 @@ const SettingsTab = ({ currentUser, onDataChange, configs, mode = 'all' }: { cur
 
             {/* Database Setup Section */}
             {(mode === 'all' || mode === 'config') && (
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
-                        <Database size={18} className="text-indigo-600" />
-                        <h3 className="font-bold text-slate-700">Setup Database</h3>
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden space-y-4">
+                    <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <Database size={18} className="text-indigo-600" />
+                            <h3 className="font-bold text-slate-700">Setup & Skema Database (Master SQL)</h3>
+                        </div>
+                        <span className="text-[11px] font-bold px-2.5 py-0.5 bg-indigo-100 text-indigo-700 rounded-full border border-indigo-200">
+                            supabase-schema.sql
+                        </span>
                     </div>
-                    <div className="p-6">
+                    <div className="p-6 space-y-5">
+                        {/* Master SQL Script Card */}
+                        <div className="p-5 bg-gradient-to-r from-slate-50 to-indigo-50/30 rounded-xl border border-slate-200/80">
+                            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <FileCode size={18} className="text-indigo-600" />
+                                        <h4 className="font-bold text-slate-800 text-sm">Skema Database Terpadu (1 File Utuh)</h4>
+                                    </div>
+                                    <p className="text-xs text-slate-600 mt-1 max-w-2xl">
+                                        Seluruh tabel (Users, Exams, Questions, Options, Exam Results, Activity Logs, Config, Schedules), RLS Policies, Realtime Replication, Index, dan Data Default telah disatukan secara rapi ke dalam satu skrip master.
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-2 w-full md:w-auto">
+                                    <button
+                                        onClick={() => setShowSqlScript(!showSqlScript)}
+                                        className="flex-1 md:flex-none px-3.5 py-2 bg-white text-slate-700 border border-slate-200 rounded-xl font-bold hover:bg-slate-50 text-xs transition shadow-xs flex items-center justify-center gap-1.5"
+                                    >
+                                        <FileCode size={14} />
+                                        {showSqlScript ? 'Tutup Script' : 'Lihat Script'}
+                                    </button>
+                                    <button
+                                        onClick={async () => {
+                                            try {
+                                                await navigator.clipboard.writeText(MASTER_SQL_SCHEMA);
+                                                setIsCopied(true);
+                                                setTimeout(() => setIsCopied(false), 2500);
+                                                await showAlert('Skrip SQL Master berhasil disalin ke clipboard! Silakan paste di SQL Editor Supabase Anda.', { type: 'success' });
+                                            } catch (err) {
+                                                await showAlert('Gagal menyalin otomatis. Silakan klik "Lihat Script" dan salin manual.', { type: 'error' });
+                                            }
+                                        }}
+                                        className="flex-1 md:flex-none px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 text-xs transition shadow-sm flex items-center justify-center gap-1.5"
+                                    >
+                                        {isCopied ? <Check size={14} className="text-white" /> : <Copy size={14} />}
+                                        {isCopied ? 'Tersalin!' : 'Salin Skrip SQL'}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Collapsible SQL Script Preview */}
+                            {showSqlScript && (
+                                <div className="mt-4 pt-4 border-t border-slate-200">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-[11px] font-mono text-slate-500 font-semibold">Skrip SQL Master (supabase-schema.sql)</span>
+                                        <span className="text-[10px] text-slate-400 font-mono">Siap dijalankan di Supabase SQL Editor</span>
+                                    </div>
+                                    <div className="relative">
+                                        <pre className="p-4 bg-slate-900 text-emerald-400 rounded-xl text-[11px] font-mono overflow-x-auto max-h-80 leading-relaxed border border-slate-800 selection:bg-indigo-500 selection:text-white">
+                                            <code>{MASTER_SQL_SCHEMA}</code>
+                                        </pre>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Survey Generator Button */}
                         <div className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200">
                             <div className="mb-4 md:mb-0">
                                 <h4 className="font-bold text-slate-700 text-sm">Generate Soal Survey Default</h4>
