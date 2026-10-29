@@ -46,8 +46,9 @@ const resilientFetch: typeof fetch = async (input, init) => {
 
   try {
     const res = await fetch(primaryUrl, init);
-    // If the proxy returns a server gateway error (502/503/504), fallback to direct URL
-    if ((res.status === 502 || res.status === 503 || res.status === 504) && primaryUrl.includes('/api/supabase')) {
+    const contentType = res.headers.get('content-type') || '';
+    // If the proxy returns a gateway error or HTML (index.html fallback on static hosts like Vercel/cPanel), fallback to direct URL
+    if (primaryUrl.includes('/api/supabase') && (res.status >= 400 || contentType.includes('text/html'))) {
       const directUrl = primaryUrl.replace(/https?:\/\/[^/]+\/api\/supabase/, targetBaseUrl);
       return await fetch(directUrl, init);
     }
